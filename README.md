@@ -2,6 +2,10 @@
 
 **AI-connected Full-stack Developer · Industrial AI · Agentic Systems**
 
+<a href="https://www.gitanimals.org/en-US?utm_medium=image&utm_source=oosuhada&utm_content=farm">
+  <img src="https://render.gitanimals.org/farms/oosuhada" width="100%" alt="GitAnimals farm for oosuhada" />
+</a>
+
 ## 대부분의 레포는 “이거 왜 없지?”에서 시작했습니다.
 
 **없으면 직접 만들어서 씁니다.**
@@ -10,10 +14,6 @@
 그러다 쓸 만해지면 배포하고, 가끔은 연구 주제까지 됩니다.
 
 *I build the software I wish existed — then keep using it until it becomes a product.*
-
-<a href="https://www.gitanimals.org/en-US?utm_medium=image&utm_source=oosuhada&utm_content=farm">
-  <img src="https://render.gitanimals.org/farms/oosuhada" width="100%" alt="GitAnimals farm for oosuhada" />
-</a>
 
 ## Featured Projects / 대표 프로젝트
 
