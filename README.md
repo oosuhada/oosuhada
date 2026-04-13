@@ -8,11 +8,12 @@
 
 ## 대부분의 레포는 “이거 왜 없지?”에서 시작했습니다.
 
+> ### *I build the software I wish existed — then keep using it until it becomes a product.*
+
 **없으면 직접 만들어서 씁니다.**  
 필요해서 만들고, 직접 써보고, 불편하면 다시 고칩니다.  
 그러다 쓸 만해지면 배포하고, 가끔은 연구 주제까지 됩니다.
 
-> ### *I build the software I wish existed — then keep using it until it becomes a product.*
 <table height="4"></table>
 
 ## Featured Projects / 대표 프로젝트
