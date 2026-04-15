@@ -1,7 +1,6 @@
 # Oosu / 우수
 
-### Full-stack Developer · Industrial AI · Agentic Systems
-### 산업 AI와 에이전틱 시스템을 만드는 풀스택 개발자
+### Full-stack Developer · Industrial AI · Agentic Systems(https://oosu.dev)
 
 <a href="https://www.gitanimals.org/en-US?utm_medium=image&utm_source=oosuhada&utm_content=farm">
   <img src="https://render.gitanimals.org/farms/oosuhada" width="100%" alt="GitAnimals farm for oosuhada" />
@@ -15,8 +14,6 @@
 
 When I run into friction in a team, at work, or in everyday life, I build a working version first.<br>
 Then I use it, fix what is still awkward, and keep going until it is useful enough to ship.
-
-[Ask about my work / 작업에 관해 물어보기](https://oosu.dev)
 
 ## Featured Projects / 대표 프로젝트
 
