@@ -1,4 +1,4 @@
-# Oosu / 우수 (https://oosu.dev)
+# Oosu / 우수
 
 ### Full-stack Developer · Industrial AI · Agentic Systems
 
