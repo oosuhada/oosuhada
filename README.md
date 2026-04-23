@@ -1,3 +1,3 @@
 <a href="https://github.com/devxb/gitanimals">
-  <img src="https://gitanimals.org{oosuhada}" width="600" height="300" />
+  <img src="https://render.gitanimals.org/farms/oosuhada" width="600" height="300" />
 </a>
