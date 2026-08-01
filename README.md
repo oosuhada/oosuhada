@@ -17,7 +17,7 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
 
 ## Featured Projects / 대표 프로젝트
 
-| Project / 프로젝트 | Why I Built It / 만든 이유 | Live | Repo |
+| Project | Why I Built It | Live | Repo |
 | --- | --- | --- | --- |
 | **Agentic Ontology Dashboard** | **EN** — Engineers need raw numbers and evidence, managers need priorities, executives need conclusions — but one fixed dashboard can't serve all three. I built a dynamic dashboard where an LLM reshapes the same manufacturing data for each role.<br><br>**KR** — 엔지니어는 수치와 근거를, 매니저는 우선순위를, 임원은 결론을 필요로 하는데, 하나의 고정된 대시보드로는 이 니즈가 동시에 충족되지 않는 문제가 있었습니다. 같은 제조 데이터를 각 역할에 맞게 LLM이 다시 구성하는 동적 대시보드를 만들었습니다. | [Live](https://dashboard.oosu.dev/app) | [Repo](https://github.com/oosuhada/agentic-ontology-dashboard) |
 | **Dev Flow Dashboard** | **EN** — LLMs made coding faster, but that speed backfired — PRs piled up simultaneously, dependencies tangled, and merging one triggered a chain of rebases that consumed more time than the feature work itself. I built a dashboard that shows the team which PRs to review and merge first.<br><br>**KR** — 코드 작업에 LLM이 도입되면서 개발 속도는 빨라졌지만, 오히려 PR이 동시다발적으로 쌓이면서 병목이 생기기 시작했습니다. 하나를 머지하면 나머지를 연쇄적으로 rebase해야 하고, 기능 구현보다 PR 정리에 시간이 더 드는 상황이 반복됐습니다. 뭐부터 리뷰하고 머지해야 하는지 팀 전체가 한눈에 볼 수 있는 화면을 만들었습니다. | [Live](https://ontology.oosu.dev/dev_dashboard) | [Repo](https://github.com/oosuhada/dev-flow-dashboard) |
@@ -29,7 +29,7 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
 
 ## More Projects / 더 많은 프로젝트
 
-| Project / 프로젝트 | Why I Built It / 만든 이유 | Live | Repo |
+| Project | Why I Built It | Live | Repo |
 | --- | --- | --- | --- |
 | **Text-to-Cypher Factory RCA** | **EN** — Before building the Ontology Dashboard, I needed to prove one thing first: can a natural-language question actually trace root causes through a manufacturing knowledge graph and return real evidence — not just unsupported LLM prose? This MVP answered that question and shaped the grounded-report design of the main dashboard.<br><br>**KR** — Ontology Dashboard를 본격적으로 만들기 전에 먼저 확인해야 할 게 있었습니다. 자연어 질문이 제조 지식그래프를 따라 실제 근거까지 추적할 수 있는지, LLM이 근거 없이 답변을 지어내는 게 아닌지. 이 선행 MVP로 그 가정을 검증했고, 결과가 본 대시보드의 grounded report 설계로 이어졌습니다. | [Live](https://text2cypher.oosu.dev) | [Repo](https://github.com/oosuhada/text2cypher-factory-rca) |
 | **GitAnimals for VS Code** | **EN** — Inspired by a teammate using a Pokémon extension in VS Code, I wanted that same experience for the GitAnimals which was already connected to my GitHub commits. Bringing my pet farm and live contribution count directly into the editor makes every commit feel rewarding.<br><br>**KR** — 옆자리 동료가 포켓몬 확장 프로그램을 띄워두고 코딩하는 걸 보고 영감을 받았습니다. 이미 git과 연결되어 있던 GitAnimals의 실시간 contribution를 개발 환경에 항상 띄워두면 작은 커밋 하나하나가 훨씬 뿌듯할 것 같았습니다. 그래서 VS Code 안으로 가져왔습니다 | — | [Repo](https://github.com/oosuhada/gitanimals-vscode) |
