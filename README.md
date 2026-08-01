@@ -16,7 +16,7 @@ When I run into friction in a team, at work, or in everyday life, I build a work
 Then I use it, fix what is still awkward, and keep going until it is useful enough to ship.
 
 <details open>
-<summary><strong>Featured Projects / 대표 프로젝트</strong></summary>
+<summary><h2>Featured Projects / 대표 프로젝트</h2></summary>
 
 | Project | Why I Built It | Live | Repo |
 | --- | --- | --- | --- |
@@ -31,7 +31,7 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
 </details>
 
 <details>
-<summary><strong>More Projects / 더 많은 프로젝트</strong></summary>
+<summary><h2>More Projects / 더 많은 프로젝트</h2></summary>
 
 | Project | Why I Built It | Live | Repo |
 | --- | --- | --- | --- |
