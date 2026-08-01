@@ -15,7 +15,8 @@
 When I run into friction in a team, at work, or in everyday life, I build a working version first.<br>
 Then I use it, fix what is still awkward, and keep going until it is useful enough to ship.
 
-## Featured Projects / 대표 프로젝트
+<details open>
+<summary><strong>Featured Projects / 대표 프로젝트</strong></summary>
 
 | Project | Why I Built It | Live | Repo |
 | --- | --- | --- | --- |
@@ -27,7 +28,10 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
 | **Algolog** | I used BaekjoonHub while solving coding tests, but it only committed the final accepted answer to Git and the entire trial-and-error, problem-solving process disappeared. Instead of keeping a separate journal, I forked the open-source extension and rebuilt it to record every submission automatically.<br><br>코딩테스트를 풀면서 BaekjoonHub를 쓰고 있었는데, Git에는 최종 정답만 커밋되고 끝이었습니다. 몇 번 틀렸는지, 얼마나 걸렸는지, 어떤 코드가 오답이었는지, 풀이 과정 전체가 사라졌습니다. 따로 기록하는 대신 오픈소스를 fork해서 모든 제출을 자동 기록하도록 직접 고쳤습니다. | — | [Repo](https://github.com/oosuhada/codetestlog-extension) |
 | **Sticks & Stones** | The site relied on a decade-old WordPress setup tangled with patches from different developers over the years, making routine maintenance practically impossible. I took the initiative to migrate the entire frontend, which directly led to a contract extension. Since proprietary code cannot be shared, this repository is a case study documenting the architectural choices and before/after results.<br><br>10년 가까이 서로 다른 개발자들의 패치가 누적된 오래된 WordPress 사이트라 코드베이스가 심각하게 엉켜 있었고, 단순 유지보수로는 감당이 안 되는 상태였습니다. 결국 프론트엔드를 직접 새로 마이그레이션했고, 그 성과로 계약 연장까지 이어졌습니다. 원본 코드는 비공개라 기술적 판단과 before/after 결과를 정리한 case study로 재구성했습니다. | [Live](https://stks.oosu.dev) | [Repo](https://github.com/oosuhada/sticksandstones.kr) |
 
-## More Projects / 더 많은 프로젝트
+</details>
+
+<details>
+<summary><strong>More Projects / 더 많은 프로젝트</strong></summary>
 
 | Project | Why I Built It | Live | Repo |
 | --- | --- | --- | --- |
@@ -39,6 +43,8 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
 | **Webtoon AI Translate** | 웹툰 번역 회사에 근무하는 친구가 개발팀 해체 후 유지보수가 이뤄지지 않고 있는 사내 번역 도구에 대해 지속적으로 불만을 토로했습니다. 친구를 인터뷰해, 하나의 정답만 내놓는 방식이 아니라 기존 번역 맥락과 어울리는 여러 옵션을 제시해 번역가가 쉽게 채택하고 수정할 수 있는 OCR + LLM 워크플로우 툴을 만들었습니다.<br><br>A close friend at a webtoon translation company kept venting about an in-house tool that had gone unmaintained since the dev team disbanded. I interviewed him to build something beyond a single fixed answer — an OCR + LLM workflow tool that offers multiple options consistent with the existing translation context, so translators can easily adopt or edit them. | [Live](https://webtoon.oosu.dev) | [Repo](https://github.com/oosuhada/webtoon-ai-translate) |
 | **Aigram** | Starting from a familiar product I used daily, I wanted to move beyond surface-level cloning to solve real friction in an AI-enhanced Instagram. I implemented AI summaries for lengthy captions and comment threads, cached translations in the database to eliminate wasteful duplicate API calls, and engineered idempotent handlers for rapid consecutive likes along with fast search.<br><br>평소 자주 쓰던 친숙한 도메인에서 출발하되, 단순 UI 재구현에 머물지 않고 실제 불편을 개선하는 미래형 인스타그램을 구상했습니다. 긴 피드 본문과 방대한 댓글을 AI로 요약하고, 중복 번역 API 호출을 막기 위해 결과를 DB에 캐싱하며, 연속적인 '좋아요' 클릭에 대응한 멱등성과 빠른 검색까지 고려하며 실질적인 사용자 경험과 시스템 비용 문제를 함께 해결했습니다. | [Live](https://aigram.oosu.dev) | [Repo](https://github.com/oosuhada/Aigram) |
 | **EZ AIR** | Flight search involved tedious friction — returning to the home screen to reset filters for every minor date change and juggling separate notes just to compare options. With conversational LLMs emerging but not yet applied to flight booking, I built a natural-language search product where travelers can adjust conditions and compare itineraries seamlessly through plain dialogue.<br><br>항공권을 검색할 때 날짜나 도시를 바꾸려면 매번 홈 화면으로 돌아가 폼을 처음부터 다시 채워야 했고, 여러 조건을 비교하려면 따로 메모해야 하는 번거로움이 있었습니다. 당시 LLM과 챗봇 기술이 급부상하고 있었지만 항공권 검색에 접목된 서비스는 없었기에, 대화 한 번으로 조건 변경과 일정 탐색을 끝낼 수 있는 자연어 항공권 검색을 직접 만들었습니다. | [Live](https://ezair.oosu.dev) | [Repo](https://github.com/oosuhada/ezair.ai) |
+
+</details>
 
 ## Stack
 
