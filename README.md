@@ -26,7 +26,7 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
     <tr>
       <td>
         <br>
-        <h2>Agentic Ontology Dashboard<h2> <a href="https://dashboard.oosu.dev/app">Live Demo</a> · <a href="https://github.com/oosuhada/agentic-ontology-dashboard">Repository</a> <br>
+        <h2>Agentic Ontology Dashboard <sub><a href="https://dashboard.oosu.dev/app"><strong>Live Demo</strong></a> <strong>·</strong> <a href="https://github.com/oosuhada/agentic-ontology-dashboard"><strong>Repository</strong></a></sub></h2>
         <p>Engineers need raw numbers and evidence, managers need priorities, executives need conclusions — but one fixed dashboard can&#x27;t serve all three. I built a dynamic dashboard where an LLM reshapes the same manufacturing data for each role.</p>
         <p>엔지니어는 수치와 근거를, 매니저는 우선순위를, 임원은 결론을 필요로 하는데, 하나의 고정된 대시보드로는 이 니즈가 동시에 충족되지 않는 문제가 있었습니다. 같은 제조 데이터를 각 역할에 맞게 LLM이 다시 구성하는 동적 대시보드를 만들었습니다.</p>
         <hr>
