@@ -25,7 +25,6 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
   <tbody>
     <tr>
       <td>
-        <br>
         <h2>Agentic Ontology Dashboard&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sub><a href="https://dashboard.oosu.dev/app"><strong>Live Demo</strong></a> <strong>·</strong> <a href="https://github.com/oosuhada/agentic-ontology-dashboard"><strong>Repository</strong></a></sub></h2>
         <p>Engineers need raw numbers and evidence, managers need priorities, executives need conclusions — but one fixed dashboard can&#x27;t serve all three. I built a dynamic dashboard where an LLM reshapes the same manufacturing data for each role.</p>
         <p>엔지니어는 수치와 근거를, 매니저는 우선순위를, 임원은 결론을 필요로 하는데, 하나의 고정된 대시보드로는 이 니즈가 동시에 충족되지 않는 문제가 있었습니다. 같은 제조 데이터를 각 역할에 맞게 LLM이 다시 구성하는 동적 대시보드를 만들었습니다.</p>
@@ -53,7 +52,6 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
         <h2>Sticks &amp; Stones&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sub><a href="https://stks.oosu.dev"><strong>Live Demo</strong></a> <strong>·</strong> <a href="https://github.com/oosuhada/sticksandstones.kr"><strong>Repository</strong></a></sub></h2>
         <p>The site relied on a decade-old WordPress setup tangled with patches from different developers over the years, making routine maintenance practically impossible. I took the initiative to migrate the entire frontend, which directly led to a contract extension. Since proprietary code cannot be shared, this repository is a case study documenting the architectural choices and before/after results.</p>
         <p>10년 가까이 서로 다른 개발자들의 패치가 누적된 오래된 WordPress 사이트라 코드베이스가 심각하게 엉켜 있었고, 단순 유지보수로는 감당이 안 되는 상태였습니다. 결국 프론트엔드를 직접 새로 마이그레이션했고, 그 성과로 계약 연장까지 이어졌습니다. 원본 코드는 비공개라 기술적 판단과 before/after 결과를 정리한 case study로 재구성했습니다.</p>
-        <br>
       </td>
     </tr>
   </tbody>
@@ -68,7 +66,6 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
   <tbody>
     <tr>
       <td>
-        <br>
         <h2>Text-to-Cypher Factory RCA&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sub><a href="https://text2cypher.oosu.dev"><strong>Live Demo</strong></a> <strong>·</strong> <a href="https://github.com/oosuhada/text2cypher-factory-rca"><strong>Repository</strong></a></sub></h2>
         <p>Before building the Ontology Dashboard, I needed to prove one thing first: can a natural-language question actually trace root causes through a manufacturing knowledge graph and return real evidence — not just unsupported LLM prose? This MVP answered that question and shaped the grounded-report design of the main dashboard.</p>
         <p>Ontology Dashboard를 본격적으로 만들기 전에 먼저 확인해야 할 게 있었습니다. 자연어 질문이 제조 지식그래프를 따라 실제 근거까지 추적할 수 있는지, LLM이 근거 없이 답변을 지어내는 게 아닌지. 이 선행 MVP로 그 가정을 검증했고, 결과가 본 대시보드의 grounded report 설계로 이어졌습니다.</p>
@@ -100,7 +97,6 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
         <h2>EZ AIR&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sub><a href="https://ezair.oosu.dev"><strong>Live Demo</strong></a> <strong>·</strong> <a href="https://github.com/oosuhada/ezair.ai"><strong>Repository</strong></a></sub></h2>
         <p>Flight search involved tedious friction — returning to the home screen to reset filters for every minor date change and juggling separate notes just to compare options. With conversational LLMs emerging but not yet applied to flight booking, I built a natural-language search product where travelers can adjust conditions and compare itineraries seamlessly through plain dialogue.</p>
         <p>항공권을 검색할 때 날짜나 도시를 바꾸려면 매번 홈 화면으로 돌아가 폼을 처음부터 다시 채워야 했고, 여러 조건을 비교하려면 따로 메모해야 하는 번거로움이 있었습니다. 당시 LLM과 챗봇 기술이 급부상하고 있었지만 항공권 검색에 접목된 서비스는 없었기에, 대화 한 번으로 조건 변경과 일정 탐색을 끝낼 수 있는 자연어 항공권 검색을 구현했습니다.</p>
-        <br>
       </td>
     </tr>
   </tbody>
