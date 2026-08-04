@@ -51,7 +51,8 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
         <hr>
         <h2>Sticks &amp; Stones&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sub><a href="https://stks.oosu.dev"><strong>Live Demo</strong></a> <strong>·</strong> <a href="https://github.com/oosuhada/sticksandstones.kr"><strong>Repository</strong></a></sub></h2>
         <p>The site relied on a decade-old WordPress setup tangled with patches from different developers over the years, making routine maintenance practically impossible. I took the initiative to migrate the entire frontend, which directly led to a contract extension. Since proprietary code cannot be shared, this repository is a case study documenting the architectural choices and before/after results.</p>
-        <p>10년 가까이 서로 다른 개발자들의 패치가 누적된 오래된 WordPress 사이트라 코드베이스가 심각하게 엉켜 있었고, 단순 유지보수로는 감당이 안 되는 상태였습니다. 결국 프론트엔드를 직접 새로 마이그레이션했고, 그 성과로 계약 연장까지 이어졌습니다. 원본 코드는 비공개라 기술적 판단과 before/after 결과를 정리한 case study로 재구성했습니다.</p>
+        <div>10년 가까이 서로 다른 개발자들의 패치가 누적된 오래된 WordPress 사이트라 코드베이스가 심각하게 엉켜 있었고, 단순 유지보수로는 감당이 안 되는 상태였습니다. 결국 프론트엔드를 직접 새로 마이그레이션했고, 그 성과로 계약 연장까지 이어졌습니다. 원본 코드는 비공개라 기술적 판단과 before/after 결과를 정리한 case study로 재구성했습니다.</div>
+        <div>&nbsp;</div>
       </td>
     </tr>
   </tbody>
@@ -96,7 +97,8 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
         <hr>
         <h2>EZ AIR&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<sub><a href="https://ezair.oosu.dev"><strong>Live Demo</strong></a> <strong>·</strong> <a href="https://github.com/oosuhada/ezair.ai"><strong>Repository</strong></a></sub></h2>
         <p>Flight search involved tedious friction — returning to the home screen to reset filters for every minor date change and juggling separate notes just to compare options. With conversational LLMs emerging but not yet applied to flight booking, I built a natural-language search product where travelers can adjust conditions and compare itineraries seamlessly through plain dialogue.</p>
-        <p>항공권을 검색할 때 날짜나 도시를 바꾸려면 매번 홈 화면으로 돌아가 폼을 처음부터 다시 채워야 했고, 여러 조건을 비교하려면 따로 메모해야 하는 번거로움이 있었습니다. 당시 LLM과 챗봇 기술이 급부상하고 있었지만 항공권 검색에 접목된 서비스는 없었기에, 대화 한 번으로 조건 변경과 일정 탐색을 끝낼 수 있는 자연어 항공권 검색을 구현했습니다.</p>
+        <div>항공권을 검색할 때 날짜나 도시를 바꾸려면 매번 홈 화면으로 돌아가 폼을 처음부터 다시 채워야 했고, 여러 조건을 비교하려면 따로 메모해야 하는 번거로움이 있었습니다. 당시 LLM과 챗봇 기술이 급부상하고 있었지만 항공권 검색에 접목된 서비스는 없었기에, 대화 한 번으로 조건 변경과 일정 탐색을 끝낼 수 있는 자연어 항공권 검색을 구현했습니다.</div>
+        <div>&nbsp;</div>
       </td>
     </tr>
   </tbody>
