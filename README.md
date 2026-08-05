@@ -18,8 +18,7 @@
 When I run into friction in a team, at work, or in everyday life, I build a working version first.<br>
 Then I use it, fix what is still awkward, and keep going until it is useful enough to ship.
 
-<details open>
-<summary><strong>Featured&nbsp;Projects&nbsp;/&nbsp;대표&nbsp;프로젝트</strong></summary>
+## Featured Projects / 대표 프로젝트
 
 <table width="100%">
   <tbody>
@@ -58,10 +57,7 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
   </tbody>
 </table>
 
-</details>
-
-<details>
-<summary><strong>More&nbsp;Projects&nbsp;/&nbsp;더&nbsp;많은&nbsp;프로젝트</strong></summary>
+## More Projects / 더 많은 프로젝트
 
 <table width="100%">
   <tbody>
@@ -104,10 +100,7 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
   </tbody>
 </table>
 
-</details>
-
-<details open>
-<summary><strong>Stack&nbsp;/&nbsp;기술&nbsp;스택</strong></summary>
+## Stack / 기술 스택
 
 > ### 기술은 목적보다 뒤에 둡니다. 필요한 문제에 맞춰 웹·모바일·AI·데이터·인프라를 연결합니다.
 
@@ -118,5 +111,3 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
 </a>
 
 <sub>↑ Click the timeline to explore the live, GitHub-backed stack page.</sub>
-
-</details>
