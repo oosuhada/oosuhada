@@ -1,22 +1,26 @@
 # Oosu / 우수
 
-### Full-stack Developer · Industrial AI · Agentic Systems
+### Product Engineer · Applied AI · Industrial Systems
 
 <a href="https://www.gitanimals.org/en-US?utm_medium=image&utm_source=oosuhada&utm_content=farm">
   <img src="https://render.gitanimals.org/farms/oosuhada" width="100%" alt="GitAnimals farm for oosuhada" />
 </a>
 
-> ### 실제 문제에서 시작해, 직접 쓸 수 있는 도구를 만듭니다.
+> ### 실제 문제와 불편에서 시작해, 직접 쓸 수 있는 제품과 시스템을 만듭니다.
 
-> ### I build tools that start with real problems and end up in actual use.
+> ### I start with real problems and friction, then build products and systems people can actually use.
 
 <br>
 
-팀 과제, 회사 업무, 일상에서 불편한 점을 발견하면 직접 만들어 봅니다.<br>
-완벽하게 계획하기보다 먼저 써보고, 불편한 부분을 고치면서 쓸 만한 제품으로 발전시킵니다.
+팀 과제, 회사 업무, 일상에서 불편한 점을 발견하면 먼저 작동하는 버전을 직접 만듭니다.<br>
+경영학적 문제 정의와 제품 기획을 바탕으로, 사용자와 현업의 요구를 구조화하고 제품으로 구현합니다.<br>
+완벽하게 계획하기보다 직접 써보고, 불편한 부분을 고치면서 배포하고 운영할 수 있는 수준까지 발전시킵니다.
 
-When I run into friction in a team, at work, or in everyday life, I build a working version first.<br>
-Then I use it, fix what is still awkward, and keep going until it is useful enough to ship.
+When I find friction in a team, at work, or in everyday life, I build a working version first.<br>
+With a background in business and product planning, I structure ambiguous user and operational needs and translate them into working software.<br>
+Rather than planning for perfection, I use what I build, fix what is still awkward, and keep iterating until it is ready to ship and operate.
+
+I work across product, AI, data, and engineering — owning the path from problem discovery to deployment and real-world use.
 
 ## Featured Projects / 대표 프로젝트
 
