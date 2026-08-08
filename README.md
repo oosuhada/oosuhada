@@ -3,7 +3,11 @@
 ### Product Engineer · Applied AI · Industrial Systems
 
 <a href="https://www.gitanimals.org/en-US?utm_medium=image&utm_source=oosuhada&utm_content=farm">
-  <img src="https://render.gitanimals.org/farms/oosuhada" width="100%" alt="GitAnimals farm for oosuhada" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/gitanimals/farm-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/gitanimals/farm-light.svg">
+    <img src="assets/gitanimals/farm-dark.svg" width="100%" alt="GitAnimals farm for oosuhada">
+  </picture>
 </a>
 
 > ### 실제 문제와 불편에서 시작해, 직접 쓸 수 있는 제품과 시스템을 만듭니다.

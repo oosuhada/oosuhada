@@ -1,0 +1,35 @@
+name: Refresh GitAnimals artwork
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 15 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Refresh theme-aware farm images
+        run: node scripts/refresh-gitanimals.mjs
+
+      - name: Commit meaningful GitAnimals changes
+        run: |
+          if git diff --quiet; then
+            echo "GitAnimals state is unchanged."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/gitanimals
+          git commit -m "chore: refresh GitAnimals artwork"
+          git push
