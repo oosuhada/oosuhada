@@ -3,7 +3,7 @@ name: Refresh GitAnimals artwork
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 15 * * *"
+    - cron: "0,30 * * * *"
 
 permissions:
   contents: write
