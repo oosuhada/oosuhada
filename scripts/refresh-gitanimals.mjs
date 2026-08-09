@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "zoned-farm-v1";
+const layoutVersion = "free-roam-v3";
 
 const response = await fetch(`https://render.gitanimals.org/users/${username}`);
 if (!response.ok) {
@@ -49,7 +49,7 @@ const visiblePersonaIds = stateData.personas
   .filter((persona) => persona.visible && renderedPersonaIds.has(String(persona.id)))
   .map((persona) => String(persona.id));
 
-const spreadCharacters = (svg) => {
+const distributeCharacterRoaming = (svg) => {
   if (visiblePersonaIds.length === 0) {
     return svg;
   }
@@ -58,11 +58,8 @@ const spreadCharacters = (svg) => {
     ? visiblePersonaIds.length
     : Math.ceil(visiblePersonaIds.length / 2);
   const rows = Math.ceil(visiblePersonaIds.length / columns);
-  const bounds = { left: 8, right: 92, top: 28, bottom: 82 };
-  const cellWidth = (bounds.right - bounds.left) / columns;
-  const cellHeight = (bounds.bottom - bounds.top) / rows;
-  const paddingX = Math.min(7, cellWidth * 0.27);
-  const paddingY = rows === 1 ? Math.min(14, cellHeight * 0.32) : 6.5;
+  const anchorBounds = { left: 12, right: 88, top: 34, bottom: 76 };
+  const roamingFreedom = 0.64;
 
   let result = svg.replace(
     "<svg ",
@@ -72,12 +69,12 @@ const spreadCharacters = (svg) => {
   visiblePersonaIds.forEach((id, index) => {
     const column = index % columns;
     const row = Math.floor(index / columns);
-    const zone = {
-      minX: bounds.left + column * cellWidth + paddingX,
-      maxX: bounds.left + (column + 1) * cellWidth - paddingX,
-      minY: bounds.top + row * cellHeight + paddingY,
-      maxY: bounds.top + (row + 1) * cellHeight - paddingY,
-    };
+    const anchorX = columns === 1
+      ? 50
+      : anchorBounds.left + column * ((anchorBounds.right - anchorBounds.left) / (columns - 1));
+    const anchorY = rows === 1
+      ? 55
+      : anchorBounds.top + row * ((anchorBounds.bottom - anchorBounds.top) / (rows - 1));
     const keyframesStart = result.indexOf(`@keyframes move-${id}`);
     const animationRuleStart = result.indexOf(`animation-name: move-${id}`, keyframesStart);
 
@@ -87,15 +84,37 @@ const spreadCharacters = (svg) => {
 
     const movementKeyframes = result.slice(keyframesStart, animationRuleStart);
     let replacementCount = 0;
-    const zonedKeyframes = movementKeyframes.replace(
-      /translate\((-?[\d.]+)%,\s*(-?[\d.]+)%\)/g,
-      (_, x, y) => {
+    let previousFrame;
+    const roamingKeyframes = movementKeyframes.replace(
+      /(\d+(?:\.\d+)?)%(\s*\{transform:translate\()(-?[\d.]+)%(,\s*)(-?[\d.]+)%(\)\s*rotate\([^)]*\)\s*scaleX\()(-?[\d.]+)(\);\})/g,
+      (_, time, translatePrefix, x, separator, y, scalePrefix, scale, suffix) => {
         replacementCount += 1;
-        const normalizedX = Math.max(0, Math.min(100, Number(x))) / 100;
-        const normalizedY = Math.max(0, Math.min(100, Number(y))) / 100;
-        const zonedX = zone.minX + normalizedX * (zone.maxX - zone.minX);
-        const zonedY = zone.minY + normalizedY * (zone.maxY - zone.minY);
-        return `translate(${zonedX.toFixed(2)}%, ${zonedY.toFixed(2)}%)`;
+        const numericTime = Number(time);
+        const originalX = Number(x);
+        const originalY = Number(y);
+        const numericScale = Number(scale);
+        let roamingX = originalX * roamingFreedom + anchorX * (1 - roamingFreedom);
+        let roamingY = originalY * roamingFreedom + anchorY * (1 - roamingFreedom);
+
+        const isDirectionFlip = previousFrame
+          && numericTime - previousFrame.time <= 0.011
+          && numericScale !== previousFrame.scale;
+
+        if (isDirectionFlip) {
+          roamingX = previousFrame.roamingX + (originalX - previousFrame.originalX);
+          roamingY = previousFrame.roamingY + (originalY - previousFrame.originalY);
+        }
+
+        previousFrame = {
+          time: numericTime,
+          originalX,
+          originalY,
+          roamingX,
+          roamingY,
+          scale: numericScale,
+        };
+
+        return `${time}%${translatePrefix}${roamingX.toFixed(2)}%${separator}${roamingY.toFixed(2)}%${scalePrefix}${scale}${suffix}`;
       },
     );
 
@@ -103,7 +122,11 @@ const spreadCharacters = (svg) => {
       throw new Error(`No movement coordinates found for visible persona ${id}.`);
     }
 
-    result = `${result.slice(0, keyframesStart)}${zonedKeyframes}${result.slice(animationRuleStart)}`;
+    result = `${result.slice(0, keyframesStart)}${roamingKeyframes}${result.slice(animationRuleStart)}`;
+    result = result.replace(
+      new RegExp(`(animation-name:\\s*move-${id};animation-duration:\\s*[\\d.]+s;)`),
+      "$1animation-timing-function:linear;",
+    );
   });
 
   return result;
@@ -115,9 +138,9 @@ const compactUsername = (svg) =>
     '<g id="username" transform="translate(15, 15) scale(0.72)">',
   );
 
-const zonedSource = spreadCharacters(source);
+const freeRoamSource = distributeCharacterRoaming(source);
 
-const light = compactUsername(zonedSource)
+const light = compactUsername(freeRoamSource)
   .replace('fill="white"/>', 'fill="#FFFFFF"/>')
   .replace('stroke="#D9D9D9"', 'stroke="#D0D7DE"');
 
@@ -127,7 +150,7 @@ const darkThemeStyle = [
   "</style>",
 ].join("");
 
-const dark = compactUsername(zonedSource)
+const dark = compactUsername(freeRoamSource)
   .replace(
     'xmlns="http://www.w3.org/2000/svg">',
     `xmlns="http://www.w3.org/2000/svg">${darkThemeStyle}`,
