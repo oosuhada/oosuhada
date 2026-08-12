@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v15";
+const layoutVersion = "character-behaviors-v17";
 
 const response = await fetch(`https://render.gitanimals.org/users/${username}`);
 if (!response.ok) {
@@ -295,8 +295,8 @@ const distributeCharacterRoaming = (svg) => {
     ].join("");
     replaceKeyframeBody(`move-${id}`, explorerMovement);
     replaceKeyframeBody(`reverse-flip-${id}`, explorerCounterFlip);
-    configureAnimation(`move-${id}`, 108, "infinite");
-    configureAnimation(`reverse-flip-${id}`, 108, "infinite");
+    configureAnimation(`move-${id}`, 72, "infinite");
+    configureAnimation(`reverse-flip-${id}`, 72, "infinite");
   }
 
   const rider = visiblePersonas.find((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES");
@@ -312,31 +312,55 @@ const distributeCharacterRoaming = (svg) => {
         `${translate}${(Number(x) + 5).toFixed(2)}%${separator}${(Number(y) - 6).toFixed(2)}%`
       ),
     );
+    const mountCounterFlip = keyframeBody(`reverse-flip-${mountId}`).body;
     replaceKeyframeBody(`move-${riderId}`, mountedMovement);
-    replaceKeyframeBody(`reverse-flip-${riderId}`, keyframeBody(`reverse-flip-${mountId}`).body);
+    replaceKeyframeBody(
+      `reverse-flip-${riderId}`,
+      "0%,100%{transform-origin:10px 0;transform:scaleX(1);}",
+    );
     configureAnimation(`move-${mountId}`, mountDuration, "infinite", "alternate");
     configureAnimation(`reverse-flip-${mountId}`, mountDuration, "infinite", "alternate");
     configureAnimation(`move-${riderId}`, mountDuration, "infinite", "alternate");
     configureAnimation(`reverse-flip-${riderId}`, mountDuration, "infinite", "alternate");
 
     const riderRootId = `little-chick-${riderId}`;
+    const riderNeutralizerId = `profile-rider-neutralizer-${riderId}`;
     const riderActionId = `profile-rider-action-${riderId}`;
-    wrapGroupContents(riderRootId, riderActionId);
-    riderActionStyles = `@keyframes chick-adventure-${riderId}{`
-      + "0%,12%{transform:translate(0,0) rotate(0deg);}"
+    wrapGroupContents(riderRootId, riderNeutralizerId);
+    wrapGroupContents(riderNeutralizerId, riderActionId);
+    riderActionStyles = `@keyframes rider-neutralize-${riderId}{${mountCounterFlip}}`
+      + `#${riderNeutralizerId}{animation-name:rider-neutralize-${riderId};`
+      + `animation-duration:${mountDuration}s;animation-timing-function:linear;`
+      + "animation-iteration-count:infinite;animation-direction:alternate;animation-fill-mode:both;}"
+      + `@keyframes chick-adventure-${riderId}{`
+      + "0%{transform:translate(0,0) rotate(0deg);}"
+      + "6%{transform:translate(2px,-3px) rotate(3deg);}"
+      + "12%{transform:translate(0,0) rotate(0deg);}"
       + "18%{transform:translate(0,-14px) rotate(-5deg);}"
-      + "23%,38%{transform:translate(0,0) rotate(0deg);}"
+      + "23%{transform:translate(0,0) rotate(0deg);}"
+      + "30%{transform:translate(-3px,-6px) rotate(-4deg);}"
+      + "38%{transform:translate(0,0) rotate(0deg);}"
       + "44%{transform:translate(12px,-9px) rotate(5deg);}"
       + "50%{transform:translate(25px,-4px) rotate(8deg);}"
       + "56%{transform:translate(31px,4px) rotate(-3deg);}"
       + "62%{transform:translate(17px,-11px) rotate(-8deg);}"
-      + "68%,82%{transform:translate(0,0) rotate(0deg);}"
+      + "68%{transform:translate(0,0) rotate(0deg);}"
+      + "75%{transform:translate(3px,-5px) rotate(4deg);}"
+      + "82%{transform:translate(0,0) rotate(0deg);}"
       + "87%{transform:translate(-5px,-11px) rotate(-7deg);}"
       + "91%{transform:translate(0,0) rotate(0deg);}"
       + "95%{transform:translate(5px,-7px) rotate(6deg);}"
       + "100%{transform:translate(0,0) rotate(0deg);}}"
-      + `#${riderActionId}{animation:chick-adventure-${riderId} 29s `
-      + "cubic-bezier(.45,.05,.55,.95) infinite both;transform-box:fill-box;transform-origin:center;}";
+      + `@keyframes chick-facing-${riderId}{`
+      + "0%,7.99%{transform:scaleX(1);}8%,11.99%{transform:scaleX(-1);}"
+      + "12%,22.99%{transform:scaleX(1);}23%,37.99%{transform:scaleX(-1);}"
+      + "38%,55.99%{transform:scaleX(1);}56%,67.99%{transform:scaleX(-1);}"
+      + "68%,74.99%{transform:scaleX(1);}75%,81.99%{transform:scaleX(-1);}"
+      + "82%,90.99%{transform:scaleX(-1);}91%,100%{transform:scaleX(1);}}"
+      + `#${riderActionId}{animation:chick-adventure-${riderId} 23s `
+      + "cubic-bezier(.45,.05,.55,.95) infinite both;transform-box:fill-box;transform-origin:center;}"
+      + `#${riderActionId}>svg{animation:chick-facing-${riderId} 23s steps(1,end) infinite both;`
+      + "transform-box:fill-box;transform-origin:center;}";
   }
 
   const staticDriftStyles = visiblePersonas
