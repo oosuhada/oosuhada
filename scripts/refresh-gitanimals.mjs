@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "collision-aware-v9";
+const layoutVersion = "character-behaviors-v13";
 
 const response = await fetch(`https://render.gitanimals.org/users/${username}`);
 if (!response.ok) {
@@ -207,6 +207,90 @@ const distributeCharacterRoaming = (svg) => {
       `$1 ${normalizedDuration}s;`,
     );
   });
+
+  const keyframeBody = (animationName) => {
+    const keyframesStart = result.indexOf(`@keyframes ${animationName}`);
+    const bodyStart = result.indexOf("{", keyframesStart) + 1;
+    const animationRuleStart = result.indexOf(`animation-name: ${animationName}`, bodyStart);
+    const bodyEnd = result.lastIndexOf("}", animationRuleStart);
+    if (keyframesStart === -1 || bodyStart === 0 || animationRuleStart === -1 || bodyEnd < bodyStart) {
+      throw new Error(`Unable to read ${animationName} keyframes.`);
+    }
+    return { body: result.slice(bodyStart, bodyEnd), bodyStart, bodyEnd };
+  };
+
+  const replaceKeyframeBody = (animationName, body) => {
+    const bounds = keyframeBody(animationName);
+    result = `${result.slice(0, bounds.bodyStart)}${body}${result.slice(bounds.bodyEnd)}`;
+  };
+
+  const configureAnimation = (animationName, duration, iterationCount = "1") => {
+    const ruleStart = result.indexOf(`animation-name: ${animationName}`);
+    const ruleEnd = result.indexOf("}", ruleStart);
+    if (ruleStart === -1 || ruleEnd === -1) {
+      throw new Error(`Unable to configure ${animationName}.`);
+    }
+    let rule = result.slice(ruleStart, ruleEnd);
+    rule = rule
+      .replace(/animation-duration:\s*[\d.]+s;/, `animation-duration: ${duration}s;`)
+      .replace(/animation-iteration-count:\s*[^;]+;/, `animation-iteration-count: ${iterationCount};`)
+      .replace(/animation-fill-mode:\s*[^;]+;/, "animation-fill-mode: both;");
+    if (!rule.includes("animation-timing-function:")) {
+      rule = rule.replace(
+        /animation-duration:\s*[\d.]+s;/,
+        (durationProperty) => `${durationProperty}animation-timing-function:linear;`,
+      );
+    }
+    result = `${result.slice(0, ruleStart)}${rule}${result.slice(ruleEnd)}`;
+  };
+
+  const explorer = visiblePersonas.find((persona) => persona.type === "RABBIT");
+  if (explorer && movingPersonaIds.has(String(explorer.id))) {
+    const id = String(explorer.id);
+    const explorerMovement = [
+      "0%{transform:translate(20%, 25%) rotate(0deg) scaleX(1);}",
+      "18%{transform:translate(40%, 28%) rotate(-2deg) scaleX(1);}",
+      "36%{transform:translate(85%, 40%) rotate(2deg) scaleX(1);}",
+      "36.01%{transform:translate(90%, 40%) rotate(2deg) scaleX(-1);}",
+      "55%{transform:translate(68%, 67%) rotate(-2deg) scaleX(-1);}",
+      "76%{transform:translate(20%, 62%) rotate(1deg) scaleX(-1);}",
+      "99.99%{transform:translate(15%, 25%) rotate(0deg) scaleX(-1);}",
+      "100%{transform:translate(20%, 25%) rotate(0deg) scaleX(1);}",
+    ].join("");
+    const explorerCounterFlip = [
+      "0%{transform-origin:10px 0;transform:scaleX(1);}",
+      "36%{transform-origin:10px 0;transform:scaleX(1);}",
+      "36.01%{transform-origin:10px 0;transform:scaleX(-1);}",
+      "99.99%{transform-origin:10px 0;transform:scaleX(-1);}",
+      "100%{transform-origin:10px 0;transform:scaleX(1);}",
+    ].join("");
+    replaceKeyframeBody(`move-${id}`, explorerMovement);
+    replaceKeyframeBody(`reverse-flip-${id}`, explorerCounterFlip);
+    configureAnimation(`move-${id}`, 108, "infinite");
+    configureAnimation(`reverse-flip-${id}`, 108, "infinite");
+  }
+
+  const rider = visiblePersonas.find((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES");
+  const mount = visiblePersonas.find((persona) => persona.type === "CAPYBARA_SWIM");
+  if (rider && mount && movingPersonaIds.has(String(rider.id)) && movingPersonaIds.has(String(mount.id))) {
+    const riderId = String(rider.id);
+    const mountId = String(mount.id);
+    const mountedMovement = keyframeBody(`move-${mountId}`).body.replace(
+      /(translate\()(-?[\d.]+)%(,\s*)(-?[\d.]+)%/g,
+      (_, translate, x, separator, y) => (
+        `${translate}${(Number(x) + 5).toFixed(2)}%${separator}${(Number(y) - 6).toFixed(2)}%`
+      ),
+    );
+    const mountDurationRuleStart = result.indexOf(`animation-name: move-${mountId}`);
+    const mountDuration = Number(
+      result.slice(mountDurationRuleStart, mountDurationRuleStart + 240)
+        .match(/animation-duration:\s*([\d.]+)s/)?.[1],
+    );
+    replaceKeyframeBody(`move-${riderId}`, mountedMovement);
+    replaceKeyframeBody(`reverse-flip-${riderId}`, keyframeBody(`reverse-flip-${mountId}`).body);
+    configureAnimation(`move-${riderId}`, mountDuration);
+    configureAnimation(`reverse-flip-${riderId}`, mountDuration);
+  }
 
   const staticDriftStyles = visiblePersonas
     .filter((persona) => staticPersonaRoots.has(String(persona.id)))
