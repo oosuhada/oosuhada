@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "grid-halo-v5";
+const layoutVersion = "collision-aware-v7";
 
 const response = await fetch(`https://render.gitanimals.org/users/${username}`);
 if (!response.ok) {
@@ -42,42 +42,105 @@ if (!source.startsWith("<svg") || !source.includes('<g id="username"')) {
   throw new Error("GitAnimals returned an unexpected SVG structure.");
 }
 
-const renderedPersonaIds = new Set(
+const movingPersonaIds = new Set(
   [...source.matchAll(/@keyframes move-([0-9]+)/g)].map((match) => match[1]),
 );
-const visiblePersonaIds = stateData.personas
-  .filter((persona) => persona.visible && renderedPersonaIds.has(String(persona.id)))
-  .map((persona) => String(persona.id));
+const staticPersonaRoots = new Map();
+
+for (const persona of stateData.personas.filter((candidate) => candidate.visible)) {
+  const id = String(persona.id);
+  if (movingPersonaIds.has(id)) {
+    continue;
+  }
+
+  const rootMatch = source.match(
+    new RegExp(`<g id="([^"]*-${id})" style="transform:translate\\([^\"]+"`),
+  );
+  if (rootMatch) {
+    staticPersonaRoots.set(id, rootMatch[1]);
+  }
+}
+
+const visiblePersonas = stateData.personas.filter((persona) => {
+  const id = String(persona.id);
+  return persona.visible && (movingPersonaIds.has(id) || staticPersonaRoots.has(id));
+});
 
 const distributeCharacterRoaming = (svg) => {
-  if (visiblePersonaIds.length === 0) {
+  if (visiblePersonas.length === 0) {
     return svg;
   }
 
-  const columns = visiblePersonaIds.length <= 3
-    ? visiblePersonaIds.length
-    : Math.ceil(visiblePersonaIds.length / 2);
-  const rows = Math.ceil(visiblePersonaIds.length / columns);
+  const columns = visiblePersonas.length <= 3
+    ? visiblePersonas.length
+    : Math.ceil(visiblePersonas.length / 2);
+  const rows = Math.ceil(visiblePersonas.length / columns);
   const anchorBounds = { left: 15, right: 85, top: 38, bottom: 68 };
   // Keep the full distance between 5x2 home points, then add an overlapping movement halo.
   // A halo is wider than a grid cell, so characters can cross cell boundaries without piling up.
   const horizontalFreedom = 0.36;
   const verticalFreedom = 0.46;
 
+  const anchors = Array.from({ length: rows * columns }, (_, index) => {
+    const column = index % columns;
+    const row = Math.floor(index / columns);
+    return {
+      x: columns === 1
+        ? 50
+        : anchorBounds.left + column * ((anchorBounds.right - anchorBounds.left) / (columns - 1)),
+      y: rows === 1
+        ? 55
+        : anchorBounds.top + row * ((anchorBounds.bottom - anchorBounds.top) / (rows - 1)),
+    };
+  });
+
+  const remainingAnchors = anchors.slice(1);
+  const spreadAnchors = [anchors[0]];
+  while (remainingAnchors.length > 0) {
+    let bestIndex = 0;
+    let bestDistance = -1;
+    remainingAnchors.forEach((candidate, index) => {
+      const nearestAssignedDistance = Math.min(...spreadAnchors.map((assigned) => {
+        const horizontalDistance = (candidate.x - assigned.x) * 2;
+        const verticalDistance = candidate.y - assigned.y;
+        return horizontalDistance ** 2 + verticalDistance ** 2;
+      }));
+      if (nearestAssignedDistance > bestDistance) {
+        bestIndex = index;
+        bestDistance = nearestAssignedDistance;
+      }
+    });
+    spreadAnchors.push(remainingAnchors.splice(bestIndex, 1)[0]);
+  }
+
+  const footprintAwareAnchors = rows === 2 && columns === 5
+    ? [0, 9, 3, 7, 1, 5, 4, 6, 2, 8].map((index) => anchors[index])
+    : spreadAnchors;
+
+  const footprintPriority = (persona) => {
+    const type = persona.type;
+    const staticPriority = staticPersonaRoots.has(String(persona.id)) ? 100 : 0;
+    if (type.includes("CAPYBARA")) return staticPriority + 5;
+    if (type.includes("PENGUIN") || type.includes("FLAMINGO")) return staticPriority + 4;
+    if (type.includes("RABBIT") || type.includes("HAMSTER")) return staticPriority + 3;
+    return staticPriority + 2;
+  };
+
+  const prioritizedPersonas = [...visiblePersonas].sort(
+    (left, right) => footprintPriority(right) - footprintPriority(left),
+  );
+  const anchorAssignments = new Map(
+    prioritizedPersonas.map((persona, index) => [String(persona.id), footprintAwareAnchors[index]]),
+  );
+
   let result = svg.replace(
     "<svg ",
     `<svg data-profile-layout="${layoutVersion}" `,
   );
 
-  visiblePersonaIds.forEach((id, index) => {
-    const column = index % columns;
-    const row = Math.floor(index / columns);
-    const anchorX = columns === 1
-      ? 50
-      : anchorBounds.left + column * ((anchorBounds.right - anchorBounds.left) / (columns - 1));
-    const anchorY = rows === 1
-      ? 55
-      : anchorBounds.top + row * ((anchorBounds.bottom - anchorBounds.top) / (rows - 1));
+  visiblePersonas.filter((persona) => movingPersonaIds.has(String(persona.id))).forEach((persona) => {
+    const id = String(persona.id);
+    const { x: anchorX, y: anchorY } = anchorAssignments.get(id);
     const keyframesStart = result.indexOf(`@keyframes move-${id}`);
     const animationRuleStart = result.indexOf(`animation-name: move-${id}`, keyframesStart);
 
@@ -131,6 +194,38 @@ const distributeCharacterRoaming = (svg) => {
       "$1animation-timing-function:linear;",
     );
   });
+
+  const staticDriftStyles = visiblePersonas
+    .filter((persona) => staticPersonaRoots.has(String(persona.id)))
+    .map((persona, index) => {
+      const id = String(persona.id);
+      const rootId = staticPersonaRoots.get(id);
+      const { x: anchorX, y: anchorY } = anchorAssignments.get(id);
+      const direction = index % 2 === 0 ? 1 : -1;
+      const duration = 118 + index * 17;
+      const points = [
+        [0, -8, -4],
+        [20, 5, -8],
+        [40, 10, 1],
+        [60, 3, 8],
+        [80, -9, 5],
+        [100, -8, -4],
+      ];
+      const keyframes = points.map(([time, offsetX, offsetY]) => (
+        `${time}%{transform:translate(${(anchorX + offsetX * direction).toFixed(2)}%, `
+        + `${(anchorY + offsetY).toFixed(2)}%) scaleX(${direction});}`
+      )).join("");
+      return `@keyframes profile-drift-${id}{${keyframes}}`
+        + `#${rootId}{animation-name:profile-drift-${id};animation-duration:${duration}s;`
+        + `animation-delay:-${index * 13}s;animation-timing-function:linear;`
+        + "animation-iteration-count:infinite;animation-fill-mode:both;}";
+    })
+    .join("");
+
+  if (staticDriftStyles) {
+    const rootOpeningEnd = result.indexOf(">") + 1;
+    result = `${result.slice(0, rootOpeningEnd)}<style>${staticDriftStyles}</style>${result.slice(rootOpeningEnd)}`;
+  }
 
   return result;
 };
