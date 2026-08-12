@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v13";
+const layoutVersion = "character-behaviors-v15";
 
 const response = await fetch(`https://render.gitanimals.org/users/${username}`);
 if (!response.ok) {
@@ -224,7 +224,7 @@ const distributeCharacterRoaming = (svg) => {
     result = `${result.slice(0, bounds.bodyStart)}${body}${result.slice(bounds.bodyEnd)}`;
   };
 
-  const configureAnimation = (animationName, duration, iterationCount = "1") => {
+  const configureAnimation = (animationName, duration, iterationCount = "1", direction) => {
     const ruleStart = result.indexOf(`animation-name: ${animationName}`);
     const ruleEnd = result.indexOf("}", ruleStart);
     if (ruleStart === -1 || ruleEnd === -1) {
@@ -241,7 +241,36 @@ const distributeCharacterRoaming = (svg) => {
         (durationProperty) => `${durationProperty}animation-timing-function:linear;`,
       );
     }
+    if (direction && !rule.includes("animation-direction:")) {
+      rule += `animation-direction:${direction};`;
+    }
     result = `${result.slice(0, ruleStart)}${rule}${result.slice(ruleEnd)}`;
+  };
+
+  const wrapGroupContents = (rootId, wrapperId) => {
+    const rootStart = result.indexOf(`<g id="${rootId}"`);
+    const rootOpeningEnd = result.indexOf(">", rootStart) + 1;
+    if (rootStart === -1 || rootOpeningEnd === 0) {
+      throw new Error(`Unable to locate ${rootId}.`);
+    }
+
+    const groupTag = /<\/?g\b[^>]*>/g;
+    groupTag.lastIndex = rootStart;
+    let depth = 0;
+    let rootClosingStart = -1;
+    for (let match = groupTag.exec(result); match; match = groupTag.exec(result)) {
+      depth += match[0].startsWith("</") ? -1 : 1;
+      if (depth === 0) {
+        rootClosingStart = match.index;
+        break;
+      }
+    }
+    if (rootClosingStart === -1) {
+      throw new Error(`Unable to find the closing tag for ${rootId}.`);
+    }
+
+    result = `${result.slice(0, rootOpeningEnd)}<g id="${wrapperId}">`
+      + `${result.slice(rootOpeningEnd, rootClosingStart)}</g>${result.slice(rootClosingStart)}`;
   };
 
   const explorer = visiblePersonas.find((persona) => persona.type === "RABBIT");
@@ -272,24 +301,42 @@ const distributeCharacterRoaming = (svg) => {
 
   const rider = visiblePersonas.find((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES");
   const mount = visiblePersonas.find((persona) => persona.type === "CAPYBARA_SWIM");
+  let riderActionStyles = "";
   if (rider && mount && movingPersonaIds.has(String(rider.id)) && movingPersonaIds.has(String(mount.id))) {
     const riderId = String(rider.id);
     const mountId = String(mount.id);
+    const mountDuration = 300;
     const mountedMovement = keyframeBody(`move-${mountId}`).body.replace(
       /(translate\()(-?[\d.]+)%(,\s*)(-?[\d.]+)%/g,
       (_, translate, x, separator, y) => (
         `${translate}${(Number(x) + 5).toFixed(2)}%${separator}${(Number(y) - 6).toFixed(2)}%`
       ),
     );
-    const mountDurationRuleStart = result.indexOf(`animation-name: move-${mountId}`);
-    const mountDuration = Number(
-      result.slice(mountDurationRuleStart, mountDurationRuleStart + 240)
-        .match(/animation-duration:\s*([\d.]+)s/)?.[1],
-    );
     replaceKeyframeBody(`move-${riderId}`, mountedMovement);
     replaceKeyframeBody(`reverse-flip-${riderId}`, keyframeBody(`reverse-flip-${mountId}`).body);
-    configureAnimation(`move-${riderId}`, mountDuration);
-    configureAnimation(`reverse-flip-${riderId}`, mountDuration);
+    configureAnimation(`move-${mountId}`, mountDuration, "infinite", "alternate");
+    configureAnimation(`reverse-flip-${mountId}`, mountDuration, "infinite", "alternate");
+    configureAnimation(`move-${riderId}`, mountDuration, "infinite", "alternate");
+    configureAnimation(`reverse-flip-${riderId}`, mountDuration, "infinite", "alternate");
+
+    const riderRootId = `little-chick-${riderId}`;
+    const riderActionId = `profile-rider-action-${riderId}`;
+    wrapGroupContents(riderRootId, riderActionId);
+    riderActionStyles = `@keyframes chick-adventure-${riderId}{`
+      + "0%,12%{transform:translate(0,0) rotate(0deg);}"
+      + "18%{transform:translate(0,-14px) rotate(-5deg);}"
+      + "23%,38%{transform:translate(0,0) rotate(0deg);}"
+      + "44%{transform:translate(12px,-9px) rotate(5deg);}"
+      + "50%{transform:translate(25px,-4px) rotate(8deg);}"
+      + "56%{transform:translate(31px,4px) rotate(-3deg);}"
+      + "62%{transform:translate(17px,-11px) rotate(-8deg);}"
+      + "68%,82%{transform:translate(0,0) rotate(0deg);}"
+      + "87%{transform:translate(-5px,-11px) rotate(-7deg);}"
+      + "91%{transform:translate(0,0) rotate(0deg);}"
+      + "95%{transform:translate(5px,-7px) rotate(6deg);}"
+      + "100%{transform:translate(0,0) rotate(0deg);}}"
+      + `#${riderActionId}{animation:chick-adventure-${riderId} 29s `
+      + "cubic-bezier(.45,.05,.55,.95) infinite both;transform-box:fill-box;transform-origin:center;}";
   }
 
   const staticDriftStyles = visiblePersonas
@@ -319,9 +366,10 @@ const distributeCharacterRoaming = (svg) => {
     })
     .join("");
 
-  if (staticDriftStyles) {
+  const profileBehaviorStyles = `${staticDriftStyles}${riderActionStyles}`;
+  if (profileBehaviorStyles) {
     const rootOpeningEnd = result.indexOf(">") + 1;
-    result = `${result.slice(0, rootOpeningEnd)}<style>${staticDriftStyles}</style>${result.slice(rootOpeningEnd)}`;
+    result = `${result.slice(0, rootOpeningEnd)}<style>${profileBehaviorStyles}</style>${result.slice(rootOpeningEnd)}`;
   }
 
   return result;
