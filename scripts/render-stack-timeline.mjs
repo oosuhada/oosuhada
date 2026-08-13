@@ -9,7 +9,7 @@ const data = JSON.parse(await readFile(dataPath, "utf8"));
 
 const WIDTH = 1200;
 const PADDING = 28;
-const TIMELINE_HEIGHT = 218;
+const TIMELINE_HEIGHT = 174;
 const TABLE_TOP = PADDING + TIMELINE_HEIGHT + 18;
 const TABLE_HEADER_HEIGHT = 48;
 const LABEL_WIDTH = 224;
@@ -146,7 +146,6 @@ const render = (themeName) => {
     + ".current-date{font-size:27px;font-weight:700;font-variant-numeric:tabular-nums;}"
     + `.legend{font-size:13px;fill:${theme.mutedForeground};}`
     + `.milestone{font-size:13px;font-weight:550;font-variant-numeric:tabular-nums;}`
-    + `.helper{font-size:13px;fill:${theme.mutedForeground};}`
     + ".table-heading,.area-label{font-size:16px;font-weight:700;}"
     + `.chip-label{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:${CHIP_FONT_SIZE}px;font-weight:540;}`
     + "</style>"
@@ -157,8 +156,6 @@ const render = (themeName) => {
     + `<rect x="${timelineStartX}" y="124" width="${timelineWidth}" height="8" rx="4" fill="${theme.track}" stroke="${theme.border}"/>`
     + renderTimelineFrames(theme)
     + renderMilestoneLabels(theme)
-    + `<text x="${PADDING + 24}" y="190" class="helper">Five grouped milestones. Each stack chip keeps its exact earliest public Git commit evidence on the live page.</text>`
-    + `<text x="${PADDING + 24}" y="211" class="helper">Click the graphic to explore commits and drag the interactive timeline.</text>`
     + `<rect x="${PADDING}" y="${TABLE_TOP}" width="${WIDTH - PADDING * 2}" height="${tableHeight}" rx="12" fill="${theme.card}" stroke="${theme.border}"/>`
     + `<path d="M${PADDING + 12} ${TABLE_TOP}H${WIDTH - PADDING - 12}Q${WIDTH - PADDING} ${TABLE_TOP} ${WIDTH - PADDING} ${TABLE_TOP + 12}V${TABLE_TOP + TABLE_HEADER_HEIGHT}H${PADDING}V${TABLE_TOP + 12}Q${PADDING} ${TABLE_TOP} ${PADDING + 12} ${TABLE_TOP}Z" fill="${theme.muted}"/>`
     + `<line x1="${PADDING}" y1="${TABLE_TOP + TABLE_HEADER_HEIGHT}" x2="${WIDTH - PADDING}" y2="${TABLE_TOP + TABLE_HEADER_HEIGHT}" stroke="${theme.border}"/>`
