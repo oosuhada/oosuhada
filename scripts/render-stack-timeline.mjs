@@ -19,7 +19,16 @@ const CHIP_HEIGHT = 30;
 const CHIP_GAP_X = 8;
 const CHIP_GAP_Y = 8;
 const CHIP_FONT_SIZE = 15;
-const CYCLE_SECONDS = 15;
+const FRAME_DURATIONS_SECONDS = data.frameDurationsSeconds;
+
+if (!Array.isArray(FRAME_DURATIONS_SECONDS)
+  || FRAME_DURATIONS_SECONDS.length !== data.milestones.length
+  || FRAME_DURATIONS_SECONDS.some((duration) => !Number.isFinite(duration) || duration <= 0)) {
+  throw new Error("frameDurationsSeconds must contain one positive duration for each milestone.");
+}
+
+const CYCLE_SECONDS = FRAME_DURATIONS_SECONDS.reduce((total, duration) => total + duration, 0);
+const formatPercent = (value) => Number(value.toFixed(4));
 
 const themes = {
   light: {
@@ -84,18 +93,27 @@ const timelineEndX = WIDTH - PADDING - 30;
 const timelineWidth = timelineEndX - timelineStartX;
 
 const animationCss = () => {
+  const starts = FRAME_DURATIONS_SECONDS.map((_, index) => (
+    FRAME_DURATIONS_SECONDS.slice(0, index).reduce((total, duration) => total + duration, 0)
+      / CYCLE_SECONDS
+  ) * 100);
+  const ends = starts.map((start, index) => (
+    start + (FRAME_DURATIONS_SECONDS[index] / CYCLE_SECONDS) * 100
+  ));
+
   const frameRules = data.milestones.map((_, index) => {
-    const start = index * 20;
-    const end = index === data.milestones.length - 1 ? 100 : (index + 1) * 20;
-    return `@keyframes frame-${index}{0%,${Math.max(0, start - 0.01)}%{opacity:0;}`
-      + `${start}%,${end - 0.01}%{opacity:1;}${end}%,100%{opacity:0;}}`
+    const start = formatPercent(starts[index]);
+    const end = formatPercent(ends[index]);
+    const before = index === 0 ? "" : `0%,${formatPercent(Math.max(0, start - 0.01))}%{opacity:0;}`;
+    const after = index === data.milestones.length - 1 ? "" : `${end}%,100%{opacity:0;}`;
+    return `@keyframes frame-${index}{${before}${start}%,${formatPercent(Math.min(100, end - 0.01))}%{opacity:1;}${after}}`
       + `.frame-${index}{animation:frame-${index} ${CYCLE_SECONDS}s steps(1,end) infinite;}`;
   }).join("");
 
   const activationRules = data.milestones.slice(1).map((_, index) => {
     const step = index + 1;
-    const start = step * 20;
-    return `@keyframes activate-${step}{0%,${start - 0.01}%{opacity:.13;}`
+    const start = formatPercent(starts[step]);
+    return `@keyframes activate-${step}{0%,${formatPercent(start - 0.01)}%{opacity:.13;}`
       + `${start}%,100%{opacity:1;}}`
       + `.step-${step}{animation:activate-${step} ${CYCLE_SECONDS}s steps(1,end) infinite;}`;
   }).join("");
