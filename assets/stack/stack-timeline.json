@@ -1,6 +1,6 @@
 {
   "milestones": ["2024.09", "2025.03", "2026.03", "2026.05", "2026.07"],
-  "frameDurationsSeconds": [2, 2, 2, 2, 7],
+  "frameDurationsSeconds": [1.5, 1.5, 1.5, 1.5, 6],
   "groups": [
     {
       "label": "Languages",
