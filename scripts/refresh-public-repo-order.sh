@@ -11,6 +11,8 @@ PUSH_DELAY_SECONDS="${PUSH_DELAY_SECONDS:-3}"
 DRY_RUN="${DRY_RUN:-0}"
 # 중간 실패 후 이어서 실행할 때 사용할 시작 순번이며 일반 일일 실행은 항상 1부터 시작한다.
 START_INDEX="${START_INDEX:-1}"
+# 프로필 README 저장소는 GitHub 프로필에서 항상 가장 위에 보이도록 생성일과 무관하게 마지막에 push한다.
+PROFILE_REPOSITORY="${PROFILE_REPOSITORY:-${OWNER}}"
 # 자동 커밋의 작성자 이름을 GitHub 계정과 일치시킨다.
 GIT_AUTHOR_NAME="${GIT_AUTHOR_NAME:-Oosu}"
 # 자동 커밋의 작성자 이메일을 GitHub 계정에 연결된 noreply 주소로 고정한다.
@@ -38,15 +40,31 @@ trap 'rm -rf "${WORK_ROOT}"' EXIT
 # public + owner 본인 소유 + non-archived + non-fork + non-disabled + default branch 존재 조건만 선택한다.
 # macOS 기본 Bash 3.2에서도 동작하도록 mapfile 대신 while read로 배열을 채운다.
 REPOSITORIES=()
+# 프로필 저장소는 일반 생성일 정렬에서 분리한 뒤 맨 마지막에 다시 붙인다.
+PROFILE_REPOSITORY_ROW=""
 # API의 created 정렬에 더해 로컬 sort를 한 번 더 적용해 실행 순서를 결정적으로 유지한다.
 while IFS= read -r REPOSITORY_ROW; do
   # 빈 줄은 배열에 넣지 않아 잘못된 저장소 처리 시도를 방지한다.
-  [[ -n "${REPOSITORY_ROW}" ]] && REPOSITORIES+=("${REPOSITORY_ROW}")
+  if [[ -n "${REPOSITORY_ROW}" ]]; then
+    # TSV의 두 번째 필드인 저장소 이름을 읽어 프로필 저장소인지 판별한다.
+    REPOSITORY_NAME="$(printf '%s\n' "${REPOSITORY_ROW}" | cut -f2)"
+    # 프로필 저장소는 일단 별도 변수에 보관하고 나머지만 생성일 순서 배열에 추가한다.
+    if [[ "${REPOSITORY_NAME}" == "${PROFILE_REPOSITORY}" ]]; then
+      PROFILE_REPOSITORY_ROW="${REPOSITORY_ROW}"
+    else
+      REPOSITORIES+=("${REPOSITORY_ROW}")
+    fi
+  fi
 done < <(
   gh api --paginate "users/${OWNER}/repos?per_page=100&type=owner&sort=created&direction=asc" \
     --jq '.[] | select(.private == false and .archived == false and .fork == false and .disabled == false and .default_branch != null) | [.created_at, .name, .default_branch] | @tsv' \
     | LC_ALL=C sort -t $'\t' -k1,1 -k2,2
 )
+
+# public 프로필 저장소가 조회된 경우 생성일과 관계없이 가장 마지막 처리 대상으로 추가한다.
+if [[ -n "${PROFILE_REPOSITORY_ROW}" ]]; then
+  REPOSITORIES+=("${PROFILE_REPOSITORY_ROW}")
+fi
 
 # 대상이 하나도 없으면 오류가 아니라 정상적인 no-op으로 종료한다.
 if [[ "${#REPOSITORIES[@]}" -eq 0 ]]; then
@@ -56,8 +74,8 @@ fi
 
 # 실제 실행 전에 총 대상 수와 정렬 기준을 로그에 남긴다.
 echo "Found ${#REPOSITORIES[@]} eligible public repositories for ${OWNER}."
-# 가장 오래된 저장소부터 push해야 가장 최근 생성 저장소가 마지막 pushed_at을 갖는다.
-echo "Push order: oldest created_at -> newest created_at."
+# 일반 저장소는 오래된 순으로 처리하고 프로필 저장소만 마지막에 보내 항상 프로필 상단에 유지한다.
+echo "Push order: oldest created_at -> newest created_at -> profile repository last."
 
 # 실패한 저장소를 모아서 중간 한 건의 실패가 나머지 정렬 작업을 막지 않도록 한다.
 FAILURES=()
