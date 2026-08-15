@@ -125,7 +125,7 @@ const renderTimelineFrames = (theme) => data.milestones.map((milestone, index) =
   const markerX = timelineStartX + (timelineWidth * index) / (data.milestones.length - 1);
   const progressWidth = markerX - timelineStartX;
   return `<g class="frame-${index}" opacity="0">`
-    + `<text x="${PADDING + 24}" y="82" class="current-date">${milestone}</text>`
+    + `<text x="${PADDING + 24}" y="90" class="current-date">${milestone}</text>`
     + `<rect x="${timelineStartX}" y="124" width="${progressWidth}" height="8" rx="4" fill="${theme.foreground}"/>`
     + `<circle cx="${markerX}" cy="128" r="10" fill="${theme.foreground}"/>`
     + "</g>";
