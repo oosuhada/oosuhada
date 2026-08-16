@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v19";
+const layoutVersion = "character-behaviors-v20";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const existingAssets = await Promise.all(
   [lightPath, darkPath].map((file) => readFile(file, "utf8").catch(() => "")),
@@ -101,10 +101,23 @@ const distributeCharacterRoaming = (svg) => {
     return svg;
   }
 
-  const columns = visiblePersonas.length <= 3
-    ? visiblePersonas.length
-    : Math.ceil(visiblePersonas.length / 2);
-  const rows = Math.ceil(visiblePersonas.length / columns);
+  const rider = visiblePersonas.find((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES");
+  const mount = visiblePersonas.find((persona) => persona.type === "CAPYBARA_SWIM");
+  const hasMountedPair = Boolean(
+    rider
+    && mount
+    && movingPersonaIds.has(String(rider.id))
+    && movingPersonaIds.has(String(mount.id)),
+  );
+  // The chick rides the swimming capybara, so they are one spatial unit. Counting the rider as a
+  // separate resident left a phantom occupied slot and pushed other pets into the mount's corridor.
+  const placementPersonas = hasMountedPair
+    ? visiblePersonas.filter((persona) => String(persona.id) !== String(rider.id))
+    : visiblePersonas;
+  const columns = placementPersonas.length <= 3
+    ? placementPersonas.length
+    : Math.ceil(placementPersonas.length / 2);
+  const rows = Math.ceil(placementPersonas.length / columns);
   const anchorBounds = { left: 15, right: 85, top: 38, bottom: 68 };
   // Keep the full distance between 5x2 home points, then add an overlapping movement halo.
   // A halo is wider than a grid cell, so characters can cross cell boundaries without piling up.
@@ -144,7 +157,10 @@ const distributeCharacterRoaming = (svg) => {
   }
 
   const footprintAwareAnchors = rows === 2 && columns === 5
-    ? [0, 9, 3, 7, 1, 5, 4, 6, 2, 8].map((index) => anchors[index])
+    ? (hasMountedPair && placementPersonas.length === 9
+      // Leave the top-centre slot empty: its roaming halo intersects the mounted pair at top-right.
+      ? [0, 9, 3, 7, 1, 5, 4, 6, 8].map((index) => anchors[index])
+      : [0, 9, 3, 7, 1, 5, 4, 6, 2, 8].map((index) => anchors[index]))
     : spreadAnchors;
 
   const footprintPriority = (persona) => {
@@ -156,17 +172,61 @@ const distributeCharacterRoaming = (svg) => {
     return staticPriority + 2;
   };
 
-  const prioritizedPersonas = [...visiblePersonas].sort(
+  const prioritizedPersonas = [...placementPersonas].sort(
     (left, right) => footprintPriority(right) - footprintPriority(left),
   );
   const anchorAssignments = new Map(
     prioritizedPersonas.map((persona, index) => [String(persona.id), footprintAwareAnchors[index]]),
   );
+  if (hasMountedPair) {
+    anchorAssignments.set(String(rider.id), anchorAssignments.get(String(mount.id)));
+  }
 
   let result = svg.replace(
     "<svg ",
     `<svg data-profile-layout="${layoutVersion}" `,
   );
+
+  const keyframeBody = (animationName) => {
+    const keyframesStart = result.indexOf(`@keyframes ${animationName}`);
+    const bodyStart = result.indexOf("{", keyframesStart) + 1;
+    const animationRuleStart = result.indexOf(`animation-name: ${animationName}`, bodyStart);
+    const bodyEnd = result.lastIndexOf("}", animationRuleStart);
+    if (keyframesStart === -1 || bodyStart === 0 || animationRuleStart === -1 || bodyEnd < bodyStart) {
+      throw new Error(`Unable to read ${animationName} keyframes.`);
+    }
+    return { body: result.slice(bodyStart, bodyEnd), bodyStart, bodyEnd };
+  };
+
+  const replaceKeyframeBody = (animationName, body) => {
+    const bounds = keyframeBody(animationName);
+    result = `${result.slice(0, bounds.bodyStart)}${body}${result.slice(bounds.bodyEnd)}`;
+  };
+
+  const configureAnimation = (animationName, duration, iterationCount = "1", direction) => {
+    const ruleStart = result.indexOf(`animation-name: ${animationName}`);
+    const ruleEnd = result.indexOf("}", ruleStart);
+    if (ruleStart === -1 || ruleEnd === -1) {
+      throw new Error(`Unable to configure ${animationName}.`);
+    }
+    let rule = result.slice(ruleStart, ruleEnd);
+    rule = rule
+      .replace(/animation-duration:\s*[\d.]+s;/, `animation-duration: ${duration}s;`)
+      .replace(/animation-iteration-count:\s*[^;]+;/, `animation-iteration-count: ${iterationCount};`)
+      .replace(/animation-fill-mode:\s*[^;]+;/, "animation-fill-mode: both;");
+    if (!rule.includes("animation-timing-function:")) {
+      rule = rule.replace(
+        /animation-duration:\s*[\d.]+s;/,
+        (durationProperty) => `${durationProperty}animation-timing-function:linear;`,
+      );
+    }
+    if (direction) {
+      rule = rule.includes("animation-direction:")
+        ? rule.replace(/animation-direction:\s*[^;]+;/, `animation-direction:${direction};`)
+        : `${rule}animation-direction:${direction};`;
+    }
+    result = `${result.slice(0, ruleStart)}${rule}${result.slice(ruleEnd)}`;
+  };
 
   visiblePersonas.filter((persona) => movingPersonaIds.has(String(persona.id))).forEach((persona) => {
     const id = String(persona.id);
@@ -228,54 +288,9 @@ const distributeCharacterRoaming = (svg) => {
 
     result = `${result.slice(0, keyframesStart)}${roamingKeyframes}${result.slice(animationRuleStart)}`;
     const normalizedDuration = Math.round(Math.max(120, Math.min(240, travelDistance / 2.2)));
-    result = result.replace(
-      new RegExp(`animation-name:\\s*move-${id};animation-duration:\\s*[\\d.]+s;(?:animation-timing-function:linear;)?`),
-      `animation-name: move-${id};animation-duration: ${normalizedDuration}s;animation-timing-function:linear;`,
-    );
-    result = result.replace(
-      new RegExp(`(animation-name:\\s*reverse-flip-${id};animation-duration:)\\s*[\\d.]+s;`),
-      `$1 ${normalizedDuration}s;`,
-    );
+    configureAnimation(`move-${id}`, normalizedDuration, "infinite", "alternate");
+    configureAnimation(`reverse-flip-${id}`, normalizedDuration, "infinite", "alternate");
   });
-
-  const keyframeBody = (animationName) => {
-    const keyframesStart = result.indexOf(`@keyframes ${animationName}`);
-    const bodyStart = result.indexOf("{", keyframesStart) + 1;
-    const animationRuleStart = result.indexOf(`animation-name: ${animationName}`, bodyStart);
-    const bodyEnd = result.lastIndexOf("}", animationRuleStart);
-    if (keyframesStart === -1 || bodyStart === 0 || animationRuleStart === -1 || bodyEnd < bodyStart) {
-      throw new Error(`Unable to read ${animationName} keyframes.`);
-    }
-    return { body: result.slice(bodyStart, bodyEnd), bodyStart, bodyEnd };
-  };
-
-  const replaceKeyframeBody = (animationName, body) => {
-    const bounds = keyframeBody(animationName);
-    result = `${result.slice(0, bounds.bodyStart)}${body}${result.slice(bounds.bodyEnd)}`;
-  };
-
-  const configureAnimation = (animationName, duration, iterationCount = "1", direction) => {
-    const ruleStart = result.indexOf(`animation-name: ${animationName}`);
-    const ruleEnd = result.indexOf("}", ruleStart);
-    if (ruleStart === -1 || ruleEnd === -1) {
-      throw new Error(`Unable to configure ${animationName}.`);
-    }
-    let rule = result.slice(ruleStart, ruleEnd);
-    rule = rule
-      .replace(/animation-duration:\s*[\d.]+s;/, `animation-duration: ${duration}s;`)
-      .replace(/animation-iteration-count:\s*[^;]+;/, `animation-iteration-count: ${iterationCount};`)
-      .replace(/animation-fill-mode:\s*[^;]+;/, "animation-fill-mode: both;");
-    if (!rule.includes("animation-timing-function:")) {
-      rule = rule.replace(
-        /animation-duration:\s*[\d.]+s;/,
-        (durationProperty) => `${durationProperty}animation-timing-function:linear;`,
-      );
-    }
-    if (direction && !rule.includes("animation-direction:")) {
-      rule += `animation-direction:${direction};`;
-    }
-    result = `${result.slice(0, ruleStart)}${rule}${result.slice(ruleEnd)}`;
-  };
 
   const wrapGroupContents = (rootId, wrapperId) => {
     const rootStart = result.indexOf(`<g id="${rootId}"`);
@@ -303,34 +318,6 @@ const distributeCharacterRoaming = (svg) => {
       + `${result.slice(rootOpeningEnd, rootClosingStart)}</g>${result.slice(rootClosingStart)}`;
   };
 
-  const explorer = visiblePersonas.find((persona) => persona.type === "RABBIT");
-  if (explorer && movingPersonaIds.has(String(explorer.id))) {
-    const id = String(explorer.id);
-    const explorerMovement = [
-      "0%{transform:translate(20%, 25%) rotate(0deg) scaleX(1);}",
-      "18%{transform:translate(40%, 28%) rotate(-2deg) scaleX(1);}",
-      "36%{transform:translate(85%, 40%) rotate(2deg) scaleX(1);}",
-      "36.01%{transform:translate(90%, 40%) rotate(2deg) scaleX(-1);}",
-      "55%{transform:translate(68%, 67%) rotate(-2deg) scaleX(-1);}",
-      "76%{transform:translate(20%, 62%) rotate(1deg) scaleX(-1);}",
-      "99.99%{transform:translate(15%, 25%) rotate(0deg) scaleX(-1);}",
-      "100%{transform:translate(20%, 25%) rotate(0deg) scaleX(1);}",
-    ].join("");
-    const explorerCounterFlip = [
-      "0%{transform-origin:10px 0;transform:scaleX(1);}",
-      "36%{transform-origin:10px 0;transform:scaleX(1);}",
-      "36.01%{transform-origin:10px 0;transform:scaleX(-1);}",
-      "99.99%{transform-origin:10px 0;transform:scaleX(-1);}",
-      "100%{transform-origin:10px 0;transform:scaleX(1);}",
-    ].join("");
-    replaceKeyframeBody(`move-${id}`, explorerMovement);
-    replaceKeyframeBody(`reverse-flip-${id}`, explorerCounterFlip);
-    configureAnimation(`move-${id}`, 72, "infinite");
-    configureAnimation(`reverse-flip-${id}`, 72, "infinite");
-  }
-
-  const rider = visiblePersonas.find((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES");
-  const mount = visiblePersonas.find((persona) => persona.type === "CAPYBARA_SWIM");
   let riderActionStyles = "";
   if (rider && mount && movingPersonaIds.has(String(rider.id)) && movingPersonaIds.has(String(mount.id))) {
     const riderId = String(rider.id);
@@ -377,34 +364,176 @@ const distributeCharacterRoaming = (svg) => {
       + "transform-box:fill-box;transform-origin:center;}";
   }
 
-  const staticDriftStyles = visiblePersonas
-    .filter((persona) => staticPersonaRoots.has(String(persona.id)))
-    .map((persona, index) => {
-      const id = String(persona.id);
-      const rootId = staticPersonaRoots.get(id);
-      const { x: anchorX, y: anchorY } = anchorAssignments.get(id);
-      const direction = index % 2 === 0 ? 1 : -1;
-      const duration = 118 + index * 17;
-      const points = [
-        [0, -8, -4],
-        [20, 5, -8],
-        [40, 10, 1],
-        [60, 3, 8],
-        [80, -9, 5],
-        [100, -8, -4],
-      ];
-      const keyframes = points.map(([time, offsetX, offsetY]) => (
-        `${time}%{transform:translate(${(anchorX + offsetX * direction).toFixed(2)}%, `
-        + `${(anchorY + offsetY).toFixed(2)}%) scaleX(${direction});}`
-      )).join("");
-      return `@keyframes profile-drift-${id}{${keyframes}}`
-        + `#${rootId}{animation-name:profile-drift-${id};animation-duration:${duration}s;`
-        + `animation-delay:-${index * 13}s;animation-timing-function:linear;`
-        + "animation-iteration-count:infinite;animation-fill-mode:both;}";
-    })
-    .join("");
+  const routeDuration = 120;
+  const routeSampleSeconds = 1;
+  const routeSafetyMargin = 8;
+  const routeSampleCount = routeDuration / routeSampleSeconds + 1;
+  const routeUnits = prioritizedPersonas.map((persona, index) => ({
+    persona,
+    index,
+    anchor: anchorAssignments.get(String(persona.id)),
+    members: hasMountedPair && String(persona.id) === String(mount.id)
+      ? [mount, rider]
+      : [persona],
+  }));
 
-  const profileBehaviorStyles = `${staticDriftStyles}${riderActionStyles}`;
+  const movementProfile = (persona, index) => {
+    const type = persona.type;
+    if (type === "RABBIT") return { amplitudeX: 34, amplitudeY: 20, frequencyX: 3, frequencyY: 2 };
+    if (type === "CAPYBARA_SWIM") return { amplitudeX: 15, amplitudeY: 9, frequencyX: 1, frequencyY: 1 };
+    if (type.includes("CAPYBARA")) return { amplitudeX: 17, amplitudeY: 11, frequencyX: 1, frequencyY: 2 };
+    if (type.includes("PENGUIN") || type.includes("FLAMINGO")) {
+      return { amplitudeX: 20, amplitudeY: 13, frequencyX: 2, frequencyY: 1 };
+    }
+    return {
+      amplitudeX: 18 + (index % 3) * 2,
+      amplitudeY: 11 + (index % 2) * 2,
+      frequencyX: 1 + (index % 2),
+      frequencyY: 1 + ((index + 1) % 2),
+    };
+  };
+
+  const preferredPosition = (unit, progress) => {
+    const profile = movementProfile(unit.persona, unit.index);
+    const phase = unit.index / routeUnits.length;
+    const secondaryPhase = ((unit.index * 3) % routeUnits.length) / routeUnits.length;
+    const xWave = 0.68 * Math.sin(2 * Math.PI * (profile.frequencyX * progress + phase))
+      + 0.32 * Math.sin(2 * Math.PI * ((profile.frequencyX + 1) * progress + secondaryPhase));
+    const yWave = 0.7 * Math.sin(2 * Math.PI * (profile.frequencyY * progress + secondaryPhase))
+      + 0.3 * Math.cos(2 * Math.PI * ((profile.frequencyY + 1) * progress + phase));
+    return {
+      x: Math.max(10, Math.min(85, unit.anchor.x + profile.amplitudeX * xWave)),
+      y: Math.max(28, Math.min(76, unit.anchor.y + profile.amplitudeY * yWave)),
+    };
+  };
+
+  const separationRadius = (persona) => {
+    const type = persona.type;
+    if (type === "CAPYBARA_SWIM") return 12;
+    if (type.includes("CAPYBARA")) return 11;
+    if (type.includes("PENGUIN") || type.includes("FLAMINGO")) return 10;
+    if (type === "RABBIT" || type === "SHIBA") return 9;
+    return 8;
+  };
+
+  const clampPosition = (position) => {
+    position.x = Math.max(10, Math.min(85, position.x));
+    position.y = Math.max(28, Math.min(76, position.y));
+  };
+
+  const resolveCollisions = (positions) => {
+    for (let iteration = 0; iteration < 36; iteration += 1) {
+      let adjusted = false;
+      for (let leftIndex = 0; leftIndex < routeUnits.length; leftIndex += 1) {
+        for (let rightIndex = leftIndex + 1; rightIndex < routeUnits.length; rightIndex += 1) {
+          const left = positions[leftIndex];
+          const right = positions[rightIndex];
+          let weightedX = (left.x - right.x) * 2;
+          let weightedY = left.y - right.y;
+          let distance = Math.hypot(weightedX, weightedY);
+          const minimumDistance = separationRadius(routeUnits[leftIndex].persona)
+            + separationRadius(routeUnits[rightIndex].persona)
+            + routeSafetyMargin;
+          if (distance >= minimumDistance) continue;
+
+          if (distance < 0.001) {
+            const angle = ((leftIndex + 1) * (rightIndex + 3) * 47 * Math.PI) / 180;
+            weightedX = Math.cos(angle);
+            weightedY = Math.sin(angle);
+            distance = 1;
+          }
+          const overlap = minimumDistance - distance;
+          const normalX = weightedX / distance;
+          const normalY = weightedY / distance;
+          left.x += (normalX * overlap) / 4;
+          right.x -= (normalX * overlap) / 4;
+          left.y += (normalY * overlap) / 2;
+          right.y -= (normalY * overlap) / 2;
+          clampPosition(left);
+          clampPosition(right);
+          adjusted = true;
+        }
+      }
+      if (!adjusted) break;
+    }
+    return positions;
+  };
+
+  const routeSamples = Array.from({ length: routeSampleCount }, (_, sampleIndex) => {
+    const progress = sampleIndex / (routeSampleCount - 1);
+    return resolveCollisions(routeUnits.map((unit) => preferredPosition(unit, progress)));
+  });
+
+  const directionFor = (unitIndex, sampleIndex) => {
+    const current = routeSamples[sampleIndex][unitIndex];
+    const nextIndex = sampleIndex === routeSamples.length - 1 ? 1 : sampleIndex + 1;
+    const next = routeSamples[nextIndex][unitIndex];
+    return next.x >= current.x ? 1 : -1;
+  };
+
+  const routeKeyframes = (unitIndex, offsetX = 0, offsetY = 0) => {
+    const frames = [];
+    let previousDirection = directionFor(unitIndex, 0);
+    routeSamples.forEach((sample, sampleIndex) => {
+      const percentage = (sampleIndex / (routeSamples.length - 1)) * 100;
+      const position = sample[unitIndex];
+      const direction = directionFor(unitIndex, sampleIndex);
+      const nextIndex = sampleIndex === routeSamples.length - 1 ? 1 : sampleIndex + 1;
+      const rotation = Math.max(-2, Math.min(2, routeSamples[nextIndex][unitIndex].y - position.y));
+      if (sampleIndex > 0 && direction !== previousDirection) {
+        frames.push(
+          `${Math.max(0, percentage - 0.01).toFixed(2)}%{transform:translate(`
+          + `${(position.x + offsetX).toFixed(2)}%,${(position.y + offsetY).toFixed(2)}%) `
+          + `rotate(${rotation.toFixed(1)}deg) scaleX(${previousDirection});}`,
+        );
+      }
+      frames.push(
+        `${percentage.toFixed(2)}%{transform:translate(${(position.x + offsetX).toFixed(2)}%,`
+        + `${(position.y + offsetY).toFixed(2)}%) rotate(${rotation.toFixed(1)}deg) scaleX(${direction});}`,
+      );
+      previousDirection = direction;
+    });
+    return frames.join("");
+  };
+
+  const counterFlipKeyframes = (unitIndex) => {
+    const frames = [];
+    let previousDirection = directionFor(unitIndex, 0);
+    routeSamples.forEach((_, sampleIndex) => {
+      const percentage = (sampleIndex / (routeSamples.length - 1)) * 100;
+      const direction = directionFor(unitIndex, sampleIndex);
+      if (sampleIndex > 0 && direction !== previousDirection) {
+        frames.push(`${Math.max(0, percentage - 0.01).toFixed(2)}%{transform:scaleX(${previousDirection});}`);
+      }
+      frames.push(`${percentage.toFixed(2)}%{transform:scaleX(${direction});}`);
+      previousDirection = direction;
+    });
+    return frames.join("");
+  };
+
+  let coordinatedRouteStyles = "";
+  routeUnits.forEach((unit, unitIndex) => {
+    unit.members.forEach((persona) => {
+      const id = String(persona.id);
+      const isRider = hasMountedPair && id === String(rider.id);
+      const movement = routeKeyframes(unitIndex, isRider ? 5 : 0, isRider ? -6 : 0);
+      const counterFlip = counterFlipKeyframes(unitIndex);
+      if (movingPersonaIds.has(id)) {
+        replaceKeyframeBody(`move-${id}`, movement);
+        replaceKeyframeBody(`reverse-flip-${id}`, counterFlip);
+        configureAnimation(`move-${id}`, routeDuration, "infinite", "normal");
+        configureAnimation(`reverse-flip-${id}`, routeDuration, "infinite", "normal");
+      } else {
+        const rootId = staticPersonaRoots.get(id);
+        coordinatedRouteStyles += `@keyframes profile-route-${id}{${movement}}`
+          + `#${rootId}{animation-name:profile-route-${id};animation-duration:${routeDuration}s;`
+          + "animation-timing-function:linear;animation-iteration-count:infinite;"
+          + "animation-direction:normal;animation-fill-mode:both;}";
+      }
+    });
+  });
+
+  const profileBehaviorStyles = `${coordinatedRouteStyles}${riderActionStyles}`;
   if (profileBehaviorStyles) {
     const rootOpeningEnd = result.indexOf(">") + 1;
     result = `${result.slice(0, rootOpeningEnd)}<style>${profileBehaviorStyles}</style>${result.slice(rootOpeningEnd)}`;

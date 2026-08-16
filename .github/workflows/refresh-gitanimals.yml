@@ -21,6 +21,9 @@ jobs:
       - name: Refresh theme-aware farm images
         run: node scripts/refresh-gitanimals.mjs
 
+      - name: Verify coordinated movement and collision recovery
+        run: node scripts/verify-gitanimals-layout.mjs
+
       - name: Commit meaningful GitAnimals changes
         run: |
           if git diff --quiet; then
