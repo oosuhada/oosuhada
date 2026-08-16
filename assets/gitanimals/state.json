@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "4691",
+  "totalContributions": "4692",
   "personas": [
     {
       "id": "829259874410923323",
@@ -66,7 +66,7 @@
     {
       "id": "834380360140686465",
       "type": "CAPYBARA_SWIM",
-      "level": "239",
+      "level": "240",
       "visible": true,
       "appVisible": false,
       "dropRate": "3%",
