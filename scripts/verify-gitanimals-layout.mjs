@@ -6,9 +6,12 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v20";
-const maximumOverlapSeconds = 2;
+const layoutVersion = "character-behaviors-v21";
+const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
+// The rabbit intentionally crosses more ground than the other pets; this still limits every pet to
+// a smooth multi-second traverse rather than a sub-second collision-correction jump.
+const maximumWeightedSpeed = 16;
 
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
@@ -79,6 +82,20 @@ lightAnimations.forEach((animation, index) => {
     JSON.stringify(animation.points) === JSON.stringify(darkAnimation.points),
     `Light and dark routes differ for ${animation.persona.type} (${animation.id}).`,
   );
+  const start = positionAt(animation, 0);
+  const nearEnd = positionAt(animation, animation.duration - sampleStepSeconds);
+  const seamDistance = Math.hypot((start.x - nearEnd.x) * 2, start.y - nearEnd.y);
+  assert(seamDistance <= maximumWeightedSpeed * sampleStepSeconds * 1.1,
+    `${animation.persona.type} jumps across its loop seam (${seamDistance.toFixed(2)} units).`);
+
+  let previous = start;
+  for (let seconds = sampleStepSeconds; seconds < animation.duration; seconds += sampleStepSeconds) {
+    const current = positionAt(animation, seconds);
+    const speed = Math.hypot((current.x - previous.x) * 2, current.y - previous.y) / sampleStepSeconds;
+    assert(speed <= maximumWeightedSpeed,
+      `${animation.persona.type} moves too abruptly (${speed.toFixed(2)} units/s at ${seconds.toFixed(2)}s).`);
+    previous = current;
+  }
 });
 
 if (rider && mount) {

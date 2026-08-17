@@ -76,7 +76,7 @@
     {
       "id": "835163392054466972",
       "type": "CAPYBARA_CARROT",
-      "level": "97",
+      "level": "98",
       "visible": false,
       "appVisible": false,
       "dropRate": "5%",
@@ -236,7 +236,7 @@
     {
       "id": "839316523686430921",
       "type": "QUOKKA",
-      "level": "46",
+      "level": "47",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
@@ -276,7 +276,7 @@
     {
       "id": "839536616395645003",
       "type": "MOLE",
-      "level": "40",
+      "level": "41",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
@@ -366,7 +366,7 @@
     {
       "id": "857206146853874945",
       "type": "GOOSE",
-      "level": "42",
+      "level": "43",
       "visible": false,
       "appVisible": false,
       "dropRate": "9%",
@@ -576,7 +576,7 @@
     {
       "id": "878088240865850820",
       "type": "PENGUIN",
-      "level": "7",
+      "level": "8",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
@@ -666,7 +666,7 @@
     {
       "id": "878547511457984579",
       "type": "CAPYBARA_SWIM",
-      "level": "6",
+      "level": "7",
       "visible": false,
       "appVisible": false,
       "dropRate": "3%",
