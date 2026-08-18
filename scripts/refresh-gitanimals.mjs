@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v21";
+const layoutVersion = "character-behaviors-v22";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const existingAssets = await Promise.all(
   [lightPath, darkPath].map((file) => readFile(file, "utf8").catch(() => "")),
@@ -225,6 +225,19 @@ const distributeCharacterRoaming = (svg) => {
         ? rule.replace(/animation-direction:\s*[^;]+;/, `animation-direction:${direction};`)
         : `${rule}animation-direction:${direction};`;
     }
+    result = `${result.slice(0, ruleStart)}${rule}${result.slice(ruleEnd)}`;
+  };
+
+  const configureTimingFunction = (animationName, timingFunction) => {
+    const ruleStart = result.indexOf(`animation-name: ${animationName}`);
+    const ruleEnd = result.indexOf("}", ruleStart);
+    if (ruleStart === -1 || ruleEnd === -1) {
+      throw new Error(`Unable to configure timing for ${animationName}.`);
+    }
+    let rule = result.slice(ruleStart, ruleEnd);
+    rule = rule.includes("animation-timing-function:")
+      ? rule.replace(/animation-timing-function:\s*[^;]+;/, `animation-timing-function:${timingFunction};`)
+      : `${rule}animation-timing-function:${timingFunction};`;
     result = `${result.slice(0, ruleStart)}${rule}${result.slice(ruleEnd)}`;
   };
 
@@ -485,49 +498,58 @@ const distributeCharacterRoaming = (svg) => {
     periodicSamples[0].map((position) => ({ ...position })),
   ];
 
-  const directionFor = (unitIndex, sampleIndex) => {
-    const current = routeSamples[sampleIndex][unitIndex];
-    const nextIndex = sampleIndex === routeSamples.length - 1 ? 1 : sampleIndex + 1;
-    const next = routeSamples[nextIndex][unitIndex];
-    return next.x >= current.x ? 1 : -1;
-  };
+  // Decide facing from a sustained look-ahead displacement, not one noisy half-second delta.
+  // This removes rapid flip-flopping near a turning point while still turning before a pet appears
+  // to walk backwards. The final duplicated loop frame is excluded from the circular lookup.
+  const periodicSampleCount = routeSamples.length - 1;
+  const directionLookAheadSamples = 4;
+  const directionDisplacementThreshold = 0.55;
+  const facingDirections = routeUnits.map((_, unitIndex) => {
+    const desiredDirections = Array.from({ length: periodicSampleCount }, (_, sampleIndex) => {
+      const current = routeSamples[sampleIndex][unitIndex];
+      const future = routeSamples[
+        (sampleIndex + directionLookAheadSamples) % periodicSampleCount
+      ][unitIndex];
+      const displacement = future.x - current.x;
+      if (displacement > directionDisplacementThreshold) return 1;
+      if (displacement < -directionDisplacementThreshold) return -1;
+      return 0;
+    });
+    const initialDirection = desiredDirections.find((direction) => direction !== 0) ?? 1;
+    const directions = [];
+    let direction = initialDirection;
+    for (let passIndex = 0; passIndex < periodicSampleCount * 2; passIndex += 1) {
+      const sampleIndex = passIndex % periodicSampleCount;
+      if (desiredDirections[sampleIndex] !== 0) direction = desiredDirections[sampleIndex];
+      if (passIndex >= periodicSampleCount) directions[sampleIndex] = direction;
+    }
+    directions.push(directions[0]);
+    return directions;
+  });
+
+  const directionFor = (unitIndex, sampleIndex) => facingDirections[unitIndex][sampleIndex];
 
   const routeKeyframes = (unitIndex, offsetX = 0, offsetY = 0) => {
     const frames = [];
-    let previousDirection = directionFor(unitIndex, 0);
     routeSamples.forEach((sample, sampleIndex) => {
       const percentage = (sampleIndex / (routeSamples.length - 1)) * 100;
       const position = sample[unitIndex];
-      const direction = directionFor(unitIndex, sampleIndex);
       const nextIndex = sampleIndex === routeSamples.length - 1 ? 1 : sampleIndex + 1;
       const rotation = Math.max(-2, Math.min(2, routeSamples[nextIndex][unitIndex].y - position.y));
-      if (sampleIndex > 0 && direction !== previousDirection) {
-        frames.push(
-          `${Math.max(0, percentage - 0.01).toFixed(2)}%{transform:translate(`
-          + `${(position.x + offsetX).toFixed(2)}%,${(position.y + offsetY).toFixed(2)}%) `
-          + `rotate(${rotation.toFixed(1)}deg) scaleX(${previousDirection});}`,
-        );
-      }
       frames.push(
         `${percentage.toFixed(2)}%{transform:translate(${(position.x + offsetX).toFixed(2)}%,`
-        + `${(position.y + offsetY).toFixed(2)}%) rotate(${rotation.toFixed(1)}deg) scaleX(${direction});}`,
+        + `${(position.y + offsetY).toFixed(2)}%) rotate(${rotation.toFixed(1)}deg);}`,
       );
-      previousDirection = direction;
     });
     return frames.join("");
   };
 
-  const counterFlipKeyframes = (unitIndex) => {
+  const facingKeyframes = (unitIndex) => {
     const frames = [];
-    let previousDirection = directionFor(unitIndex, 0);
     routeSamples.forEach((_, sampleIndex) => {
       const percentage = (sampleIndex / (routeSamples.length - 1)) * 100;
       const direction = directionFor(unitIndex, sampleIndex);
-      if (sampleIndex > 0 && direction !== previousDirection) {
-        frames.push(`${Math.max(0, percentage - 0.01).toFixed(2)}%{transform:scaleX(${previousDirection});}`);
-      }
       frames.push(`${percentage.toFixed(2)}%{transform:scaleX(${direction});}`);
-      previousDirection = direction;
     });
     return frames.join("");
   };
@@ -538,18 +560,42 @@ const distributeCharacterRoaming = (svg) => {
       const id = String(persona.id);
       const isRider = hasMountedPair && id === String(rider.id);
       const movement = routeKeyframes(unitIndex, isRider ? 5 : 0, isRider ? -6 : 0);
-      const counterFlip = counterFlipKeyframes(unitIndex);
+      const facing = facingKeyframes(unitIndex);
+      let rootId;
       if (movingPersonaIds.has(id)) {
+        const animationRuleStart = result.indexOf(`animation-name: move-${id}`);
+        const selectorStart = result.lastIndexOf("#", animationRuleStart);
+        rootId = result.slice(selectorStart + 1, result.indexOf(" ", selectorStart));
+        if (!rootId) throw new Error(`Unable to locate movement root for ${persona.type} (${id}).`);
         replaceKeyframeBody(`move-${id}`, movement);
-        replaceKeyframeBody(`reverse-flip-${id}`, counterFlip);
+        replaceKeyframeBody(`reverse-flip-${id}`, facing);
         configureAnimation(`move-${id}`, routeDuration, "infinite", "normal");
         configureAnimation(`reverse-flip-${id}`, routeDuration, "infinite", "normal");
+        configureTimingFunction(`reverse-flip-${id}`, "steps(1,end)");
       } else {
-        const rootId = staticPersonaRoots.get(id);
+        rootId = staticPersonaRoots.get(id);
         coordinatedRouteStyles += `@keyframes profile-route-${id}{${movement}}`
           + `#${rootId}{animation-name:profile-route-${id};animation-duration:${routeDuration}s;`
           + "animation-timing-function:linear;animation-iteration-count:infinite;"
           + "animation-direction:normal;animation-fill-mode:both;}";
+      }
+
+      const facingWrapperId = `profile-facing-${id}`;
+      wrapGroupContents(rootId, facingWrapperId);
+      coordinatedRouteStyles += `@keyframes profile-facing-route-${id}{${facing}}`
+        + `#${facingWrapperId}{animation:profile-facing-route-${id} ${routeDuration}s steps(1,end) infinite both;`
+        + "transform-box:fill-box;transform-origin:center;}";
+
+      if (!movingPersonaIds.has(id)) {
+        const counterFacingSelector = [
+          `#contributions-wrap-${id}`,
+          `#level-tag-wrap-${id}`,
+          `#level-wrap-${id}`,
+          `#username-tag-wrap-${id}`,
+          `#username-wrap-${id}`,
+        ].join(",");
+        coordinatedRouteStyles += `${counterFacingSelector}{animation:profile-facing-route-${id} `
+          + `${routeDuration}s steps(1,end) infinite both;transform-box:fill-box;transform-origin:center;}`;
       }
     });
   });
