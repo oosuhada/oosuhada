@@ -256,7 +256,7 @@
     {
       "id": "839316524282022269",
       "type": "CAPYBARA",
-      "level": "141",
+      "level": "142",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -286,7 +286,7 @@
     {
       "id": "839804521871978019",
       "type": "SLOTH",
-      "level": "36",
+      "level": "37",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -376,7 +376,7 @@
     {
       "id": "857516066107135610",
       "type": "GALCHI_CAT",
-      "level": "33",
+      "level": "34",
       "visible": true,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -566,7 +566,7 @@
     {
       "id": "877778699074778051",
       "type": "CAPYBARA_CARROT",
-      "level": "11",
+      "level": "12",
       "visible": false,
       "appVisible": false,
       "dropRate": "5%",
@@ -736,7 +736,7 @@
     {
       "id": "879379983292805009",
       "type": "RABBIT",
-      "level": "2",
+      "level": "3",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
