@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v24";
+const layoutVersion = "character-behaviors-v25";
 const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
 // The rabbit intentionally crosses more ground than the other pets; this still limits every pet to
@@ -150,10 +150,18 @@ lightAnimations.forEach((animation, index) => {
 
 const carrotCapybara = visible.find((persona) => persona.type === "CAPYBARA_CARROT");
 if (carrotCapybara) {
-  assert(light.includes(`#level-wrap-${carrotCapybara.id}{translate:0 -5px;}`),
+  assert(light.includes(`#level-wrap-${carrotCapybara.id}{translate:0 -10px;}`),
     "Carrot capybara level label must clear the carrot.");
-  assert(dark.includes(`#level-wrap-${carrotCapybara.id}{translate:0 -5px;}`),
+  assert(dark.includes(`#level-wrap-${carrotCapybara.id}{translate:0 -10px;}`),
     "Dark carrot capybara level label must clear the carrot.");
+}
+
+const rabbit = visible.find((persona) => persona.type === "RABBIT");
+if (rabbit) {
+  assert(light.includes(`#level-wrap-${rabbit.id}{translate:0 -9px;}`),
+    "Rabbit level label must remain above its animated emotion artwork.");
+  assert(dark.includes(`#level-wrap-${rabbit.id}{translate:0 -9px;}`),
+    "Dark rabbit level label must remain above its animated emotion artwork.");
 }
 
 if (rider && mount) {

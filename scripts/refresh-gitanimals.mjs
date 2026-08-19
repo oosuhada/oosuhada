@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v24";
+const layoutVersion = "character-behaviors-v25";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const existingAssets = await Promise.all(
   [lightPath, darkPath].map((file) => readFile(file, "utf8").catch(() => "")),
@@ -635,8 +635,12 @@ const distributeCharacterRoaming = (svg) => {
         + `#${facingWrapperId}{animation:profile-facing-route-${id} ${routeDuration}s steps(1,end) infinite both;`
         + `transform-origin:${pivot.toFixed(2)}px 0px;}`;
 
-      if (persona.type === "CAPYBARA_CARROT") {
-        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 -5px;}`;
+      // Emotion artwork can extend above the normal sprite bounds. Keep the label above that
+      // artwork instead of letting the rabbit's ! / ... state or the capybara's carrot cover it.
+      if (persona.type === "RABBIT") {
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 -9px;}`;
+      } else if (persona.type === "CAPYBARA_CARROT") {
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 -10px;}`;
       }
     });
   });
