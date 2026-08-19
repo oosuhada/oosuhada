@@ -6,12 +6,24 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v23";
+const layoutVersion = "character-behaviors-v24";
 const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
 // The rabbit intentionally crosses more ground than the other pets; this still limits every pet to
 // a smooth multi-second traverse rather than a sub-second collision-correction jump.
 const maximumWeightedSpeed = 16;
+const expectedFacingPivots = {
+  RABBIT: "25.51",
+  HAMSTER: "21.00",
+  PENGUIN: "20.75",
+  CAPYBARA_CARROT: "30.76",
+  CAPYBARA_SWIM: "17.40",
+  LITTLE_CHICK_SUNGLASSES: "14.36",
+  GOOSE: "23.59",
+  GALCHI_CAT: "11.75",
+  SHIBA: "11.98",
+  FLAMINGO: "24.24",
+};
 
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
@@ -102,8 +114,10 @@ lightAnimations.forEach((animation, index) => {
   const facingRuleEnd = light.indexOf("}", facingRuleStart);
   const facingRule = light.slice(facingRuleStart, facingRuleEnd);
   assert(facingRule.includes("steps(1,end)"), `${animation.persona.type} facing must use a discrete turn.`);
-  assert(facingRule.includes("transform-box:fill-box") && facingRule.includes("transform-origin:center"),
-    `${animation.persona.type} must turn around its own visual centre.`);
+  assert(/transform-origin:[\d.]+px 0px/.test(facingRule) && !facingRule.includes("transform-box:fill-box"),
+    `${animation.persona.type} must use its measured local sprite pivot.`);
+  assert(facingRule.includes(`transform-origin:${expectedFacingPivots[animation.persona.type]}px 0px`),
+    `${animation.persona.type} measured pivot changed unexpectedly.`);
 
   const facingKeyframesStart = light.indexOf(`@keyframes profile-facing-route-${animation.id}`);
   const facingKeyframesEnd = light.indexOf(`#${facingId}`, facingKeyframesStart);
@@ -133,6 +147,14 @@ lightAnimations.forEach((animation, index) => {
     previous = current;
   }
 });
+
+const carrotCapybara = visible.find((persona) => persona.type === "CAPYBARA_CARROT");
+if (carrotCapybara) {
+  assert(light.includes(`#level-wrap-${carrotCapybara.id}{translate:0 -5px;}`),
+    "Carrot capybara level label must clear the carrot.");
+  assert(dark.includes(`#level-wrap-${carrotCapybara.id}{translate:0 -5px;}`),
+    "Dark carrot capybara level label must clear the carrot.");
+}
 
 if (rider && mount) {
   const riderAnimation = extractAnimation(light, rider);

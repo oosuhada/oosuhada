@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v23";
+const layoutVersion = "character-behaviors-v24";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const existingAssets = await Promise.all(
   [lightPath, darkPath].map((file) => readFile(file, "utf8").catch(() => "")),
@@ -561,6 +561,21 @@ const distributeCharacterRoaming = (svg) => {
 
   const directionFor = (unitIndex, sampleIndex) => facingDirections[unitIndex][sampleIndex];
 
+  // Measured from paired +1/-1 renders of each sprite at the same animation timestamp. These local
+  // pivots keep the visible artwork centre fixed even when hidden emotion states enlarge its SVG box.
+  const facingPivot = (persona) => ({
+    RABBIT: 25.51,
+    HAMSTER: 21.00,
+    PENGUIN: 20.75,
+    CAPYBARA_CARROT: 30.76,
+    CAPYBARA_SWIM: 17.40,
+    LITTLE_CHICK_SUNGLASSES: 14.36,
+    GOOSE: 23.59,
+    GALCHI_CAT: 11.75,
+    SHIBA: 11.98,
+    FLAMINGO: 24.24,
+  })[persona.type] ?? 0;
+
   const routeKeyframes = (unitIndex, offsetX = 0, offsetY = 0) => {
     const frames = [];
     routeSamples.forEach((sample, sampleIndex) => {
@@ -614,10 +629,15 @@ const distributeCharacterRoaming = (svg) => {
       }
 
       const facingWrapperId = `profile-facing-${id}`;
+      const pivot = facingPivot(persona);
       wrapArtworkContents(rootId, facingWrapperId, id);
       coordinatedRouteStyles += `@keyframes profile-facing-route-${id}{${facing}}`
         + `#${facingWrapperId}{animation:profile-facing-route-${id} ${routeDuration}s steps(1,end) infinite both;`
-        + "transform-box:fill-box;transform-origin:center;}";
+        + `transform-origin:${pivot.toFixed(2)}px 0px;}`;
+
+      if (persona.type === "CAPYBARA_CARROT") {
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 -5px;}`;
+      }
     });
   });
 
