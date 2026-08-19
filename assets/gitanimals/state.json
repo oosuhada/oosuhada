@@ -86,7 +86,7 @@
     {
       "id": "835719307358968503",
       "type": "LITTLE_CHICK",
-      "level": "81",
+      "level": "82",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
@@ -186,7 +186,7 @@
     {
       "id": "839316522163902329",
       "type": "PENGUIN",
-      "level": "47",
+      "level": "48",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
@@ -246,7 +246,7 @@
     {
       "id": "839316523975851376",
       "type": "LITTLE_CHICK",
-      "level": "58",
+      "level": "59",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
@@ -266,7 +266,7 @@
     {
       "id": "839316524592413461",
       "type": "PENGUIN",
-      "level": "44",
+      "level": "45",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
