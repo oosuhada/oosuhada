@@ -2,7 +2,7 @@
   <img src="https://render.gitanimals.org/farms/oosuhada" width="100%" alt="GitAnimals farm for oosuhada" />
 </a>
 
-# Oosu / 장우수
+# Oosu / 우수
 
 **AI-connected Full-stack Developer · Industrial AI · Agentic Systems**
 
