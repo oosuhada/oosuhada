@@ -11,10 +11,10 @@ I build working software end to end — from domain modeling and backend APIs to
 | Project | What it demonstrates | Live / Repo |
 | --- | --- | --- |
 | **Agentic Ontology Dashboard** | Industrial ontology workbench, governed actions, manufacturing analytics, FastAPI + React/Vite + ML | [Live](https://dashboard.oosu.dev/app) · [Repo](https://github.com/oosuhada/agentic-ontology-dashboard) |
-| **Text-to-Cypher Factory RCA** | Manufacturing knowledge graph, explainable RCA, Neo4j + LangGraph + FastAPI + Next.js | [Repo](https://github.com/oosuhada/text2cypher-factory-rca) |
+| **Text-to-Cypher Factory RCA** | Manufacturing knowledge graph, explainable RCA, Neo4j + LangGraph + FastAPI + Next.js | [Live](https://text2cypher.oosu.dev) · [Repo](https://github.com/oosuhada/text2cypher-factory-rca) |
 | **Dev Flow Dashboard** | PR dependency/bottleneck visualization, AI project-management surface, FastAPI + React + Playwright | [Live](https://ontology.oosu.dev/dev_dashboard) · [Repo](https://github.com/oosuhada/dev-flow-dashboard) |
 | **AskOosu** | AI-connected personal portfolio, RAG, multi-provider AI, Next.js, home-server deployment | [Live](https://oosu.dev) · [Repo](https://github.com/oosuhada/AskOosu) |
-| **Flai** | AI flight-search product experiment, SDKs, worker fallback, resilient result handling | [Repo](https://github.com/oosuhada/Flai) |
+| **Flai** | AI flight-search product experiment, SDKs, worker fallback, resilient result handling | [Live](https://flai.oosu.dev) · [Repo](https://github.com/oosuhada/Flai) |
 | **iBridge Studio** | Software display bridge that repurposes older iMac hardware, native Swift/macOS tooling | [Repo](https://github.com/oosuhada/iBridge-Studio) |
 
 > Live links are kept on the project README as deployments evolve. / 배포 주소가 바뀌는 경우 각 프로젝트 README를 기준으로 관리합니다.
@@ -44,6 +44,11 @@ I build working software end to end — from domain modeling and backend APIs to
 - [oosu.dev](https://oosu.dev) — AI-connected portfolio / AI 포트폴리오
 - [dashboard.oosu.dev/app](https://dashboard.oosu.dev/app) — Ontology Dashboard
 - [ontology.oosu.dev/dev_dashboard](https://ontology.oosu.dev/dev_dashboard) — Dev Flow Dashboard
+- [text2cypher.oosu.dev](https://text2cypher.oosu.dev) — Factory RCA / Text-to-Cypher portfolio demo
+- [flai.oosu.dev](https://flai.oosu.dev) — Flai portfolio demo
+- [lingo.oosu.dev](https://lingo.oosu.dev) — Lingo learning-platform demo
+- [webtoon.oosu.dev](https://webtoon.oosu.dev) — Webtoon AI Translate prototype demo
+- [ezair.oosu.dev](https://ezair.oosu.dev) — EZ AIR archived-product demo
 - [kaist.oosu.dev](https://kaist.oosu.dev) — KAIST BTM Interview Prep
 - [aigram.oosu.dev](https://aigram.oosu.dev) — Aigram
 - [stks.oosu.dev](https://stks.oosu.dev) — Sticks & Stones case study
