@@ -1,6 +1,6 @@
 # Oosu / 우수
 
-**AI-connected Full-stack Developer · Industrial AI · Agentic Systems**
+### AI-connected Full-stack Developer · Industrial AI · Agentic Systems
 
 <a href="https://www.gitanimals.org/en-US?utm_medium=image&utm_source=oosuhada&utm_content=farm">
   <img src="https://render.gitanimals.org/farms/oosuhada" width="100%" alt="GitAnimals farm for oosuhada" />
@@ -12,7 +12,7 @@
 필요해서 만들고, 직접 써보고, 불편하면 다시 고칩니다.  
 그러다 쓸 만해지면 배포하고, 가끔은 연구 주제까지 됩니다.
 
-> *I build the software I wish existed — then keep using it until it becomes a product.*
+> ### *I build the software I wish existed — then keep using it until it becomes a product.*
 
 ## Featured Projects / 대표 프로젝트
 
@@ -50,4 +50,4 @@
 | **AI / ML** | `LLM` · `RAG` · `Agentic Workflows` · `LangChain` · `LangGraph` · `LlamaIndex` · `Embeddings / Vector Search` · `Prompt Engineering` · `Fine-tuning` · `Reinforcement Learning` · `Machine Learning` · `Google Colab` · `Jupyter` · `Vertex AI / Gemini` · `OpenAI API` · `Groq` |
 | **Data / Knowledge** | `Data Modeling` · `Ontology` · `Knowledge Graph` · `Text-to-Cypher` · `Neo4j` · `PostgreSQL` · `pgvector` · `SQLite` · `Meilisearch` |
 
-> 기술은 목적보다 뒤에 둡니다. 필요한 문제에 맞춰 웹·모바일·AI·데이터·인프라를 연결합니다.
+> ### 기술은 목적보다 뒤에 둡니다. 필요한 문제에 맞춰 웹·모바일·AI·데이터·인프라를 연결합니다.
