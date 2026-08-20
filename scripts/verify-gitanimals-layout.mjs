@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v27";
+const layoutVersion = "character-behaviors-v28";
 const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
 // The rabbit intentionally crosses more ground than the other pets; this still limits every pet to
@@ -118,6 +118,29 @@ lightAnimations.forEach((animation, index) => {
     `${animation.persona.type} must use its measured local sprite pivot.`);
   assert(facingRule.includes(`transform-origin:${expectedFacingPivots[animation.persona.type]}px 0px`),
     `${animation.persona.type} measured pivot changed unexpectedly.`);
+
+  const interactionId = `profile-interaction-${animation.id}`;
+  assert(light.includes(`<g id="${interactionId}">`),
+    `${animation.persona.type} is missing its proximity interaction wrapper.`);
+  assert(light.includes(`@keyframes profile-interaction-route-${animation.id}`),
+    `${animation.persona.type} is missing continuous proximity interaction keyframes.`);
+
+  if (animation.persona.type !== "LITTLE_CHICK_SUNGLASSES") {
+    const actionId = `profile-actions-${animation.id}`;
+    const actionStart = light.indexOf(`@keyframes profile-actions-route-${animation.id}`);
+    const actionRuleStart = light.indexOf(`#${actionId}`, actionStart);
+    assert(light.includes(`<g id="${actionId}">`) && actionStart !== -1 && actionRuleStart !== -1,
+      `${animation.persona.type} is missing its alternating character actions.`);
+    const actionBody = light.slice(actionStart, actionRuleStart);
+    assert((actionBody.match(/transform:/g) ?? []).length >= 8,
+      `${animation.persona.type} needs several alternating actions, not one repeated gesture.`);
+    assert(light.includes(`<svg id="profile-shadow-${animation.id}"`)
+      && light.includes(`<ellipse class="profile-ground-shadow"`),
+    `${animation.persona.type} is missing its grounding shadow.`);
+    assert(light.includes(`<svg id="profile-proximity-${animation.id}"`)
+      && light.includes(`@keyframes profile-proximity-route-${animation.id}`),
+    `${animation.persona.type} is missing its visible proximity response.`);
+  }
 
   const facingKeyframesStart = light.indexOf(`@keyframes profile-facing-route-${animation.id}`);
   const facingKeyframesEnd = light.indexOf(`#${facingId}`, facingKeyframesStart);
