@@ -1,14 +1,19 @@
-<a href="https://www.gitanimals.org/en-US?utm_medium=image&utm_source=oosuhada&utm_content=farm">
-  <img src="https://render.gitanimals.org/farms/oosuhada" width="100%" alt="GitAnimals farm for oosuhada" />
-</a>
-
 # Oosu / 우수
 
 **AI-connected Full-stack Developer · Industrial AI · Agentic Systems**
 
-제품 아이디어를 빠르게 작동하는 소프트웨어로 만들고, 백엔드·프론트엔드·AI·데이터 모델링·배포까지 직접 연결합니다. 최근에는 제조/산업 도메인의 **Ontology, Knowledge Graph, Text-to-Cypher, Agentic workflow**를 제품 흐름으로 만드는 작업에 집중하고 있습니다.
+## 대부분의 레포는 “이거 왜 없지?”에서 시작했습니다.
 
-I build working software end to end, with a current focus on **industrial AI, ontologies, knowledge graphs, Text-to-Cypher, and agentic workflows**.
+**없으면 직접 만들어서 씁니다.**
+
+필요해서 만들고, 직접 써보고, 불편하면 다시 고칩니다.  
+그러다 쓸 만해지면 배포하고, 가끔은 연구 주제까지 됩니다.
+
+*I build the software I wish existed — then keep using it until it becomes a product.*
+
+<a href="https://www.gitanimals.org/en-US?utm_medium=image&utm_source=oosuhada&utm_content=farm">
+  <img src="https://render.gitanimals.org/farms/oosuhada" width="100%" alt="GitAnimals farm for oosuhada" />
+</a>
 
 ## Featured Projects / 대표 프로젝트
 
