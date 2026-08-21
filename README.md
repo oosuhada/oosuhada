@@ -12,8 +12,6 @@
 필요해서 만들고, 직접 써보고, 불편하면 다시 고칩니다.  
 그러다 쓸 만해지면 배포하고, 가끔은 연구 주제까지 됩니다.
 
-<br>
-
 > ### *I build the software I wish existed — then keep using it until it becomes a product.*
 
 <br>
@@ -44,8 +42,6 @@
 | **Flai** | 항공권 조건을 바꿀 때마다 폼을 다시 채우는 게 귀찮아서, 자연어로 원하는 여행 일정과 항공권을 찾아주게 하려고 | [Live](https://flai.oosu.dev) · [Repo](https://github.com/oosuhada/Flai) |
 
 ## Stack
-
-<br>
 
 > ### 기술은 목적보다 뒤에 둡니다. 필요한 문제에 맞춰 웹·모바일·AI·데이터·인프라를 연결합니다.
 
