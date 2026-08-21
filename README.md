@@ -41,10 +41,10 @@
 
 ## Stack
 
+> ### 기술은 목적보다 뒤에 둡니다. 필요한 문제에 맞춰 웹·모바일·AI·데이터·인프라를 연결합니다.
+
 <a href="https://oosu.dev/stack">
   <img src="https://raw.githubusercontent.com/oosuhada/AskOosu/main/assets/stack-timeline.gif" width="100%" alt="Oosu stack timeline from 2024.09 to 2026.07" />
 </a>
 
 <sub>↑ Click the timeline to explore the live, GitHub-backed stack page.</sub>
-
-> ### 기술은 목적보다 뒤에 둡니다. 필요한 문제에 맞춰 웹·모바일·AI·데이터·인프라를 연결합니다.
