@@ -106,7 +106,8 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
 
 </details>
 
-## Stack
+<details open>
+<summary><h2>Stack / 기술 스택</h2></summary>
 
 > ### 기술은 목적보다 뒤에 둡니다. 필요한 문제에 맞춰 웹·모바일·AI·데이터·인프라를 연결합니다.
 
@@ -117,3 +118,5 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
 </a>
 
 <sub>↑ Click the timeline to explore the live, GitHub-backed stack page.</sub>
+
+</details>
