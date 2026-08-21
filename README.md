@@ -7,7 +7,10 @@
 </a>
 
 > ### 실제 문제에서 시작해, 직접 쓸 수 있는 도구를 만듭니다.
-> I build tools that start with real problems and end up in actual use.
+
+> ### I build tools that start with real problems and end up in actual use.
+
+<br>
 
 팀 과제, 회사 업무, 일상에서 불편한 점을 발견하면 직접 만들어 봅니다.<br>
 완벽하게 계획하기보다 먼저 써보고, 불편한 부분을 고치면서 쓸 만한 제품으로 발전시킵니다.
@@ -16,7 +19,12 @@ When I run into friction in a team, at work, or in everyday life, I build a work
 Then I use it, fix what is still awkward, and keep going until it is useful enough to ship.
 
 <details open>
-<summary><h2>Featured Projects / 대표 프로젝트</h2></summary>
+<summary>
+
+| Featured Projects / 대표 프로젝트 |
+| --- |
+
+</summary>
 
 ### Agentic Ontology Dashboard
 
@@ -89,7 +97,12 @@ The site relied on a decade-old WordPress setup tangled with patches from differ
 </details>
 
 <details>
-<summary><h2>More Projects / 더 많은 프로젝트</h2></summary>
+<summary>
+
+| More Projects / 더 많은 프로젝트 |
+| --- |
+
+</summary>
 
 ### Text-to-Cypher Factory RCA
 
