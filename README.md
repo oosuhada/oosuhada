@@ -6,8 +6,8 @@
   <img src="https://render.gitanimals.org/farms/oosuhada" width="100%" alt="GitAnimals farm for oosuhada" />
 </a>
 
-## 실제 문제에서 시작해, 직접 쓸 수 있는 도구를 만듭니다.
-### I build tools that start with real problems and end up in actual use.
+> ### 실제 문제에서 시작해, 직접 쓸 수 있는 도구를 만듭니다.
+> I build tools that start with real problems and end up in actual use.
 
 팀 과제, 회사 업무, 일상에서 불편한 점을 발견하면 직접 만들어 봅니다.<br>
 완벽하게 계획하기보다 먼저 써보고, 불편한 부분을 고치면서 쓸 만한 제품으로 발전시킵니다.
