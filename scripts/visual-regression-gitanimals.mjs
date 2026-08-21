@@ -6,7 +6,7 @@ import { chromium } from "playwright";
 
 const root = process.cwd();
 const outputDirectory = path.join(root, "artifacts", "gitanimals-visual-regression");
-const snapshots = [0, 30, 60, 90];
+const snapshots = [0, 22, 30, 60, 90];
 const themes = ["light", "dark"];
 
 const contentType = (filePath) => filePath.endsWith(".svg")
@@ -86,10 +86,22 @@ try {
           visibleProximity: [...document.querySelectorAll("svg[id^='profile-proximity-']")]
             .filter((element) => Number(getComputedStyle(element).opacity) > 0.5)
             .map((element) => element.id),
+          rabbitThought: (() => {
+            const bubble = document.querySelector("#rabbit-think-bubble");
+            const emotion = document.querySelector("#rabbit-829259874410923324-emo-4");
+            const level = document.querySelector("#level-wrap-829259874410923324");
+            return bubble && emotion && level ? {
+              visible: getComputedStyle(emotion).visibility !== "hidden"
+                && getComputedStyle(emotion).display !== "none"
+                && Number(getComputedStyle(emotion).opacity) > 0,
+              bubble: rectFor(bubble),
+              level: rectFor(level),
+            } : null;
+          })(),
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v29", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v30", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.actions === 9, `${theme} ${seconds}s lost character action wrappers.`);
@@ -100,6 +112,15 @@ try {
         assert(level.x > -45 && level.x + level.width < 645 && level.y > -25 && level.y < 300,
           `${theme} ${seconds}s moves ${level.id} outside the farm.`);
       });
+      if (seconds === 22) {
+        assert(geometry.rabbitThought?.visible,
+          `${theme} 22s must exercise the rabbit thinking-bubble state.`);
+        assert(
+          geometry.rabbitThought.bubble.y >= geometry.rabbitThought.level.y
+            + geometry.rabbitThought.level.height,
+          `${theme} rabbit thinking bubble must sit below its level label.`,
+        );
+      }
       assert(errors.length === 0, `${theme} SVG raised browser errors: ${errors.join("; ")}`);
 
       const fileName = `${theme}-${String(seconds).padStart(3, "0")}s.png`;
