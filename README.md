@@ -41,13 +41,10 @@
 
 ## Stack
 
-| Area | Stack |
-| --- | --- |
-| **Languages** | `Python` · `TypeScript` · `JavaScript` · `Dart` · `Java` · `Swift` · `SQL` · `HTML` · `CSS` |
-| **Web / Frontend** | `React` · `Next.js` · `Vite` · `Tailwind CSS` · `React Admin` · `Framer Motion` · `Three.js` |
-| **App / Desktop / Extensions** | `Flutter` · `Riverpod` · `GoRouter` · `Firebase` · `Firestore` · `Swift/macOS` · `ScreenCaptureKit` · `VS Code Extension API` · `Chrome Extensions` |
-| **Backend / API** | `FastAPI` · `Spring Boot` · `Node.js` · `SQLAlchemy` · `Drizzle ORM` · `Pydantic` · `WebSocket` |
-| **AI / ML** | `LLM` · `RAG` · `Agentic Workflows` · `LangChain` · `LangGraph` · `LlamaIndex` · `Embeddings / Vector Search` · `Prompt Engineering` · `Fine-tuning` · `Reinforcement Learning` · `Machine Learning` · `Google Colab` · `Jupyter` · `Vertex AI / Gemini` · `OpenAI API` · `Groq` |
-| **Data / Knowledge** | `Data Modeling` · `Ontology` · `Knowledge Graph` · `Text-to-Cypher` · `Neo4j` · `PostgreSQL` · `pgvector` · `SQLite` · `Meilisearch` |
+<a href="https://oosu.dev/stack">
+  <img src="https://raw.githubusercontent.com/oosuhada/AskOosu/main/assets/stack-timeline.gif" width="100%" alt="Oosu stack timeline from 2024.09 to 2026.07" />
+</a>
+
+<sub>↑ Click the timeline to explore the live, GitHub-backed stack page.</sub>
 
 > ### 기술은 목적보다 뒤에 둡니다. 필요한 문제에 맞춰 웹·모바일·AI·데이터·인프라를 연결합니다.
