@@ -12,7 +12,11 @@
 필요해서 만들고, 직접 써보고, 불편하면 다시 고칩니다.  
 그러다 쓸 만해지면 배포하고, 가끔은 연구 주제까지 됩니다.
 
+<br>
+
 > ### *I build the software I wish existed — then keep using it until it becomes a product.*
+
+<br>
 
 ## Featured Projects / 대표 프로젝트
 
@@ -41,7 +45,11 @@
 
 ## Stack
 
+<br>
+
 > ### 기술은 목적보다 뒤에 둡니다. 필요한 문제에 맞춰 웹·모바일·AI·데이터·인프라를 연결합니다.
+
+<br>
 
 <a href="https://oosu.dev/stack">
   <img src="https://raw.githubusercontent.com/oosuhada/AskOosu/main/assets/stack-timeline.gif" width="100%" alt="Oosu stack timeline from 2024.09 to 2026.07" />
