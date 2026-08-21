@@ -1,31 +1,30 @@
 # Oosu / 우수
 
-### AI-connected Full-stack Developer · Industrial AI · Agentic Systems
+### Full-stack Developer · Industrial AI · Agentic Systems
 
 <a href="https://www.gitanimals.org/en-US?utm_medium=image&utm_source=oosuhada&utm_content=farm">
   <img src="https://render.gitanimals.org/farms/oosuhada" width="100%" alt="GitAnimals farm for oosuhada" />
 </a>
 
-## 대부분의 레포는 “이거 왜 없지?”에서 시작했습니다.
+## 실제 상황에서 문제를 발견하면, 직접 만들어서 풀었습니다.
 
-> ### *I build the software I wish existed — then keep using it until it becomes a product.*
+> ### *When I hit a real problem — at work, in a team, or on my own — I build the tool to solve it.*
 
-**없으면 직접 만들어서 씁니다.**  
-필요해서 만들고, 직접 써보고, 불편하면 다시 고칩니다.  
-그러다 쓸 만해지면 배포하고, 가끔은 연구 주제까지 됩니다.
+팀 과제에서든, 회사 업무에서든, 개인 불편에서든  
+문제가 보이면 일단 만들어 보고, 직접 쓰면서 고치고, 쓸 만해지면 배포합니다.
 
 
 ## Featured Projects / 대표 프로젝트
 
 | Project | Started from / 시작한 이유 | Live / Repo |
 | --- | --- | --- |
-| **Agentic Ontology Dashboard** | 같은 제조 데이터라도 엔지니어는 수치를, 매니저와 임원은 결론을 원하니까 역할마다 화면과 LLM 리포트가 달라지는 동적 대시보드를 만들려고 | [Live](https://dashboard.oosu.dev/app) · [Repo](https://github.com/oosuhada/agentic-ontology-dashboard) |
-| **Dev Flow Dashboard** | PR이 너무 많이 쌓이고 서로 병목까지 생기니 팀원들이 무엇부터 리뷰하고 머지해야 하는지 한눈에 보이게 하려고 | [Live](https://ontology.oosu.dev/dev_dashboard) · [Repo](https://github.com/oosuhada/dev-flow-dashboard) |
-| **KAIST BTM Prep** | Notion에 정리한 면접 답변이 눈에 잘 안 들어와서, 좋아하는 뮤지컬처럼 듣고 보고 반복해서 익히려고 | [Live](https://kaist.oosu.dev) · [Repo](https://github.com/oosuhada/kaist-btm-interview-prep) |
-| **CodeMap AI** | 낯선 회사 코드베이스를 이해하는 데 몇 주씩 걸리는 시간을 LLM으로 줄이고, VS Code도 Google Docs처럼 함께 이해하고 협업하는 공간으로 만들고 싶어서 | [Live](https://oosu.dev/codemap/example/) · [Repo](https://github.com/oosuhada/codemap-share) |
-| **AskOosu** | 모든 기능을 보여주려다 너무 복잡하고 무거워진 기존 포트폴리오 대신, 궁금한 건 그때그때 그냥 물어보게 하려고 | [Live](https://oosu.dev) · [Repo](https://github.com/oosuhada/AskOosu) |
-| **Algolog** | 백준허브가 최종 정답만 남겨서 사라지는 시행착오까지 기록하고 싶어, 오픈소스 BaekjoonHub를 직접 고쳐 쓰려고 | [Repo](https://github.com/oosuhada/codetestlog-extension) |
-| **Sticks & Stones** | 회사 WordPress 작업이 한계에 부딪혀 직접 마이그레이션했고, 그 작업을 공개 가능한 포트폴리오 형태로 남기려고 | [Live](https://stks.oosu.dev) · [Repo](https://github.com/oosuhada/sticksandstones.kr) |
+| **Agentic Ontology Dashboard** | KOSA/Bistel 팀 과제로 시작. 엔지니어·매니저·임원이 모두 같은 대시보드를 보는 게 맞는지 의문이었고, 역할과 질문에 따라 LLM이 다른 리포트를 생성하는 화면을 만들었다 | [Live](https://dashboard.oosu.dev/app) · [Repo](https://github.com/oosuhada/agentic-ontology-dashboard) |
+| **Dev Flow Dashboard** | PR이 쌓이고 stacked PR 선후관계가 얽히면서 무엇부터 리뷰해야 하는지 추적하는 비용이 커졌다. 병목과 우선순위를 한 화면에 보이게 만들었다 | [Live](https://ontology.oosu.dev/dev_dashboard) · [Repo](https://github.com/oosuhada/dev-flow-dashboard) |
+| **KAIST BTM Prep** | 면접 답변을 Notion에 정리해도 실제 질문 앞에서는 나오지 않았다. 뮤지컬처럼 듣고 반복하는 방식으로 기억하는 도구를 만들었다 | [Live](https://kaist.oosu.dev) · [Repo](https://github.com/oosuhada/kaist-btm-interview-prep) |
+| **CodeMap AI** | 처음 맡은 WordPress 코드베이스를 이해하는 데 2주가 걸렸다. LLM으로 온보딩 시간을 줄이고 이해 과정을 공유할 수 있게 만들었다 | [Live](https://oosu.dev/codemap/example/) · [Repo](https://github.com/oosuhada/codemap-share) |
+| **AskOosu** | 이전 포트폴리오는 보여주려는 기능이 많아질수록 복잡해졌다. 둘러보기보다 궁금한 것을 바로 묻는 방향으로 다시 만들었다 | [Live](https://oosu.dev) · [Repo](https://github.com/oosuhada/AskOosu) |
+| **Algolog** | BaekjoonHub가 최종 정답만 남기는 것이 아쉬웠다. 오픈소스를 fork해 오답과 풀이 과정까지 기록하도록 개선했다 | [Repo](https://github.com/oosuhada/codetestlog-extension) |
+| **Sticks & Stones** | 실제 회사 업무로 진행한 사이트 마이그레이션. WordPress 유지보수 비용 문제를 해결했고 공개 가능한 case study로 정리했다 | [Live](https://stks.oosu.dev) · [Repo](https://github.com/oosuhada/sticksandstones.kr) |
 
 ## More Things I Built / 더 만든 것들
 
@@ -38,7 +37,7 @@
 | **Lingo** | 코딩테스트 기초 문법이 자꾸 생각나지 않는데 단순 암기는 잘 안 맞아서, Duolingo처럼 게임하듯 Python·Java를 반복하려고 | [Live](https://lingo.oosu.dev) · [Repo](https://github.com/oosuhada/Lingo) |
 | **Webtoon AI Translate** | 웹툰 번역 회사에서 오래 일한 친구에게 낡고 유지보수 안 되는 도구 이야기를 계속 듣다가, 실제 번역자가 편하게 쓸 툴을 만들어주고 싶어서 | [Live](https://webtoon.oosu.dev) · [Repo](https://github.com/oosuhada/webtoon-ai-translate) |
 | **Aigram** | Firebase 같은 서비스를 붙여 쓰는 단계에서 벗어나 Java 백엔드까지 직접 만든 첫 풀스택 프로젝트로, Instagram의 번역·긴 글 요약 같은 불편도 AI로 풀어보려고 | [Live](https://aigram.oosu.dev) · [Repo](https://github.com/oosuhada/Aigram) |
-| **Flai** | 항공권 조건을 바꿀 때마다 폼을 다시 채우는 게 귀찮아서, 자연어로 원하는 여행 일정과 항공권을 찾아주게 하려고 | [Live](https://flai.oosu.dev) · [Repo](https://github.com/oosuhada/Flai) |
+| **EZ AIR** | 항공권 검색에서 날짜나 도시 하나를 바꿀 때마다 폼을 다시 작성하는 경험이 불편했다. 자연어로 원하는 여행 조건을 말하면 찾을 수 있게 만들었다 | [Live](https://ezair.oosu.dev) · [Repo](https://github.com/oosuhada/ezair.ai) |
 
 ## Stack
 
