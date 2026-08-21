@@ -13,7 +13,8 @@
 그러다 쓸 만해지면 배포하고, 가끔은 연구 주제까지 됩니다.
 
 > ### *I build the software I wish existed — then keep using it until it becomes a product.*
-<sub>&nbsp;</sub>
+<div><small><small>&nbsp;</small></small></div>
+
 ## Featured Projects / 대표 프로젝트
 
 | Project | Started from / 시작한 이유 | Live / Repo |
