@@ -157,7 +157,7 @@ A close friend at a webtoon translation company kept venting about an in-house t
 
 Starting from a familiar product I used daily, I wanted to move beyond surface-level cloning to solve real friction in an AI-enhanced Instagram. I implemented AI summaries for lengthy captions and comment threads, cached translations in the database to eliminate wasteful duplicate API calls, and engineered idempotent handlers for rapid consecutive likes along with fast search.
 
-평소 자주 쓰던 친숙한 도메인에서 출발하되, 단순 UI 재구현에 머물지 않고 실제 불편을 개선하는 미래형 인스타그램을 구상했습니다. 긴 피드 본문과 방대한 댓글을 AI로 요약하고, 중복 번역 API 호출을 막기 위해 결과를 DB에 캐싱하며, 연속적인 '좋아요' 클릭에 대응한 멱등성과 빠른 검색까지 고려하며 실질적인 사용자 경험과 시스템 비용 문제를 함께 해결했습니다.
+평소 자주 쓰던 친숙한 도메인에서 출발하되, 단순 UI 재구현에 머물지 않고 실제 불편을 개선하는 미래형 인스타그램을 구상했습니다. 긴 피드 본문과 방대한 댓글을 AI로 요약하고, 중복 번역 API 호출을 막기 위해 결과를 DB에 캐싱하며, 연속적인 '좋아요' 클릭에 대응한 멱등성과 빠른 검색까지 고려하며 사용자 경험과 시스템 비용 문제를 함께 해결했습니다.
 
 ---
 
@@ -167,7 +167,7 @@ Starting from a familiar product I used daily, I wanted to move beyond surface-l
 
 Flight search involved tedious friction — returning to the home screen to reset filters for every minor date change and juggling separate notes just to compare options. With conversational LLMs emerging but not yet applied to flight booking, I built a natural-language search product where travelers can adjust conditions and compare itineraries seamlessly through plain dialogue.
 
-항공권을 검색할 때 날짜나 도시를 바꾸려면 매번 홈 화면으로 돌아가 폼을 처음부터 다시 채워야 했고, 여러 조건을 비교하려면 따로 메모해야 하는 번거로움이 있었습니다. 당시 LLM과 챗봇 기술이 급부상하고 있었지만 항공권 검색에 접목된 서비스는 없었기에, 대화 한 번으로 조건 변경과 일정 탐색을 끝낼 수 있는 자연어 항공권 검색을 직접 만들었습니다.
+항공권을 검색할 때 날짜나 도시를 바꾸려면 매번 홈 화면으로 돌아가 폼을 처음부터 다시 채워야 했고, 여러 조건을 비교하려면 따로 메모해야 하는 번거로움이 있었습니다. 당시 LLM과 챗봇 기술이 급부상하고 있었지만 항공권 검색에 접목된 서비스는 없었기에, 대화 한 번으로 조건 변경과 일정 탐색을 끝낼 수 있는 자연어 항공권 검색을 구현했습니다.
 
 </details>
 
