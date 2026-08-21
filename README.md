@@ -1,23 +1,26 @@
 # Oosu / 우수
 
-### Full-stack Developer building Industrial AI & Agentic Systems
-### 산업 AI와 에이전틱 시스템을 만드는 풀스택 개발자
+### Full-stack Developer · Industrial AI · Agentic Systems
+### 풀스택 개발자 · 산업 AI · 에이전틱 시스템
 
 <a href="https://www.gitanimals.org/en-US?utm_medium=image&utm_source=oosuhada&utm_content=farm">
   <img src="https://render.gitanimals.org/farms/oosuhada" width="100%" alt="GitAnimals farm for oosuhada" />
 </a>
 
-> **I turn real problems into software I can use.**<br>
-> **실제 문제를 직접 쓸 수 있는 소프트웨어로 만듭니다.**
+## 실제 상황에서 문제를 발견하면, 직접 만들어서 풀었습니다.
+### When I find a real problem, I build something to solve it.
 
-At work, in teams, or in daily life, I trace the friction, build a working tool, and improve it through use.<br>
-회사 업무, 팀 프로젝트, 일상의 불편에서 문제를 찾고, 작동하는 도구를 만든 뒤 직접 쓰며 개선합니다.
+팀 과제에서든, 회사 업무에서든, 개인 불편에서든<br>
+문제가 보이면 일단 만들어 보고, 직접 쓰면서 고치고, 쓸 만해지면 배포합니다.
+
+Whether it starts with a team assignment, a problem at work, or a personal frustration,<br>
+I build first, use it myself, fix what gets in the way, and ship it when it becomes useful.
 
 [Portfolio & AI assistant / 포트폴리오 & AI 어시스턴트](https://oosu.dev)
 
-## Selected Work / 대표 프로젝트
+## Featured Projects / 대표 프로젝트
 
-| Project | Problem → Product / 문제 → 제품 | Links / 링크 |
+| Project / 프로젝트 | Started from / 시작한 이유 | Links / 링크 |
 | --- | --- | --- |
 | **Agentic Ontology Dashboard** | **EN** — A KOSA/Bistel team assignment that challenged one fixed dashboard for every role. The UI and LLM report adapt to the viewer's role and decision.<br>**KR** — KOSA/Bistel 팀 과제에서 모두가 같은 대시보드를 보는 문제를 발견했습니다. 역할과 의사결정에 따라 화면과 LLM 리포트가 달라집니다. | [Live / 배포](https://dashboard.oosu.dev/app) · [Repo / 코드](https://github.com/oosuhada/agentic-ontology-dashboard) |
 | **Dev Flow Dashboard** | **EN** — Stacked PRs made dependencies and review order hard to track, so I put bottlenecks and priorities on one screen.<br>**KR** — stacked PR이 얽히며 리뷰 순서를 추적하기 어려워졌습니다. 병목과 우선순위를 한 화면에 보이게 만들었습니다. | [Live / 배포](https://ontology.oosu.dev/dev_dashboard) · [Repo / 코드](https://github.com/oosuhada/dev-flow-dashboard) |
@@ -29,7 +32,7 @@ At work, in teams, or in daily life, I trace the friction, build a working tool,
 
 ## More Things I Built / 더 만든 것들
 
-| Project | Problem → Product / 문제 → 제품 | Links / 링크 |
+| Project / 프로젝트 | Started from / 시작한 이유 | Links / 링크 |
 | --- | --- | --- |
 | **Text-to-Cypher Factory RCA** | **EN** — A precursor MVP proving that natural-language questions can become safe graph queries with traceable manufacturing evidence.<br>**KR** — 자연어 질문을 안전한 그래프 쿼리와 추적 가능한 제조 근거로 바꿀 수 있는지 먼저 검증한 선행 MVP입니다. | [Public demo / 공개 데모](https://text2cypher.oosu.dev) · [Repo / 코드](https://github.com/oosuhada/text2cypher-factory-rca) |
 | **GitAnimals for VS Code** | **EN** — Companion extensions used generic mascots; I wanted my own GitAnimals and live contribution activity beside my code.<br>**KR** — 기존 companion 대신 제가 키우던 GitAnimals와 실시간 contribution을 코딩 화면 곁에 두고 싶어 만들었습니다. | [Repo / 코드](https://github.com/oosuhada/gitanimals-vscode) |
