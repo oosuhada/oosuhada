@@ -14,6 +14,8 @@
 
 > ### *I build the software I wish existed — then keep using it until it becomes a product.*
 
+<sub>&nbsp;</sub>
+
 ## Featured Projects / 대표 프로젝트
 
 | Project | Started from / 시작한 이유 | Live / Repo |
