@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v28";
+const layoutVersion = "character-behaviors-v29";
 const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
 // The rabbit intentionally crosses more ground than the other pets; this still limits every pet to
@@ -221,6 +221,13 @@ if (swimmingCapybara) {
     "Swimming capybara level label must clear the mounted chick.");
   assert(dark.includes(`#level-wrap-${swimmingCapybara.id}{translate:-8px 0;}`),
     "Dark swimming capybara level label must clear the mounted chick.");
+  for (const [theme, svg] of [["Light", light], ["Dark", dark]]) {
+    assert(svg.includes("class=\"profile-water-bed\"")
+      && svg.includes("class=\"profile-water-ripple-inner\"")
+      && svg.includes("class=\"profile-water-ripple-outer\"")
+      && svg.includes("class=\"profile-water-glints\""),
+    `${theme} swimming capybara needs a layered water surface.`);
+  }
 }
 
 if (rider && mount) {

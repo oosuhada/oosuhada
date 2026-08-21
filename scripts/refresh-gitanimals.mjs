@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v28";
+const layoutVersion = "character-behaviors-v29";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -840,8 +840,18 @@ const distributeCharacterRoaming = (svg) => {
           + `<g id="profile-shadow-shape-${id}"><ellipse class="profile-ground-shadow" cx="${geometry.cx}" `
           + `cy="${geometry.cy}" rx="${geometry.rx}" ry="1.15" fill="#57606A" opacity=".18"/></g>`
           + (persona.type === "CAPYBARA_SWIM"
-            ? `<ellipse class="profile-water-ripple" cx="${geometry.cx}" cy="${geometry.cy - 0.2}" `
-              + `rx="${geometry.rx + 2}" ry="1.8" stroke="#58A6FF" stroke-width=".45" opacity=".38"/>`
+            ? `<ellipse class="profile-water-bed" cx="${geometry.cx}" cy="${geometry.cy - 0.15}" `
+              + `rx="${geometry.rx + 0.5}" ry="2.6" fill="#58A6FF" opacity=".12"/>`
+              + `<ellipse class="profile-water-ripple-inner" cx="${geometry.cx}" cy="${geometry.cy - 0.1}" `
+              + `rx="${geometry.rx + 1.5}" ry="2.05" stroke="#79C0FF" stroke-width=".55" opacity=".42"/>`
+              + `<ellipse class="profile-water-ripple-outer" cx="${geometry.cx}" cy="${geometry.cy}" `
+              + `rx="${geometry.rx + 4}" ry="2.8" stroke="#58A6FF" stroke-width=".4" opacity=".24"/>`
+              + `<g class="profile-water-glints" fill="none" stroke="#B6E3FF" stroke-width=".65" `
+              + `stroke-linecap="round" opacity=".58">`
+              + `<path d="M${geometry.cx - 14} ${geometry.cy - 0.7} Q${geometry.cx - 10} ${geometry.cy - 2.15} `
+              + `${geometry.cx - 6} ${geometry.cy - 0.85}"/>`
+              + `<path d="M${geometry.cx + 6} ${geometry.cy - 0.85} Q${geometry.cx + 10} ${geometry.cy - 2.15} `
+              + `${geometry.cx + 14} ${geometry.cy - 0.7}"/></g>`
             : "")
           + "</svg>";
         insertAtRootStart(rootId, shadowMarkup);
@@ -881,13 +891,28 @@ const distributeCharacterRoaming = (svg) => {
     });
   });
 
-  const ambientBehaviorStyles = "@keyframes profile-water-ripple{"
-    + "0%,100%{transform:scaleX(.82);opacity:.18;}50%{transform:scaleX(1.12);opacity:.48;}}"
+  const ambientBehaviorStyles = "@keyframes profile-water-bed{"
+    + "0%,100%{transform:scale(.96,.9);opacity:.08;}50%{transform:scale(1.04,1.08);opacity:.2;}}"
+    + "@keyframes profile-water-ripple-inner{"
+    + "0%{transform:scale(.82,.72);opacity:0;}28%{opacity:.48;}72%{opacity:.25;}"
+    + "100%{transform:scale(1.18,1.14);opacity:0;}}"
+    + "@keyframes profile-water-ripple-outer{"
+    + "0%{transform:scale(.76,.68);opacity:0;}34%{opacity:.3;}78%{opacity:.14;}"
+    + "100%{transform:scale(1.24,1.18);opacity:0;}}"
+    + "@keyframes profile-water-glints{"
+    + "0%,100%{transform:translateX(-.6px);opacity:.24;}50%{transform:translateX(.6px);opacity:.68;}}"
     + ".profile-ground-layer,.profile-proximity-layer{pointer-events:none;}"
-    + ".profile-water-ripple{animation:profile-water-ripple 4.8s ease-in-out infinite;transform-origin:center;}"
+    + ".profile-water-bed,.profile-water-ripple-inner,.profile-water-ripple-outer{"
+    + "transform-box:fill-box;transform-origin:center;}"
+    + ".profile-water-bed{animation:profile-water-bed 5.6s ease-in-out infinite;}"
+    + ".profile-water-ripple-inner{animation:profile-water-ripple-inner 4.8s ease-out infinite;}"
+    + ".profile-water-ripple-outer{animation:profile-water-ripple-outer 6.4s ease-out -2.35s infinite;}"
+    + ".profile-water-glints{animation:profile-water-glints 3.6s ease-in-out infinite;transform-box:fill-box;"
+    + "transform-origin:center;}"
     + "@media (prefers-reduced-motion:reduce){"
     + "[id^='profile-actions-'],[id^='profile-interaction-'],[id^='profile-proximity-'],"
-    + "[id^='profile-shadow-shape-'],.profile-water-ripple{animation-duration:240s!important;}}";
+    + "[id^='profile-shadow-shape-'],.profile-water-bed,.profile-water-ripple-inner,"
+    + ".profile-water-ripple-outer,.profile-water-glints{animation-duration:240s!important;}}";
   const profileBehaviorStyles = `${coordinatedRouteStyles}${riderActionStyles}${ambientBehaviorStyles}`;
   if (profileBehaviorStyles) {
     const rootOpeningEnd = result.indexOf(">") + 1;
@@ -912,7 +937,7 @@ const light = compactUsername(freeRoamSource)
 const darkThemeStyle = [
   "<style>",
   "#username path, #commit path, [id^='level-wrap-'] path { fill: #F0F6FC; }",
-  ".profile-ground-shadow { fill: #8B949E; }",
+  ".profile-ground-shadow { fill: #C9D1D9; opacity: .34; }",
   "</style>",
 ].join("");
 
