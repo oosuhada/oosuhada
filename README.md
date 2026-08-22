@@ -111,3 +111,7 @@ Then I use it, fix what is still awkward, and keep going until it is useful enou
 </a>
 
 <sub>↑ Click the timeline to explore the live, GitHub-backed stack page.</sub>
+
+## Topics
+
+[`ai-engineering`](https://github.com/topics/ai-engineering) · [`developer-portfolio`](https://github.com/topics/developer-portfolio) · [`full-stack-development`](https://github.com/topics/full-stack-development) · [`github-profile`](https://github.com/topics/github-profile) · [`mobile-development`](https://github.com/topics/mobile-development) · [`project-showcase`](https://github.com/topics/project-showcase)
