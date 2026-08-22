@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v30";
+const layoutVersion = "character-behaviors-v31";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -50,6 +50,7 @@ console.log("Triggered GitAnimals refresh through the farm endpoint.");
 
 let stateData;
 let state;
+let latestStateWasStale = false;
 for (let attempt = 1; attempt <= pollAttempts; attempt += 1) {
   if (attempt > 1 && pollIntervalMs > 0) {
     await wait(pollIntervalMs);
@@ -57,6 +58,7 @@ for (let attempt = 1; attempt <= pollAttempts; attempt += 1) {
 
   stateData = await fetchState();
   const fetchedContributionTotal = Number(stateData.totalContributions ?? 0);
+  latestStateWasStale = fetchedContributionTotal < previousContributionTotal;
   if (fetchedContributionTotal < previousContributionTotal) {
     console.log(
       `GitAnimals returned a stale contribution total (${fetchedContributionTotal} < `
@@ -78,9 +80,24 @@ for (let attempt = 1; attempt <= pollAttempts; attempt += 1) {
 
 console.log("Loaded the latest GitAnimals users state.");
 
-const source = await fetchFarm("latest");
+let source = await fetchFarm("latest");
 if (!source.startsWith("<svg") || !source.includes('<g id="username"')) {
   throw new Error("GitAnimals returned an unexpected SVG structure.");
+}
+
+if (latestStateWasStale && existingAssets[0]) {
+  const commitArtworkBounds = (svg) => {
+    const start = svg.indexOf('<g id="commit"');
+    const end = svg.indexOf('<rect x="0.5"', start);
+    return start >= 0 && end > start ? { start, end } : null;
+  };
+  const previousBounds = commitArtworkBounds(existingAssets[0]);
+  const sourceBounds = commitArtworkBounds(source);
+  if (previousBounds && sourceBounds) {
+    const previousCommitArtwork = existingAssets[0].slice(previousBounds.start, previousBounds.end);
+    source = `${source.slice(0, sourceBounds.start)}${previousCommitArtwork}${source.slice(sourceBounds.end)}`;
+    console.log("Preserved the last confirmed contribution artwork while GitAnimals is stale.");
+  }
 }
 
 const movingPersonaIds = new Set(
@@ -477,7 +494,41 @@ const distributeCharacterRoaming = (svg) => {
     };
   };
 
+  // The rabbit is the farm explorer. Keep this role independent from its assigned home anchor so
+  // source refreshes and cosmetic edits cannot quietly collapse it back into one grid cell.
+  // Catmull-Rom interpolation provides a continuous closed loop without the old waypoint corners.
+  const explorerWaypoints = [
+    { x: 15, y: 33 },
+    { x: 47, y: 29 },
+    { x: 82, y: 40 },
+    { x: 76, y: 67 },
+    { x: 43, y: 73 },
+    { x: 12, y: 61 },
+  ];
+  const interpolateClosedRoute = (waypoints, progress) => {
+    const scaled = (((progress % 1) + 1) % 1) * waypoints.length;
+    const index = Math.floor(scaled) % waypoints.length;
+    const t = scaled - Math.floor(scaled);
+    const point = (offset) => waypoints[(index + offset + waypoints.length) % waypoints.length];
+    const p0 = point(-1);
+    const p1 = point(0);
+    const p2 = point(1);
+    const p3 = point(2);
+    const interpolate = (a, b, c, d) => 0.5 * (
+      (2 * b)
+      + (-a + c) * t
+      + (2 * a - 5 * b + 4 * c - d) * t ** 2
+      + (-a + 3 * b - 3 * c + d) * t ** 3
+    );
+    return { x: interpolate(p0.x, p1.x, p2.x, p3.x), y: interpolate(p0.y, p1.y, p2.y, p3.y) };
+  };
+
   const preferredPosition = (unit, progress) => {
+    if (unit.persona.type === "RABBIT") {
+      // Two full circuits per shared 120-second timeline keeps the explorer visibly active while
+      // all characters still use the same clock for reliable collision avoidance.
+      return interpolateClosedRoute(explorerWaypoints, progress * 2);
+    }
     const profile = movementProfile(unit.persona, unit.index);
     const phase = unit.index / routeUnits.length;
     const secondaryPhase = ((unit.index * 3) % routeUnits.length) / routeUnits.length;
@@ -526,9 +577,11 @@ const distributeCharacterRoaming = (svg) => {
           let weightedX = (left.x - right.x) * 2;
           let weightedY = left.y - right.y;
           let distance = Math.hypot(weightedX, weightedY);
+          const involvesExplorer = routeUnits[leftIndex].persona.type === "RABBIT"
+            || routeUnits[rightIndex].persona.type === "RABBIT";
           const steeringDistance = separationRadius(routeUnits[leftIndex].persona)
             + separationRadius(routeUnits[rightIndex].persona)
-            + routeSafetyMargin;
+            + (involvesExplorer ? 8 : routeSafetyMargin);
           if (distance >= steeringDistance) continue;
           if (distance < 0.001) {
             const angle = ((leftIndex + 1) * (rightIndex + 3) * 47 * Math.PI) / 180;
@@ -539,10 +592,16 @@ const distributeCharacterRoaming = (svg) => {
           const strength = (steeringDistance - distance) * 0.09;
           const forceX = (weightedX / distance) * strength;
           const forceY = (weightedY / distance) * strength;
-          forces[sampleIndex][leftIndex].x += forceX / 2;
-          forces[sampleIndex][rightIndex].x -= forceX / 2;
-          forces[sampleIndex][leftIndex].y += forceY;
-          forces[sampleIndex][rightIndex].y -= forceY;
+          const leftIsExplorer = routeUnits[leftIndex].persona.type === "RABBIT";
+          const rightIsExplorer = routeUnits[rightIndex].persona.type === "RABBIT";
+          const leftShare = leftIsExplorer ? 0.8 : rightIsExplorer ? 0.2 : 0.5;
+          const rightShare = rightIsExplorer ? 0.8 : leftIsExplorer ? 0.2 : 0.5;
+          // The roaming rabbit yields most of the way. Resident characters keep their calm local
+          // paths instead of being shoved across a cell whenever the explorer passes nearby.
+          forces[sampleIndex][leftIndex].x += forceX * leftShare;
+          forces[sampleIndex][rightIndex].x -= forceX * rightShare;
+          forces[sampleIndex][leftIndex].y += forceY * leftShare * 2;
+          forces[sampleIndex][rightIndex].y -= forceY * rightShare * 2;
         }
       }
     });
@@ -551,7 +610,13 @@ const distributeCharacterRoaming = (svg) => {
       const previous = periodicSamples[(sampleIndex - 1 + routeSampleCount) % routeSampleCount][unitIndex];
       const next = periodicSamples[(sampleIndex + 1) % routeSampleCount][unitIndex];
       const preferred = preferredSamples[sampleIndex][unitIndex];
-      const force = forces[sampleIndex][unitIndex];
+      const previousForce = forces[(sampleIndex - 1 + routeSampleCount) % routeSampleCount][unitIndex];
+      const currentForce = forces[sampleIndex][unitIndex];
+      const nextForce = forces[(sampleIndex + 1) % routeSampleCount][unitIndex];
+      const force = {
+        x: currentForce.x * 0.5 + previousForce.x * 0.25 + nextForce.x * 0.25,
+        y: currentForce.y * 0.5 + previousForce.y * 0.25 + nextForce.y * 0.25,
+      };
       const smoothed = {
         x: position.x * 0.56 + previous.x * 0.2 + next.x * 0.2 + preferred.x * 0.04 + force.x,
         y: position.y * 0.56 + previous.y * 0.2 + next.y * 0.2 + preferred.y * 0.04 + force.y,

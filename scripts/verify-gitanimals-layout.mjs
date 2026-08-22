@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v30";
+const layoutVersion = "character-behaviors-v31";
 const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
 // The rabbit intentionally crosses more ground than the other pets; this still limits every pet to
@@ -89,6 +89,9 @@ const lightAnimations = collisionPersonas.map((persona) => extractAnimation(ligh
 const darkAnimations = collisionPersonas.map((persona) => extractAnimation(dark, persona));
 
 lightAnimations.forEach((animation, index) => {
+  // The explorer crosses the full 600px farm twice per cycle; its higher cap still limits each
+  // half-second frame to a visibly continuous traverse rather than a teleport.
+  const personaMaximumWeightedSpeed = animation.persona.type === "RABBIT" ? 22 : maximumWeightedSpeed;
   const darkAnimation = darkAnimations[index];
   assert(
     JSON.stringify(animation.points) === JSON.stringify(darkAnimation.points),
@@ -158,18 +161,46 @@ lightAnimations.forEach((animation, index) => {
   const start = positionAt(animation, 0);
   const nearEnd = positionAt(animation, animation.duration - sampleStepSeconds);
   const seamDistance = Math.hypot((start.x - nearEnd.x) * 2, start.y - nearEnd.y);
-  assert(seamDistance <= maximumWeightedSpeed * sampleStepSeconds * 1.1,
+  assert(seamDistance <= personaMaximumWeightedSpeed * sampleStepSeconds * 1.1,
     `${animation.persona.type} jumps across its loop seam (${seamDistance.toFixed(2)} units).`);
 
   let previous = start;
   for (let seconds = sampleStepSeconds; seconds < animation.duration; seconds += sampleStepSeconds) {
     const current = positionAt(animation, seconds);
     const speed = Math.hypot((current.x - previous.x) * 2, current.y - previous.y) / sampleStepSeconds;
-    assert(speed <= maximumWeightedSpeed,
+    assert(speed <= personaMaximumWeightedSpeed,
       `${animation.persona.type} moves too abruptly (${speed.toFixed(2)} units/s at ${seconds.toFixed(2)}s).`);
     previous = current;
   }
 });
+
+const explorerAnimation = lightAnimations.find((animation) => animation.persona.type === "RABBIT");
+if (explorerAnimation) {
+  const xValues = explorerAnimation.points.map((point) => point.x);
+  const yValues = explorerAnimation.points.map((point) => point.y);
+  const horizontalCoverage = Math.max(...xValues) - Math.min(...xValues);
+  const verticalCoverage = Math.max(...yValues) - Math.min(...yValues);
+  assert(horizontalCoverage >= 65,
+    `Rabbit explorer must traverse the farm horizontally (${horizontalCoverage.toFixed(2)}%).`);
+  assert(verticalCoverage >= 35,
+    `Rabbit explorer must traverse the farm vertically (${verticalCoverage.toFixed(2)}%).`);
+
+  let stationarySeconds = 0;
+  let longestStationarySeconds = 0;
+  let previousPosition = positionAt(explorerAnimation, 0);
+  for (let seconds = sampleStepSeconds; seconds < explorerAnimation.duration; seconds += sampleStepSeconds) {
+    const currentPosition = positionAt(explorerAnimation, seconds);
+    const speed = Math.hypot(
+      (currentPosition.x - previousPosition.x) * 2,
+      currentPosition.y - previousPosition.y,
+    ) / sampleStepSeconds;
+    stationarySeconds = speed < 0.5 ? stationarySeconds + sampleStepSeconds : 0;
+    longestStationarySeconds = Math.max(longestStationarySeconds, stationarySeconds);
+    previousPosition = currentPosition;
+  }
+  assert(longestStationarySeconds <= 2,
+    `Rabbit explorer stays nearly still for ${longestStationarySeconds.toFixed(2)}s.`);
+}
 
 const carrotCapybara = visible.find((persona) => persona.type === "CAPYBARA_CARROT");
 if (carrotCapybara) {
