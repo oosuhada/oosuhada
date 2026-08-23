@@ -2,12 +2,6 @@
 
 ### Product Engineer · Applied AI · Industrial Systems
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="github_profile_dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="github_profile_light.JPG">
-  <img alt="Oosu profile image" src="github_profile_dark.png">
-</picture>
-
 <a href="https://www.gitanimals.org/en-US?utm_medium=image&utm_source=oosuhada&utm_content=farm">
   <img src="https://render.gitanimals.org/farms/oosuhada" width="100%" alt="GitAnimals farm for oosuhada" />
 </a>
