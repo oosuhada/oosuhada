@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "4914",
+  "totalContributions": "4915",
   "personas": [
     {
       "id": "829259874410923323",
@@ -136,7 +136,7 @@
     {
       "id": "839316493969798500",
       "type": "QUOKKA",
-      "level": "65",
+      "level": "66",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
@@ -356,7 +356,7 @@
     {
       "id": "856825497340980190",
       "type": "LITTLE_CHICK_SUNGLASSES",
-      "level": "58",
+      "level": "59",
       "visible": false,
       "appVisible": false,
       "dropRate": "3%",
@@ -416,7 +416,7 @@
     {
       "id": "858157756757153384",
       "type": "RABBIT",
-      "level": "59",
+      "level": "60",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
