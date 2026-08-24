@@ -88,12 +88,12 @@ I work across product, AI, data, and engineering — owning the path from proble
         <p>MacBook 환경에서 개발하면서 내장 화면만큼 선명한 5K 고화질 외장 모니터에 대한 니즈가 있었습니다. 고가의 Apple 5K 디스플레이를 구매하기보다, 집에 이미 가지고 있던 5K iMac 패널을 직접 활용할 수 있겠다는 생각이 들었습니다. 공식 지원이 끊긴 구형 iMac의 Target Display Mode 문제를 소프트웨어 방식으로 직접 해결해 외장 모니터로 재탄생시켰습니다.</p>
         <hr>
         <h2>Lingo<br><sub><sub><a href="https://lingo.oosu.dev"><strong>Live Demo</strong></a> <strong>·</strong> <a href="https://github.com/oosuhada/Lingo"><strong>Repository</strong></a></sub></sub></h2>
-        <p>코딩테스트를 풀 때 Python·Java 기초 문법에서 사소한 실수들이 반복되었습니다. 책으로 외우기보다 매일 하던 Duolingo 방식이 훨씬 재밌고 오래 기억에 남았던 터라, 그 방식을 차용해서 더 재밌게 문법을 학습할 수 있는 도구를 만들어봤습니다.</p>
         <p>Basic Python and Java syntax kept tripping me up with small mistakes during coding tests. Reading never stuck for me the way daily Duolingo practice did, so I borrowed that same game-like approach to make learning syntax fun again — and built a tool around it.</p>
+        <p>코딩테스트를 풀 때 Python·Java 기초 문법에서 사소한 실수들이 반복되었습니다. 책으로 외우기보다 매일 하던 Duolingo 방식이 훨씬 재밌고 오래 기억에 남았던 터라, 그 방식을 차용해서 더 재밌게 문법을 학습할 수 있는 도구를 만들어봤습니다.</p>
         <hr>
         <h2>Webtoon AI Translate<br><sub><sub><a href="https://webtoon.oosu.dev"><strong>Live Demo</strong></a> <strong>·</strong> <a href="https://github.com/oosuhada/webtoon-ai-translate"><strong>Repository</strong></a></sub></sub></h2>
-        <p>웹툰 번역 회사에 근무하는 친구가 개발팀 해체 후 유지보수가 이뤄지지 않고 있는 사내 번역 도구에 대해 지속적으로 불만을 토로했습니다. 친구를 인터뷰해, 하나의 정답만 내놓는 방식이 아니라 기존 번역 맥락과 어울리는 여러 옵션을 제시해 번역가가 쉽게 채택하고 수정할 수 있는 OCR + LLM 워크플로우 툴을 만들었습니다.</p>
         <p>A close friend at a webtoon translation company kept venting about an in-house tool that had gone unmaintained since the dev team disbanded. I interviewed him to build something beyond a single fixed answer — an OCR + LLM workflow tool that offers multiple options consistent with the existing translation context, so translators can easily adopt or edit them.</p>
+        <p>웹툰 번역 회사에 근무하는 친구가 개발팀 해체 후 유지보수가 이뤄지지 않고 있는 사내 번역 도구에 대해 지속적으로 불만을 토로했습니다. 친구를 인터뷰해, 하나의 정답만 내놓는 방식이 아니라 기존 번역 맥락과 어울리는 여러 옵션을 제시해 번역가가 쉽게 채택하고 수정할 수 있는 OCR + LLM 워크플로우 툴을 만들었습니다.</p>
         <hr>
         <h2>Aigram<br><sub><sub><a href="https://aigram.oosu.dev"><strong>Live Demo</strong></a> <strong>·</strong> <a href="https://github.com/oosuhada/Aigram"><strong>Repository</strong></a></sub></sub></h2>
         <p>Starting from a familiar product I used daily, I wanted to move beyond surface-level cloning to solve real friction in an AI-enhanced Instagram. I implemented AI summaries for lengthy captions and comment threads, cached translations in the database to eliminate wasteful duplicate API calls, and engineered idempotent handlers for rapid consecutive likes along with fast search.</p>
