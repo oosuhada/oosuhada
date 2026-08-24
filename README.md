@@ -115,7 +115,11 @@ I work across product, AI, data, and engineering — owning the path from proble
 <br>
 
 <a href="https://oosu.dev/stack">
-  <img src="https://raw.githubusercontent.com/oosuhada/AskOosu/main/assets/stack-timeline.gif" width="100%" alt="Oosu stack timeline from 2024.09 to 2026.07" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/stack/stack-timeline-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/stack/stack-timeline-light.svg">
+    <img src="assets/stack/stack-timeline-dark.svg" width="100%" alt="Oosu stack timeline from 2024.09 to 2026.07">
+  </picture>
 </a>
 
 <sub>↑ Click the timeline to explore the live, GitHub-backed stack page.</sub>

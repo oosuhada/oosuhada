@@ -1,0 +1,80 @@
+{
+  "milestones": ["2024.09", "2025.03", "2026.03", "2026.05", "2026.07"],
+  "groups": [
+    {
+      "label": "Languages",
+      "skills": [
+        { "name": "Dart", "step": 0 },
+        { "name": "JavaScript", "step": 1 },
+        { "name": "HTML", "step": 1 },
+        { "name": "CSS", "step": 1 },
+        { "name": "Python", "step": 3 },
+        { "name": "TypeScript", "step": 2 },
+        { "name": "Java", "step": 3 },
+        { "name": "Swift", "step": 3 }
+      ]
+    },
+    {
+      "label": "Web / Frontend",
+      "skills": [
+        { "name": "Three.js", "step": 1 },
+        { "name": "React", "step": 2 },
+        { "name": "Next.js", "step": 2 },
+        { "name": "Tailwind CSS", "step": 2 },
+        { "name": "Framer Motion", "step": 2 },
+        { "name": "Vite", "step": 2 },
+        { "name": "React Admin", "step": 2 }
+      ]
+    },
+    {
+      "label": "App / Desktop / Extensions",
+      "skills": [
+        { "name": "Flutter", "step": 0 },
+        { "name": "Riverpod", "step": 0 },
+        { "name": "Firebase", "step": 0 },
+        { "name": "Firestore", "step": 0 },
+        { "name": "GoRouter", "step": 0 },
+        { "name": "Chrome Extensions", "step": 3 },
+        { "name": "Swift / macOS", "step": 3 },
+        { "name": "ScreenCaptureKit", "step": 3 },
+        { "name": "VS Code Extension API", "step": 3 }
+      ]
+    },
+    {
+      "label": "Backend / API",
+      "skills": [
+        { "name": "Node.js", "step": 1 },
+        { "name": "Express", "step": 1 },
+        { "name": "Pydantic", "step": 2 },
+        { "name": "Spring Boot", "step": 2 },
+        { "name": "Meilisearch", "step": 2 },
+        { "name": "FastAPI", "step": 2 },
+        { "name": "SQLAlchemy", "step": 2 },
+        { "name": "Drizzle ORM", "step": 2 }
+      ]
+    },
+    {
+      "label": "AI / ML",
+      "skills": [
+        { "name": "Groq", "step": 2 },
+        { "name": "OpenAI API", "step": 2 },
+        { "name": "RAG", "step": 2 },
+        { "name": "Embeddings / Vector Search", "step": 2 },
+        { "name": "Vertex AI / Gemini", "step": 2 },
+        { "name": "LangChain", "step": 3 },
+        { "name": "Agentic Workflows", "step": 3 }
+      ]
+    },
+    {
+      "label": "Data / Knowledge",
+      "skills": [
+        { "name": "PostgreSQL", "step": 2 },
+        { "name": "pgvector", "step": 2 },
+        { "name": "Knowledge Graph", "step": 4 },
+        { "name": "Neo4j", "step": 4 },
+        { "name": "Text-to-Cypher", "step": 4 },
+        { "name": "Ontology", "step": 4 }
+      ]
+    }
+  ]
+}
