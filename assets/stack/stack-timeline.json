@@ -28,7 +28,7 @@
       ]
     },
     {
-      "label": "App / Desktop / Extensions",
+      "label": "App / Extensions",
       "skills": [
         { "name": "Flutter", "step": 0 },
         { "name": "Riverpod", "step": 0 },
