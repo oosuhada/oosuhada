@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "4522",
+  "totalContributions": "4524",
   "personas": [
     {
       "id": "829259874410923323",
@@ -416,7 +416,7 @@
     {
       "id": "858157756757153384",
       "type": "RABBIT",
-      "level": "26",
+      "level": "27",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
@@ -496,7 +496,7 @@
     {
       "id": "869614905974699316",
       "type": "HAMSTER",
-      "level": "20",
+      "level": "21",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",

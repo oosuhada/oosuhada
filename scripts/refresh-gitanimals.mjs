@@ -9,14 +9,6 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const layoutVersion = "character-behaviors-v19";
-
-const response = await fetch(`https://render.gitanimals.org/users/${username}`);
-if (!response.ok) {
-  throw new Error(`Unable to load GitAnimals state: ${response.status}`);
-}
-
-const stateData = await response.json();
-const state = `${JSON.stringify(stateData, null, 2)}\n`;
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const existingAssets = await Promise.all(
   [lightPath, darkPath].map((file) => readFile(file, "utf8").catch(() => "")),
@@ -24,20 +16,58 @@ const existingAssets = await Promise.all(
 const assetsUseCurrentLayout = existingAssets.every((asset) =>
   asset.includes(`data-profile-layout="${layoutVersion}"`),
 );
+const pollAttempts = Math.max(1, Number.parseInt(process.env.GITANIMALS_POLL_ATTEMPTS ?? "4", 10));
+const pollIntervalMs = Math.max(0, Number.parseInt(process.env.GITANIMALS_POLL_INTERVAL_MS ?? "2000", 10));
 
-if (state === previousState && assetsUseCurrentLayout && process.env.FORCE_REFRESH !== "1") {
-  console.log("GitAnimals state is unchanged; keeping the existing themed artwork.");
-  process.exit(0);
+const wait = (milliseconds) => new Promise((resolve) => {
+  setTimeout(resolve, milliseconds);
+});
+
+const fetchFarm = async (phase) => {
+  const response = await fetch(
+    `https://render.gitanimals.org/farms/${username}?profile-refresh=${Date.now()}-${phase}`,
+  );
+  if (!response.ok) {
+    throw new Error(`Unable to load GitAnimals farm during ${phase}: ${response.status}`);
+  }
+  return response.text();
+};
+
+const fetchState = async () => {
+  const response = await fetch(
+    `https://render.gitanimals.org/users/${username}?profile-refresh=${Date.now()}`,
+  );
+  if (!response.ok) {
+    throw new Error(`Unable to load GitAnimals state: ${response.status}`);
+  }
+  return response.json();
+};
+
+await fetchFarm("trigger");
+console.log("Triggered GitAnimals refresh through the farm endpoint.");
+
+let stateData;
+let state;
+for (let attempt = 1; attempt <= pollAttempts; attempt += 1) {
+  if (attempt > 1 && pollIntervalMs > 0) {
+    await wait(pollIntervalMs);
+  }
+
+  stateData = await fetchState();
+  state = `${JSON.stringify(stateData, null, 2)}\n`;
+
+  if (previousState === "" || state !== previousState || attempt === pollAttempts) {
+    break;
+  }
+
+  console.log(
+    `GitAnimals users state is unchanged after check ${attempt}/${pollAttempts}; waiting for async refresh.`,
+  );
 }
 
-const farmResponse = await fetch(
-  `https://render.gitanimals.org/farms/${username}?profile-refresh=${Date.now()}`,
-);
-if (!farmResponse.ok) {
-  throw new Error(`Unable to load GitAnimals farm: ${farmResponse.status}`);
-}
+console.log("Loaded the latest GitAnimals users state.");
 
-const source = await farmResponse.text();
+const source = await fetchFarm("latest");
 if (!source.startsWith("<svg") || !source.includes('<g id="username"')) {
   throw new Error("GitAnimals returned an unexpected SVG structure.");
 }
@@ -408,6 +438,15 @@ const dark = compactUsername(freeRoamSource)
   )
   .replace('fill="white"/>', 'fill="#0D1117"/>')
   .replace('stroke="#D9D9D9"', 'stroke="#30363D"');
+
+if (
+  state === previousState
+  && assetsUseCurrentLayout
+  && process.env.FORCE_REFRESH !== "1"
+) {
+  console.log("GitAnimals users state is unchanged; keeping the existing themed artwork.");
+  process.exit(0);
+}
 
 await mkdir(outputDirectory, { recursive: true });
 await Promise.all([
