@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "free-roam-v3";
+const layoutVersion = "grid-halo-v5";
 
 const response = await fetch(`https://render.gitanimals.org/users/${username}`);
 if (!response.ok) {
@@ -58,8 +58,11 @@ const distributeCharacterRoaming = (svg) => {
     ? visiblePersonaIds.length
     : Math.ceil(visiblePersonaIds.length / 2);
   const rows = Math.ceil(visiblePersonaIds.length / columns);
-  const anchorBounds = { left: 12, right: 88, top: 34, bottom: 76 };
-  const roamingFreedom = 0.64;
+  const anchorBounds = { left: 15, right: 85, top: 38, bottom: 68 };
+  // Keep the full distance between 5x2 home points, then add an overlapping movement halo.
+  // A halo is wider than a grid cell, so characters can cross cell boundaries without piling up.
+  const horizontalFreedom = 0.36;
+  const verticalFreedom = 0.46;
 
   let result = svg.replace(
     "<svg ",
@@ -93,8 +96,8 @@ const distributeCharacterRoaming = (svg) => {
         const originalX = Number(x);
         const originalY = Number(y);
         const numericScale = Number(scale);
-        let roamingX = originalX * roamingFreedom + anchorX * (1 - roamingFreedom);
-        let roamingY = originalY * roamingFreedom + anchorY * (1 - roamingFreedom);
+        let roamingX = anchorX + (originalX - 50) * horizontalFreedom;
+        let roamingY = anchorY + (originalY - 50) * verticalFreedom;
 
         const isDirectionFlip = previousFrame
           && numericTime - previousFrame.time <= 0.011
