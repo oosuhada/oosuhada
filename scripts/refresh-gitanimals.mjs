@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v17";
+const layoutVersion = "character-behaviors-v19";
 
 const response = await fetch(`https://render.gitanimals.org/users/${username}`);
 if (!response.ok) {
@@ -314,10 +314,7 @@ const distributeCharacterRoaming = (svg) => {
     );
     const mountCounterFlip = keyframeBody(`reverse-flip-${mountId}`).body;
     replaceKeyframeBody(`move-${riderId}`, mountedMovement);
-    replaceKeyframeBody(
-      `reverse-flip-${riderId}`,
-      "0%,100%{transform-origin:10px 0;transform:scaleX(1);}",
-    );
+    replaceKeyframeBody(`reverse-flip-${riderId}`, mountCounterFlip);
     configureAnimation(`move-${mountId}`, mountDuration, "infinite", "alternate");
     configureAnimation(`reverse-flip-${mountId}`, mountDuration, "infinite", "alternate");
     configureAnimation(`move-${riderId}`, mountDuration, "infinite", "alternate");
@@ -328,38 +325,25 @@ const distributeCharacterRoaming = (svg) => {
     const riderActionId = `profile-rider-action-${riderId}`;
     wrapGroupContents(riderRootId, riderNeutralizerId);
     wrapGroupContents(riderNeutralizerId, riderActionId);
-    riderActionStyles = `@keyframes rider-neutralize-${riderId}{${mountCounterFlip}}`
-      + `#${riderNeutralizerId}{animation-name:rider-neutralize-${riderId};`
-      + `animation-duration:${mountDuration}s;animation-timing-function:linear;`
-      + "animation-iteration-count:infinite;animation-direction:alternate;animation-fill-mode:both;}"
-      + `@keyframes chick-adventure-${riderId}{`
-      + "0%{transform:translate(0,0) rotate(0deg);}"
-      + "6%{transform:translate(2px,-3px) rotate(3deg);}"
-      + "12%{transform:translate(0,0) rotate(0deg);}"
-      + "18%{transform:translate(0,-14px) rotate(-5deg);}"
-      + "23%{transform:translate(0,0) rotate(0deg);}"
-      + "30%{transform:translate(-3px,-6px) rotate(-4deg);}"
-      + "38%{transform:translate(0,0) rotate(0deg);}"
-      + "44%{transform:translate(12px,-9px) rotate(5deg);}"
-      + "50%{transform:translate(25px,-4px) rotate(8deg);}"
-      + "56%{transform:translate(31px,4px) rotate(-3deg);}"
-      + "62%{transform:translate(17px,-11px) rotate(-8deg);}"
-      + "68%{transform:translate(0,0) rotate(0deg);}"
-      + "75%{transform:translate(3px,-5px) rotate(4deg);}"
-      + "82%{transform:translate(0,0) rotate(0deg);}"
-      + "87%{transform:translate(-5px,-11px) rotate(-7deg);}"
-      + "91%{transform:translate(0,0) rotate(0deg);}"
-      + "95%{transform:translate(5px,-7px) rotate(6deg);}"
-      + "100%{transform:translate(0,0) rotate(0deg);}}"
+    riderActionStyles = `@keyframes chick-adventure-${riderId}{`
+      + "0%,20%{transform:translate(0,0) rotate(0deg);}"
+      + "24%{transform:translate(3px,-12px) rotate(4deg);}"
+      + "30%{transform:translate(16px,10px) rotate(2deg);}"
+      + "38%{transform:translate(34px,43px) rotate(0deg);}"
+      + "45%{transform:translate(20px,43px) rotate(-2deg);}"
+      + "52%{transform:translate(7px,18px) rotate(-5deg);}"
+      + "58%{transform:translate(2px,-11px) rotate(4deg);}"
+      + "64%,88%{transform:translate(0,0) rotate(0deg);}"
+      + "92%{transform:translate(2px,-8px) rotate(4deg);}"
+      + "96%,100%{transform:translate(0,0) rotate(0deg);}}"
       + `@keyframes chick-facing-${riderId}{`
-      + "0%,7.99%{transform:scaleX(1);}8%,11.99%{transform:scaleX(-1);}"
-      + "12%,22.99%{transform:scaleX(1);}23%,37.99%{transform:scaleX(-1);}"
-      + "38%,55.99%{transform:scaleX(1);}56%,67.99%{transform:scaleX(-1);}"
-      + "68%,74.99%{transform:scaleX(1);}75%,81.99%{transform:scaleX(-1);}"
-      + "82%,90.99%{transform:scaleX(-1);}91%,100%{transform:scaleX(1);}}"
-      + `#${riderActionId}{animation:chick-adventure-${riderId} 23s `
+      + "0%,11.99%{transform:scaleX(1);}12%,15.99%{transform:scaleX(-1);}"
+      + "16%,37.99%{transform:scaleX(1);}38%,63.99%{transform:scaleX(-1);}"
+      + "64%,77.99%{transform:scaleX(1);}78%,81.99%{transform:scaleX(-1);}"
+      + "82%,100%{transform:scaleX(1);}}"
+      + `#${riderActionId}{animation:chick-adventure-${riderId} 36s `
       + "cubic-bezier(.45,.05,.55,.95) infinite both;transform-box:fill-box;transform-origin:center;}"
-      + `#${riderActionId}>svg{animation:chick-facing-${riderId} 23s steps(1,end) infinite both;`
+      + `#${riderActionId}>svg{animation:chick-facing-${riderId} 36s steps(1,end) infinite both;`
       + "transform-box:fill-box;transform-origin:center;}";
   }
 
