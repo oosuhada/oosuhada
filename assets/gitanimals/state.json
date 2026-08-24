@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "4931",
+  "totalContributions": "4939",
   "personas": [
     {
       "id": "829259874410923323",
@@ -36,7 +36,7 @@
     {
       "id": "829510187139173823",
       "type": "LITTLE_CHICK_EGG_ON_HAT",
-      "level": "204",
+      "level": "205",
       "visible": false,
       "appVisible": false,
       "dropRate": "0%",
@@ -86,7 +86,7 @@
     {
       "id": "835719307358968503",
       "type": "LITTLE_CHICK",
-      "level": "110",
+      "level": "112",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
@@ -146,7 +146,7 @@
     {
       "id": "839316494225649198",
       "type": "CAPYBARA",
-      "level": "81",
+      "level": "82",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -276,7 +276,7 @@
     {
       "id": "839536616395645003",
       "type": "MOLE",
-      "level": "75",
+      "level": "76",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
@@ -346,7 +346,7 @@
     {
       "id": "856219257967577654",
       "type": "GALCHI_CAT",
-      "level": "44",
+      "level": "45",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -506,7 +506,7 @@
     {
       "id": "869866564982247480",
       "type": "QUOKKA",
-      "level": "52",
+      "level": "53",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
@@ -696,7 +696,7 @@
     {
       "id": "878908729150509758",
       "type": "CAPYBARA",
-      "level": "33",
+      "level": "34",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
