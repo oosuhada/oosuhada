@@ -137,9 +137,8 @@ const renderRows = (theme) => rows.map((row, rowIndex) => {
 const render = (themeName) => {
   const theme = themes[themeName];
   const tableHeight = HEIGHT - TABLE_TOP - PADDING;
-  return `<svg data-stack-layout="vector-v1" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="stack-title stack-description">`
+  return `<svg data-stack-layout="vector-v1" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="stack-title">`
     + `<title id="stack-title">Oosu stack timeline from 2024.09 to 2026.07</title>`
-    + `<desc id="stack-description">Five animated Git-backed milestones showing languages, frontend, application, backend, AI, and data technologies.</desc>`
     + `<style>${animationCss()}`
     + `text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:${theme.foreground};text-rendering:geometricPrecision;}`
     + `.eyebrow{font-size:14px;font-weight:650;letter-spacing:.08em;fill:${theme.mutedForeground};}`

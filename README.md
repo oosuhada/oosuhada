@@ -10,21 +10,20 @@
   </picture>
 </a>
 
-> ### 실제 문제와 불편에서 시작해, 직접 쓸 수 있는 제품과 시스템을 만듭니다.
-
 > ### I start with real problems and friction, then build products and systems people can actually use.
 
+> ### 실제 문제와 불편에서 시작해, 직접 쓸 수 있는 제품과 시스템을 만듭니다.
+
 <br>
+
+When I find friction in a team, at work, or in everyday life, I build a working version first.<br>
+With a background in business and product planning, I structure ambiguous user and operational needs and translate them into working software.<br>
+Rather than planning for perfection, I use what I build, fix what is still awkward, and keep iterating until it is ready to ship and operate.<br>
+I work across product, AI, data, and engineering — owning the path from problem discovery to deployment and real-world use.
 
 팀 과제, 회사 업무, 일상에서 불편한 점을 발견하면 먼저 작동하는 버전을 직접 만듭니다.<br>
 경영학적 문제 정의와 제품 기획을 바탕으로, 사용자와 현업의 요구를 구조화하고 제품으로 구현합니다.<br>
 완벽하게 계획하기보다 직접 써보고, 불편한 부분을 고치면서 배포하고 운영할 수 있는 수준까지 발전시킵니다.
-
-When I find friction in a team, at work, or in everyday life, I build a working version first.<br>
-With a background in business and product planning, I structure ambiguous user and operational needs and translate them into working software.<br>
-Rather than planning for perfection, I use what I build, fix what is still awkward, and keep iterating until it is ready to ship and operate.
-
-I work across product, AI, data, and engineering — owning the path from problem discovery to deployment and real-world use.
 
 ## Featured Projects / 대표 프로젝트
 
@@ -110,6 +109,8 @@ I work across product, AI, data, and engineering — owning the path from proble
 
 ## Stack / 기술 스택
 
+> ### Technology comes after purpose. I connect web, mobile, AI, data, and infrastructure around the needs of each problem.
+
 > ### 기술은 목적보다 뒤에 둡니다. 필요한 문제에 맞춰 웹·모바일·AI·데이터·인프라를 연결합니다.
 
 <br>
@@ -126,8 +127,4 @@ I work across product, AI, data, and engineering — owning the path from proble
 
 ## Architecture & Topics / 아키텍처 및 주제
 
-[`agentic-rag`](https://github.com/topics/agentic-rag) · [`architecture-fitness-functions`](https://github.com/topics/architecture-fitness-functions) · [`clean-architecture`](https://github.com/topics/clean-architecture) · [`contract-driven-development`](https://github.com/topics/contract-driven-development) · [`domain-driven-design`](https://github.com/topics/domain-driven-design) · [`event-driven-architecture`](https://github.com/topics/event-driven-architecture) · [`evolutionary-architecture`](https://github.com/topics/evolutionary-architecture) · [`feature-sliced-design`](https://github.com/topics/feature-sliced-design) · [`hexagonal-architecture`](https://github.com/topics/hexagonal-architecture) · [`layered-architecture`](https://github.com/topics/layered-architecture) · [`modular-monolith`](https://github.com/topics/modular-monolith) · [`multi-agent-systems`](https://github.com/topics/multi-agent-systems) · [`mvvm`](https://github.com/topics/mvvm) · [`polyglot-persistence`](https://github.com/topics/polyglot-persistence) · [`repository-pattern`](https://github.com/topics/repository-pattern) · [`stateful-workflows`](https://github.com/topics/stateful-workflows) · [`transactional-outbox`](https://github.com/topics/transactional-outbox) · [`human-in-the-loop`](https://github.com/topics/human-in-the-loop) · [`hybrid-retrieval`](https://github.com/topics/hybrid-retrieval) · [`provider-failover`](https://github.com/topics/provider-failover)
-
-[`agentic-ai`](https://github.com/topics/agentic-ai) · [`ai-engineering`](https://github.com/topics/ai-engineering) · [`developer-portfolio`](https://github.com/topics/developer-portfolio) · [`full-stack-development`](https://github.com/topics/full-stack-development) · [`github-profile`](https://github.com/topics/github-profile) · [`industrial-ai`](https://github.com/topics/industrial-ai) · [`mobile-development`](https://github.com/topics/mobile-development) · [`project-showcase`](https://github.com/topics/project-showcase)
-
-[`flutter`](https://github.com/topics/flutter) · [`nextjs`](https://github.com/topics/nextjs) · [`python`](https://github.com/topics/python) · [`react`](https://github.com/topics/react) · [`typescript`](https://github.com/topics/typescript)
+[`agentic-rag`](https://github.com/topics/agentic-rag) · [`architecture-fitness-functions`](https://github.com/topics/architecture-fitness-functions) · [`clean-architecture`](https://github.com/topics/clean-architecture) · [`contract-driven-development`](https://github.com/topics/contract-driven-development) · [`domain-driven-design`](https://github.com/topics/domain-driven-design) · [`event-driven-architecture`](https://github.com/topics/event-driven-architecture) · [`evolutionary-architecture`](https://github.com/topics/evolutionary-architecture) · [`feature-sliced-design`](https://github.com/topics/feature-sliced-design) · [`hexagonal-architecture`](https://github.com/topics/hexagonal-architecture) · [`layered-architecture`](https://github.com/topics/layered-architecture) · [`modular-monolith`](https://github.com/topics/modular-monolith) · [`multi-agent-systems`](https://github.com/topics/multi-agent-systems) · [`mvvm`](https://github.com/topics/mvvm) · [`polyglot-persistence`](https://github.com/topics/polyglot-persistence) · [`repository-pattern`](https://github.com/topics/repository-pattern) · [`stateful-workflows`](https://github.com/topics/stateful-workflows) · [`transactional-outbox`](https://github.com/topics/transactional-outbox) · [`human-in-the-loop`](https://github.com/topics/human-in-the-loop) · [`hybrid-retrieval`](https://github.com/topics/hybrid-retrieval) · [`provider-failover`](https://github.com/topics/provider-failover) · [`agentic-ai`](https://github.com/topics/agentic-ai) · [`ai-engineering`](https://github.com/topics/ai-engineering) · [`developer-portfolio`](https://github.com/topics/developer-portfolio) · [`full-stack-development`](https://github.com/topics/full-stack-development) · [`github-profile`](https://github.com/topics/github-profile) · [`industrial-ai`](https://github.com/topics/industrial-ai) · [`mobile-development`](https://github.com/topics/mobile-development) · [`project-showcase`](https://github.com/topics/project-showcase) · [`flutter`](https://github.com/topics/flutter) · [`nextjs`](https://github.com/topics/nextjs) · [`python`](https://github.com/topics/python) · [`react`](https://github.com/topics/react) · [`typescript`](https://github.com/topics/typescript)
