@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "collision-aware-v7";
+const layoutVersion = "collision-aware-v9";
 
 const response = await fetch(`https://render.gitanimals.org/users/${username}`);
 if (!response.ok) {
@@ -150,6 +150,7 @@ const distributeCharacterRoaming = (svg) => {
 
     const movementKeyframes = result.slice(keyframesStart, animationRuleStart);
     let replacementCount = 0;
+    let travelDistance = 0;
     let previousFrame;
     const roamingKeyframes = movementKeyframes.replace(
       /(\d+(?:\.\d+)?)%(\s*\{transform:translate\()(-?[\d.]+)%(,\s*)(-?[\d.]+)%(\)\s*rotate\([^)]*\)\s*scaleX\()(-?[\d.]+)(\);\})/g,
@@ -161,6 +162,8 @@ const distributeCharacterRoaming = (svg) => {
         const numericScale = Number(scale);
         let roamingX = anchorX + (originalX - 50) * horizontalFreedom;
         let roamingY = anchorY + (originalY - 50) * verticalFreedom;
+        roamingX = Math.max(10, Math.min(85, roamingX));
+        roamingY = Math.max(28, Math.min(76, roamingY));
 
         const isDirectionFlip = previousFrame
           && numericTime - previousFrame.time <= 0.011
@@ -169,6 +172,11 @@ const distributeCharacterRoaming = (svg) => {
         if (isDirectionFlip) {
           roamingX = previousFrame.roamingX + (originalX - previousFrame.originalX);
           roamingY = previousFrame.roamingY + (originalY - previousFrame.originalY);
+        } else if (previousFrame) {
+          travelDistance += Math.hypot(
+            (roamingX - previousFrame.roamingX) * 2,
+            roamingY - previousFrame.roamingY,
+          );
         }
 
         previousFrame = {
@@ -189,9 +197,14 @@ const distributeCharacterRoaming = (svg) => {
     }
 
     result = `${result.slice(0, keyframesStart)}${roamingKeyframes}${result.slice(animationRuleStart)}`;
+    const normalizedDuration = Math.round(Math.max(120, Math.min(240, travelDistance / 2.2)));
     result = result.replace(
-      new RegExp(`(animation-name:\\s*move-${id};animation-duration:\\s*[\\d.]+s;)`),
-      "$1animation-timing-function:linear;",
+      new RegExp(`animation-name:\\s*move-${id};animation-duration:\\s*[\\d.]+s;(?:animation-timing-function:linear;)?`),
+      `animation-name: move-${id};animation-duration: ${normalizedDuration}s;animation-timing-function:linear;`,
+    );
+    result = result.replace(
+      new RegExp(`(animation-name:\\s*reverse-flip-${id};animation-duration:)\\s*[\\d.]+s;`),
+      `$1 ${normalizedDuration}s;`,
     );
   });
 
