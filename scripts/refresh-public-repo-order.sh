@@ -7,8 +7,10 @@ set -euo pipefail
 OWNER="${GITHUB_REPOSITORY_OWNER:-oosuhada}"
 # GitHub의 pushed_at 초 단위 정렬이 겹치지 않도록 저장소 사이 기본 간격을 3초로 둔다.
 PUSH_DELAY_SECONDS="${PUSH_DELAY_SECONDS:-3}"
-# DRY_RUN=1이면 실제 clone/commit/push 없이 정렬 대상과 순서만 검증한다.
+# DRY_RUN=1이면 실제 fetch/commit/push 없이 정렬 대상과 순서만 검증한다.
 DRY_RUN="${DRY_RUN:-0}"
+# 중간 실패 후 이어서 실행할 때 사용할 시작 순번이며 일반 일일 실행은 항상 1부터 시작한다.
+START_INDEX="${START_INDEX:-1}"
 # 자동 커밋의 작성자 이름을 GitHub 계정과 일치시킨다.
 GIT_AUTHOR_NAME="${GIT_AUTHOR_NAME:-Oosu}"
 # 자동 커밋의 작성자 이메일을 GitHub 계정에 연결된 noreply 주소로 고정한다.
@@ -68,38 +70,56 @@ for ROW in "${REPOSITORIES[@]}"; do
   INDEX=$((INDEX + 1))
   # TSV 한 줄에서 생성일, 저장소 이름, default branch를 분리한다.
   IFS=$'\t' read -r CREATED_AT REPOSITORY DEFAULT_BRANCH <<< "${ROW}"
-  # 현재 저장소와 전체 진행률을 Actions 로그에 표시한다.
+  # 현재 저장소와 전체 진행률을 로그에 표시한다.
   printf '[%02d/%02d] %s | %s | %s\n' "${INDEX}" "${#REPOSITORIES[@]}" "${CREATED_AT}" "${REPOSITORY}" "${DEFAULT_BRANCH}"
+
+  # 복구 실행에서는 이미 성공한 앞쪽 저장소를 건너뛰어 같은 날 중복 empty commit이 생기지 않게 한다.
+  if [[ "${INDEX}" -lt "${START_INDEX}" ]]; then
+    echo "Skipping already completed repository at index ${INDEX}."
+    continue
+  fi
 
   # dry-run에서는 순서만 확인하고 GitHub 저장소에는 아무 변경도 만들지 않는다.
   if [[ "${DRY_RUN}" == "1" ]]; then
     continue
   fi
 
-  # 저장소마다 독립된 임시 clone 경로를 사용한다.
+  # 저장소마다 독립된 임시 Git 디렉터리를 사용한다.
   REPOSITORY_DIR="${WORK_ROOT}/${REPOSITORY}"
-  # 전체 이력을 받을 필요가 없으므로 default branch의 최신 커밋 한 개만 shallow clone 한다.
-  if ! git clone --quiet --depth 1 --single-branch --branch "${DEFAULT_BRANCH}" "https://github.com/${OWNER}/${REPOSITORY}.git" "${REPOSITORY_DIR}"; then
-    echo "Clone failed: ${REPOSITORY}" >&2
-    FAILURES+=("${REPOSITORY}:clone")
+  # 실제 파일 checkout 없이 commit/tree 객체만 다루기 위해 빈 Git 저장소를 초기화한다.
+  mkdir -p "${REPOSITORY_DIR}"
+  # 조용한 모드로 로컬 Git 메타데이터만 만든다.
+  git -C "${REPOSITORY_DIR}" init --quiet
+  # 현재 public 저장소를 origin으로 등록한다.
+  git -C "${REPOSITORY_DIR}" remote add origin "https://github.com/${OWNER}/${REPOSITORY}.git"
+
+  # 최신 default-branch commit과 tree만 가져오고 blob 파일은 내려받지 않아 대형 저장소도 빠르게 처리한다.
+  if ! git -C "${REPOSITORY_DIR}" fetch --quiet --depth 1 --filter=blob:none origin "refs/heads/${DEFAULT_BRANCH}"; then
+    echo "Fetch failed: ${REPOSITORY}" >&2
+    FAILURES+=("${REPOSITORY}:fetch")
+    rm -rf "${REPOSITORY_DIR}"
     continue
   fi
 
-  # empty commit도 GitHub 계정에 정상 귀속되도록 저장소별 작성자 이름을 설정한다.
+  # 원격 default branch의 현재 최신 commit SHA를 부모 commit으로 사용한다.
+  PARENT_COMMIT="$(git -C "${REPOSITORY_DIR}" rev-parse FETCH_HEAD)"
+  # 부모 commit과 동일한 tree SHA를 재사용해 파일 내용은 단 한 바이트도 바꾸지 않는다.
+  PARENT_TREE="$(git -C "${REPOSITORY_DIR}" show -s --format=%T "${PARENT_COMMIT}")"
+  # 새 commit의 author/committer를 GitHub 계정에 연결된 정보로 설정한다.
   git -C "${REPOSITORY_DIR}" config user.name "${GIT_AUTHOR_NAME}"
-  # empty commit도 GitHub 계정에 정상 귀속되도록 저장소별 noreply 이메일을 설정한다.
+  # noreply 이메일을 사용해 GitHub contribution 연결을 유지한다.
   git -C "${REPOSITORY_DIR}" config user.email "${GIT_AUTHOR_EMAIL}"
 
-  # 파일을 수정하지 않고 순서 보정용 empty commit 한 개만 생성한다.
-  if ! git -C "${REPOSITORY_DIR}" commit --quiet --allow-empty -m "${COMMIT_MESSAGE}"; then
-    echo "Commit failed: ${REPOSITORY}" >&2
+  # 동일한 tree를 부모 commit 위에 얹는 진짜 empty commit을 low-level commit-tree로 생성한다.
+  if ! NEW_COMMIT="$(printf '%s\n' "${COMMIT_MESSAGE}" | git -C "${REPOSITORY_DIR}" commit-tree "${PARENT_TREE}" -p "${PARENT_COMMIT}")"; then
+    echo "Commit creation failed: ${REPOSITORY}" >&2
     FAILURES+=("${REPOSITORY}:commit")
     rm -rf "${REPOSITORY_DIR}"
     continue
   fi
 
-  # 현재 HEAD를 해당 저장소의 default branch로 직접 push해 pushed_at을 갱신한다.
-  if ! git -C "${REPOSITORY_DIR}" push --quiet origin "HEAD:${DEFAULT_BRANCH}"; then
+  # 새 empty commit SHA를 해당 저장소의 실제 default branch로 직접 push해 pushed_at을 갱신한다.
+  if ! git -C "${REPOSITORY_DIR}" push --quiet origin "${NEW_COMMIT}:refs/heads/${DEFAULT_BRANCH}"; then
     echo "Push failed: ${REPOSITORY}" >&2
     FAILURES+=("${REPOSITORY}:push")
     rm -rf "${REPOSITORY_DIR}"
