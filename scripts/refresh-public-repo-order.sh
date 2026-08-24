@@ -13,6 +13,8 @@ DRY_RUN="${DRY_RUN:-0}"
 START_INDEX="${START_INDEX:-1}"
 # 프로필 README 저장소는 GitHub 프로필에서 항상 가장 위에 보이도록 생성일과 무관하게 마지막에 push한다.
 PROFILE_REPOSITORY="${PROFILE_REPOSITORY:-${OWNER}}"
+# 아직 private이지만 일일 정렬 루틴에 포함해야 하는 명시적 예외 저장소를 공백 구분 목록으로 관리한다.
+PRIVATE_REPOSITORY_EXCEPTIONS="${PRIVATE_REPOSITORY_EXCEPTIONS:-fabops-decision-lab-ops ai-memory-museum signal-garden scenario-prism generative-decision-surface}"
 # 자동 커밋의 작성자 이름을 GitHub 계정과 일치시킨다.
 GIT_AUTHOR_NAME="${GIT_AUTHOR_NAME:-Oosu}"
 # 자동 커밋의 작성자 이메일을 GitHub 계정에 연결된 noreply 주소로 고정한다.
@@ -22,6 +24,8 @@ COMMIT_MESSAGE="${COMMIT_MESSAGE:-chore: preserve repository creation order [ski
 
 # 필수 CLI가 runner 또는 로컬 환경에 존재하는지 먼저 확인한다.
 command -v gh >/dev/null 2>&1 || { echo "gh CLI is required." >&2; exit 1; }
+# authenticated API 결과에서 public + private 예외를 안전하게 필터링하기 위해 jq를 사용한다.
+command -v jq >/dev/null 2>&1 || { echo "jq is required." >&2; exit 1; }
 # 실제 push 모드에서는 git CLI도 반드시 필요하다.
 if [[ "${DRY_RUN}" != "1" ]]; then
   command -v git >/dev/null 2>&1 || { echo "git CLI is required." >&2; exit 1; }
@@ -37,7 +41,7 @@ WORK_ROOT="$(mktemp -d)"
 # 정상 종료와 오류 종료 모두에서 임시 디렉터리를 제거한다.
 trap 'rm -rf "${WORK_ROOT}"' EXIT
 
-# public + owner 본인 소유 + non-archived + non-fork + non-disabled + default branch 존재 조건만 선택한다.
+# public 저장소와 명시적 private 예외 중 owner 본인 소유 + non-archived + non-fork + non-disabled + default branch 존재 조건만 선택한다.
 # macOS 기본 Bash 3.2에서도 동작하도록 mapfile 대신 while read로 배열을 채운다.
 REPOSITORIES=()
 # 프로필 저장소는 일반 생성일 정렬에서 분리한 뒤 맨 마지막에 다시 붙인다.
@@ -56,8 +60,16 @@ while IFS= read -r REPOSITORY_ROW; do
     fi
   fi
 done < <(
-  gh api --paginate "users/${OWNER}/repos?per_page=100&type=owner&sort=created&direction=asc" \
-    --jq '.[] | select(.private == false and .archived == false and .fork == false and .disabled == false and .default_branch != null) | [.created_at, .name, .default_branch] | @tsv' \
+  gh api --paginate "user/repos?per_page=100&visibility=all&affiliation=owner&sort=created&direction=asc" \
+    | jq -r --arg owner "${OWNER}" --arg privateExceptions "${PRIVATE_REPOSITORY_EXCEPTIONS}" '
+        ($privateExceptions | split(" ")) as $exceptions
+        | .[] as $repo
+        | $repo
+        | select(.owner.login == $owner)
+        | select((.private == false) or ($exceptions | index($repo.name)))
+        | select(.archived == false and .fork == false and .disabled == false and .default_branch != null)
+        | [.created_at, .name, .default_branch] | @tsv
+      ' \
     | LC_ALL=C sort -t $'\t' -k1,1 -k2,2
 )
 
@@ -68,12 +80,12 @@ fi
 
 # 대상이 하나도 없으면 오류가 아니라 정상적인 no-op으로 종료한다.
 if [[ "${#REPOSITORIES[@]}" -eq 0 ]]; then
-  echo "No eligible public repositories found for ${OWNER}."
+  echo "No eligible public or explicitly included private repositories found for ${OWNER}."
   exit 0
 fi
 
 # 실제 실행 전에 총 대상 수와 정렬 기준을 로그에 남긴다.
-echo "Found ${#REPOSITORIES[@]} eligible public repositories for ${OWNER}."
+echo "Found ${#REPOSITORIES[@]} eligible repositories for ${OWNER} (public + explicit private exceptions)."
 # 일반 저장소는 오래된 순으로 처리하고 프로필 저장소만 마지막에 보내 항상 프로필 상단에 유지한다.
 echo "Push order: oldest created_at -> newest created_at -> profile repository last."
 
