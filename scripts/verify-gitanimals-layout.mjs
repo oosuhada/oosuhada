@@ -6,12 +6,13 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v32";
+const layoutVersion = "character-behaviors-v33";
 const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
-// The rabbit intentionally crosses more ground than the other pets; this still limits every pet to
-// a smooth multi-second traverse rather than a sub-second collision-correction jump.
+// Farm-wide explorers intentionally cross more ground than residents; this still limits every pet
+// to a smooth multi-second traverse rather than a sub-second collision-correction jump.
 const maximumWeightedSpeed = 16;
+const explorerTypes = new Set(["RABBIT", "GALCHI_CAT", "SHIBA", "GOOSE"]);
 const expectedFacingPivots = {
   RABBIT: "25.51",
   HAMSTER: "21.00",
@@ -89,11 +90,11 @@ const lightAnimations = collisionPersonas.map((persona) => extractAnimation(ligh
 const darkAnimations = collisionPersonas.map((persona) => extractAnimation(dark, persona));
 
 lightAnimations.forEach((animation, index) => {
-  // The explorer crosses the full 600px farm twice per cycle; its higher cap still limits each
-  // half-second frame to a visibly continuous traverse rather than a teleport.
-  const personaMaximumWeightedSpeed = ["RABBIT", "GALCHI_CAT"].includes(animation.persona.type)
-    ? 30
-    : maximumWeightedSpeed;
+  // Explorers cross the full 600px farm multiple times per cycle; their higher caps still limit
+  // each half-second frame to a visibly continuous traverse rather than a teleport.
+  const personaMaximumWeightedSpeed = ["SHIBA", "GOOSE"].includes(animation.persona.type)
+    ? 34
+    : explorerTypes.has(animation.persona.type) ? 30 : maximumWeightedSpeed;
   const darkAnimation = darkAnimations[index];
   assert(
     JSON.stringify(animation.points) === JSON.stringify(darkAnimation.points),
@@ -179,16 +180,21 @@ lightAnimations.forEach((animation, index) => {
   }
 });
 
-const explorerAnimation = lightAnimations.find((animation) => animation.persona.type === "RABBIT");
-if (explorerAnimation) {
+for (const explorerType of explorerTypes) {
+  const explorerAnimation = lightAnimations.find((animation) => animation.persona.type === explorerType);
+  if (!explorerAnimation) continue;
   const xValues = explorerAnimation.points.map((point) => point.x);
   const yValues = explorerAnimation.points.map((point) => point.y);
   const horizontalCoverage = Math.max(...xValues) - Math.min(...xValues);
   const verticalCoverage = Math.max(...yValues) - Math.min(...yValues);
   assert(horizontalCoverage >= 65,
-    `Rabbit explorer must traverse the farm horizontally (${horizontalCoverage.toFixed(2)}%).`);
+    `${explorerType} explorer must traverse the farm horizontally (${horizontalCoverage.toFixed(2)}%).`);
   assert(verticalCoverage >= 35,
-    `Rabbit explorer must traverse the farm vertically (${verticalCoverage.toFixed(2)}%).`);
+    `${explorerType} explorer must traverse the farm vertically (${verticalCoverage.toFixed(2)}%).`);
+
+  // The cat retains its established pause-and-patrol cadence; this turn only makes the Shiba and
+  // goose join the rabbit's continuously active roaming class.
+  if (explorerType === "GALCHI_CAT") continue;
 
   let stationarySeconds = 0;
   let longestStationarySeconds = 0;
@@ -204,19 +210,7 @@ if (explorerAnimation) {
     previousPosition = currentPosition;
   }
   assert(longestStationarySeconds <= 3,
-    `Rabbit explorer stays nearly still for ${longestStationarySeconds.toFixed(2)}s.`);
-}
-
-const catExplorerAnimation = lightAnimations.find((animation) => animation.persona.type === "GALCHI_CAT");
-if (catExplorerAnimation) {
-  const xValues = catExplorerAnimation.points.map((point) => point.x);
-  const yValues = catExplorerAnimation.points.map((point) => point.y);
-  const horizontalCoverage = Math.max(...xValues) - Math.min(...xValues);
-  const verticalCoverage = Math.max(...yValues) - Math.min(...yValues);
-  assert(horizontalCoverage >= 65,
-    `Cat explorer must traverse the farm horizontally (${horizontalCoverage.toFixed(2)}%).`);
-  assert(verticalCoverage >= 35,
-    `Cat explorer must traverse the farm vertically (${verticalCoverage.toFixed(2)}%).`);
+    `${explorerType} explorer stays nearly still for ${longestStationarySeconds.toFixed(2)}s.`);
 }
 
 const heartEventCount = (light.match(/opacity:1;transform:translate\([^)]*\);/g) ?? []).length;

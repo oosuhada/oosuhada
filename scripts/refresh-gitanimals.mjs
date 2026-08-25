@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v32";
+const layoutVersion = "character-behaviors-v33";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -494,9 +494,10 @@ const distributeCharacterRoaming = (svg) => {
     };
   };
 
-  // The rabbit is the farm explorer. Keep this role independent from its assigned home anchor so
-  // source refreshes and cosmetic edits cannot quietly collapse it back into one grid cell.
-  // Catmull-Rom interpolation provides a continuous closed loop without the old waypoint corners.
+  // Fast explorers use independent, farm-wide routes so source refreshes and cosmetic edits cannot
+  // quietly collapse them back into one grid cell. Catmull-Rom interpolation keeps every route
+  // continuous through turns, including the loop seam.
+  const explorerTypes = new Set(["RABBIT", "GALCHI_CAT", "SHIBA", "GOOSE"]);
   const explorerWaypoints = [
     { x: 15, y: 33 },
     { x: 47, y: 29 },
@@ -512,6 +513,24 @@ const distributeCharacterRoaming = (svg) => {
     { x: 22, y: 69 },
     { x: 58, y: 72 },
     { x: 86, y: 55 },
+  ];
+  const shibaExplorerWaypoints = [
+    { x: 12, y: 30 },
+    { x: 45, y: 34 },
+    { x: 83, y: 28 },
+    { x: 88, y: 52 },
+    { x: 72, y: 74 },
+    { x: 36, y: 68 },
+    { x: 10, y: 58 },
+  ];
+  const gooseExplorerWaypoints = [
+    { x: 86, y: 66 },
+    { x: 54, y: 72 },
+    { x: 18, y: 65 },
+    { x: 11, y: 45 },
+    { x: 30, y: 29 },
+    { x: 66, y: 32 },
+    { x: 88, y: 46 },
   ];
   const catExplorerPhase = Number.parseFloat(process.env.GITANIMALS_CAT_PHASE ?? "0.12");
   const interpolateClosedRoute = (waypoints, progress) => {
@@ -542,6 +561,16 @@ const distributeCharacterRoaming = (svg) => {
       // The cat patrols in the opposite direction on a distinct loop, so the two roamers do not
       // look like synchronized copies of one another.
       return interpolateClosedRoute(catExplorerWaypoints, catExplorerPhase - progress * 2);
+    }
+    if (unit.persona.type === "SHIBA") {
+      // Three circuits per timeline make the Shiba visibly energetic without sacrificing the
+      // half-second samples used for smooth collision steering and direction changes.
+      return interpolateClosedRoute(shibaExplorerWaypoints, progress * 3);
+    }
+    if (unit.persona.type === "GOOSE") {
+      // The duck-like goose takes a separate reverse loop so it does not move in formation with
+      // the Shiba or repeatedly meet the same residents at the same timestamps.
+      return interpolateClosedRoute(gooseExplorerWaypoints, 0.18 - progress * 3);
     }
     const profile = movementProfile(unit.persona, unit.index);
     const phase = unit.index / routeUnits.length;
@@ -591,12 +620,11 @@ const distributeCharacterRoaming = (svg) => {
           let weightedX = (left.x - right.x) * 2;
           let weightedY = left.y - right.y;
           let distance = Math.hypot(weightedX, weightedY);
-          const isRoamer = (unitIndex) => ["RABBIT", "GALCHI_CAT"]
-            .includes(routeUnits[unitIndex].persona.type);
+          const isRoamer = (unitIndex) => explorerTypes.has(routeUnits[unitIndex].persona.type);
           const involvesExplorer = isRoamer(leftIndex) || isRoamer(rightIndex);
           const steeringDistance = separationRadius(routeUnits[leftIndex].persona)
             + separationRadius(routeUnits[rightIndex].persona)
-            + (involvesExplorer ? 10.5 : routeSafetyMargin);
+            + (involvesExplorer ? 12.5 : routeSafetyMargin);
           if (distance >= steeringDistance) continue;
           if (distance < 0.001) {
             const angle = ((leftIndex + 1) * (rightIndex + 3) * 47 * Math.PI) / 180;
