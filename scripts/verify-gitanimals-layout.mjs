@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v26";
+const layoutVersion = "character-behaviors-v27";
 const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
 // The rabbit intentionally crosses more ground than the other pets; this still limits every pet to
@@ -173,6 +173,31 @@ if (rabbit) {
     assert(rule.includes("steps(1,end)"),
       `${theme} rabbit level offset must switch discretely with its facing direction.`);
   }
+}
+
+const flamingo = visible.find((persona) => persona.type === "FLAMINGO");
+if (flamingo) {
+  for (const [theme, svg] of [["Light", light], ["Dark", dark]]) {
+    const animationName = `profile-level-route-${flamingo.id}`;
+    const keyframesStart = svg.indexOf(`@keyframes ${animationName}`);
+    const ruleStart = svg.indexOf(`animation-name:${animationName}`, keyframesStart);
+    assert(keyframesStart !== -1 && ruleStart !== -1,
+      `${theme} flamingo level label must follow its facing direction.`);
+    const body = svg.slice(keyframesStart, ruleStart);
+    assert(body.includes("translate:0px 0px") && body.includes("translate:-12px 0px"),
+      `${theme} flamingo level must shift left only while facing left.`);
+    const rule = svg.slice(ruleStart, svg.indexOf("}", ruleStart));
+    assert(rule.includes(`animation-name:${animationName} !important`) && rule.includes("steps(1,end)"),
+      `${theme} flamingo level offset must override metadata and switch with direction.`);
+  }
+}
+
+const swimmingCapybara = visible.find((persona) => persona.type === "CAPYBARA_SWIM");
+if (swimmingCapybara) {
+  assert(light.includes(`#level-wrap-${swimmingCapybara.id}{translate:-8px 0;}`),
+    "Swimming capybara level label must clear the mounted chick.");
+  assert(dark.includes(`#level-wrap-${swimmingCapybara.id}{translate:-8px 0;}`),
+    "Dark swimming capybara level label must clear the mounted chick.");
 }
 
 if (rider && mount) {

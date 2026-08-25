@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v26";
+const layoutVersion = "character-behaviors-v27";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const existingAssets = await Promise.all(
   [lightPath, darkPath].map((file) => readFile(file, "utf8").catch(() => "")),
@@ -601,15 +601,13 @@ const distributeCharacterRoaming = (svg) => {
     return frames.join("");
   };
 
-  const rabbitLevelKeyframes = (unitIndex) => {
+  const directionalLevelKeyframes = (unitIndex, leftOffsetX, offsetY) => {
     const frames = [];
     routeSamples.forEach((_, sampleIndex) => {
       const percentage = (sampleIndex / (routeSamples.length - 1)) * 100;
       const direction = directionFor(unitIndex, sampleIndex);
-      // The rabbit artwork's visual centre moves substantially inside its wide emotion-state
-      // canvas when mirrored. A 25px optical correction aligns the label with the visible body.
-      const offsetX = direction === -1 ? 25 : 0;
-      frames.push(`${percentage.toFixed(2)}%{translate:${offsetX}px -9px;}`);
+      const offsetX = direction === -1 ? leftOffsetX : 0;
+      frames.push(`${percentage.toFixed(2)}%{translate:${offsetX}px ${offsetY}px;}`);
     });
     return frames.join("");
   };
@@ -651,10 +649,20 @@ const distributeCharacterRoaming = (svg) => {
       // Emotion artwork can extend above the normal sprite bounds. Keep the label above that
       // artwork instead of letting the rabbit's ! / ... state or the capybara's carrot cover it.
       if (persona.type === "RABBIT") {
-        coordinatedRouteStyles += `@keyframes profile-level-route-${id}{${rabbitLevelKeyframes(unitIndex)}}`
+        // The rabbit artwork's visual centre moves substantially inside its wide emotion-state
+        // canvas when mirrored. A 25px optical correction aligns the label with the visible body.
+        coordinatedRouteStyles += `@keyframes profile-level-route-${id}{${directionalLevelKeyframes(unitIndex, 25, -9)}}`
           + `#level-wrap-${id}{animation-name:profile-level-route-${id} !important;animation-duration:${routeDuration}s;`
           + "animation-timing-function:steps(1,end);animation-iteration-count:infinite;"
           + "animation-direction:normal;animation-fill-mode:both;}";
+      } else if (persona.type === "FLAMINGO") {
+        // Its head and neck sit left of the root anchor when facing left, so the label follows.
+        coordinatedRouteStyles += `@keyframes profile-level-route-${id}{${directionalLevelKeyframes(unitIndex, -12, 0)}}`
+          + `#level-wrap-${id}{animation-name:profile-level-route-${id} !important;animation-duration:${routeDuration}s;`
+          + "animation-timing-function:steps(1,end);animation-iteration-count:infinite;"
+          + "animation-direction:normal;animation-fill-mode:both;}";
+      } else if (persona.type === "CAPYBARA_SWIM") {
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:-8px 0;}`;
       } else if (persona.type === "CAPYBARA_CARROT") {
         coordinatedRouteStyles += `#level-wrap-${id}{translate:0 -10px;}`;
       }
