@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v25";
+const layoutVersion = "character-behaviors-v26";
 const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
 // The rabbit intentionally crosses more ground than the other pets; this still limits every pet to
@@ -158,10 +158,21 @@ if (carrotCapybara) {
 
 const rabbit = visible.find((persona) => persona.type === "RABBIT");
 if (rabbit) {
-  assert(light.includes(`#level-wrap-${rabbit.id}{translate:0 -9px;}`),
-    "Rabbit level label must remain above its animated emotion artwork.");
-  assert(dark.includes(`#level-wrap-${rabbit.id}{translate:0 -9px;}`),
-    "Dark rabbit level label must remain above its animated emotion artwork.");
+  for (const [theme, svg] of [["Light", light], ["Dark", dark]]) {
+    const animationName = `profile-level-route-${rabbit.id}`;
+    const keyframesStart = svg.indexOf(`@keyframes ${animationName}`);
+    const ruleStart = svg.indexOf(`animation-name:${animationName}`, keyframesStart);
+    assert(keyframesStart !== -1 && ruleStart !== -1,
+      `${theme} rabbit level label must follow its facing direction.`);
+    const body = svg.slice(keyframesStart, ruleStart);
+    assert(body.includes("translate:0px -9px") && body.includes("translate:25px -9px"),
+      `${theme} rabbit level must shift right only while facing left.`);
+    const rule = svg.slice(ruleStart, svg.indexOf("}", ruleStart));
+    assert(rule.includes(`animation-name:${animationName} !important`),
+      `${theme} rabbit level animation must override the source metadata animation.`);
+    assert(rule.includes("steps(1,end)"),
+      `${theme} rabbit level offset must switch discretely with its facing direction.`);
+  }
 }
 
 if (rider && mount) {
