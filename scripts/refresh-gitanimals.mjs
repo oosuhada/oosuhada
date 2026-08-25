@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v22";
+const layoutVersion = "character-behaviors-v23";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const existingAssets = await Promise.all(
   [lightPath, darkPath].map((file) => readFile(file, "utf8").catch(() => "")),
@@ -331,6 +331,38 @@ const distributeCharacterRoaming = (svg) => {
       + `${result.slice(rootOpeningEnd, rootClosingStart)}</g>${result.slice(rootClosingStart)}`;
   };
 
+  const groupClosingStart = (rootStart) => {
+    const groupTag = /<\/?g\b[^>]*>/g;
+    groupTag.lastIndex = rootStart;
+    let depth = 0;
+    for (let match = groupTag.exec(result); match; match = groupTag.exec(result)) {
+      depth += match[0].startsWith("</") ? -1 : 1;
+      if (depth === 0) return match.index;
+    }
+    return -1;
+  };
+
+  const wrapArtworkContents = (rootId, wrapperId, personaId) => {
+    const rootStart = result.indexOf(`<g id="${rootId}"`);
+    const rootClosingStart = groupClosingStart(rootStart);
+    const levelWrapStart = result.indexOf(`<g id="level-wrap-${personaId}"`, rootStart);
+    const levelWrapClosingStart = groupClosingStart(levelWrapStart);
+    const levelWrapClosingEnd = result.indexOf(">", levelWrapClosingStart) + 1;
+    const artworkStart = result.indexOf("<svg", levelWrapClosingEnd);
+    if (
+      rootStart === -1
+      || rootClosingStart === -1
+      || levelWrapStart === -1
+      || levelWrapClosingStart === -1
+      || artworkStart === -1
+      || artworkStart >= rootClosingStart
+    ) {
+      throw new Error(`Unable to isolate artwork for ${rootId}.`);
+    }
+    result = `${result.slice(0, artworkStart)}<g id="${wrapperId}">`
+      + `${result.slice(artworkStart, rootClosingStart)}</g>${result.slice(rootClosingStart)}`;
+  };
+
   let riderActionStyles = "";
   if (rider && mount && movingPersonaIds.has(String(rider.id)) && movingPersonaIds.has(String(mount.id))) {
     const riderId = String(rider.id);
@@ -568,7 +600,8 @@ const distributeCharacterRoaming = (svg) => {
         rootId = result.slice(selectorStart + 1, result.indexOf(" ", selectorStart));
         if (!rootId) throw new Error(`Unable to locate movement root for ${persona.type} (${id}).`);
         replaceKeyframeBody(`move-${id}`, movement);
-        replaceKeyframeBody(`reverse-flip-${id}`, facing);
+        // Labels are siblings of the facing wrapper, so the old counter-flip must stay neutral.
+        replaceKeyframeBody(`reverse-flip-${id}`, "0%,100%{transform:scaleX(1);}");
         configureAnimation(`move-${id}`, routeDuration, "infinite", "normal");
         configureAnimation(`reverse-flip-${id}`, routeDuration, "infinite", "normal");
         configureTimingFunction(`reverse-flip-${id}`, "steps(1,end)");
@@ -581,22 +614,10 @@ const distributeCharacterRoaming = (svg) => {
       }
 
       const facingWrapperId = `profile-facing-${id}`;
-      wrapGroupContents(rootId, facingWrapperId);
+      wrapArtworkContents(rootId, facingWrapperId, id);
       coordinatedRouteStyles += `@keyframes profile-facing-route-${id}{${facing}}`
         + `#${facingWrapperId}{animation:profile-facing-route-${id} ${routeDuration}s steps(1,end) infinite both;`
         + "transform-box:fill-box;transform-origin:center;}";
-
-      if (!movingPersonaIds.has(id)) {
-        const counterFacingSelector = [
-          `#contributions-wrap-${id}`,
-          `#level-tag-wrap-${id}`,
-          `#level-wrap-${id}`,
-          `#username-tag-wrap-${id}`,
-          `#username-wrap-${id}`,
-        ].join(",");
-        coordinatedRouteStyles += `${counterFacingSelector}{animation:profile-facing-route-${id} `
-          + `${routeDuration}s steps(1,end) infinite both;transform-box:fill-box;transform-origin:center;}`;
-      }
     });
   });
 

@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v22";
+const layoutVersion = "character-behaviors-v23";
 const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
 // The rabbit intentionally crosses more ground than the other pets; this still limits every pet to
@@ -92,6 +92,10 @@ lightAnimations.forEach((animation, index) => {
 
   const facingId = `profile-facing-${animation.id}`;
   assert(light.includes(`<g id="${facingId}">`), `${animation.persona.type} is missing its facing wrapper.`);
+  const levelWrapIndex = light.indexOf(`<g id="level-wrap-${animation.id}"`);
+  const facingWrapperIndex = light.indexOf(`<g id="${facingId}">`);
+  assert(facingWrapperIndex > levelWrapIndex,
+    `${animation.persona.type} facing wrapper must exclude its level and metadata overlays.`);
   assert(light.includes(`#${facingId}{animation:profile-facing-route-${animation.id}`),
     `${animation.persona.type} is missing its independent facing animation.`);
   const facingRuleStart = light.indexOf(`#${facingId}{animation:profile-facing-route-${animation.id}`);
@@ -106,6 +110,14 @@ lightAnimations.forEach((animation, index) => {
   const facingBody = light.slice(facingKeyframesStart, facingKeyframesEnd);
   assert(!/\d+\.\d1%\{transform:scaleX/.test(facingBody),
     `${animation.persona.type} still contains near-zero-time paired flip frames.`);
+
+  const reverseFlipStart = light.indexOf(`@keyframes reverse-flip-${animation.id}`);
+  if (reverseFlipStart !== -1) {
+    const reverseFlipRuleStart = light.indexOf(`animation-name: reverse-flip-${animation.id}`, reverseFlipStart);
+    const reverseFlipBody = light.slice(reverseFlipStart, reverseFlipRuleStart);
+    assert(!reverseFlipBody.includes("scaleX(-1)"),
+      `${animation.persona.type} metadata must not counter-flip independently from its artwork.`);
+  }
   const start = positionAt(animation, 0);
   const nearEnd = positionAt(animation, animation.duration - sampleStepSeconds);
   const seamDistance = Math.hypot((start.x - nearEnd.x) * 2, start.y - nearEnd.y);
