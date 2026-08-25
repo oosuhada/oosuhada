@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "4912",
+  "totalContributions": "4914",
   "personas": [
     {
       "id": "829259874410923323",
@@ -26,7 +26,7 @@
     {
       "id": "829259874410923325",
       "type": "HAMSTER",
-      "level": "337",
+      "level": "338",
       "visible": true,
       "appVisible": false,
       "dropRate": "7%",
@@ -506,7 +506,7 @@
     {
       "id": "869866564982247480",
       "type": "QUOKKA",
-      "level": "51",
+      "level": "52",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
