@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v29";
+const layoutVersion = "character-behaviors-v30";
 const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
 // The rabbit intentionally crosses more ground than the other pets; this still limits every pet to
@@ -182,6 +182,8 @@ if (carrotCapybara) {
 const rabbit = visible.find((persona) => persona.type === "RABBIT");
 if (rabbit) {
   for (const [theme, svg] of [["Light", light], ["Dark", dark]]) {
+    assert(svg.includes('<g id="rabbit-think-bubble" transform="translate(6, -10)">'),
+      `${theme} rabbit thinking bubble must stay near its head and below the level label.`);
     const animationName = `profile-level-route-${rabbit.id}`;
     const keyframesStart = svg.indexOf(`@keyframes ${animationName}`);
     const ruleStart = svg.indexOf(`animation-name:${animationName}`, keyframesStart);
@@ -227,6 +229,11 @@ if (swimmingCapybara) {
       && svg.includes("class=\"profile-water-ripple-outer\"")
       && svg.includes("class=\"profile-water-glints\""),
     `${theme} swimming capybara needs a layered water surface.`);
+    assert(svg.includes("transform:scale(.94,.9)")
+      && svg.includes("transform:scale(1.06,1.04)")
+      && svg.includes("transform:translateX(-.18px)")
+      && svg.includes("transform:translateX(.18px)"),
+    `${theme} swimming capybara water motion must remain subtle and local.`);
   }
 }
 

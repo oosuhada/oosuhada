@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v29";
+const layoutVersion = "character-behaviors-v30";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -196,6 +196,13 @@ const distributeCharacterRoaming = (svg) => {
   let result = svg.replace(
     "<svg ",
     `<svg data-profile-layout="${layoutVersion}" `,
+  );
+
+  // Keep the rabbit's thinking bubble close to its head. The upstream offset places the bubble
+  // above the level label after the sprite is mirrored, making the dots look detached.
+  result = result.replace(
+    '<g id="rabbit-think-bubble" transform="translate(12, -18)">',
+    '<g id="rabbit-think-bubble" transform="translate(6, -10)">',
   );
 
   const keyframeBody = (animationName) => {
@@ -734,7 +741,7 @@ const distributeCharacterRoaming = (svg) => {
   const groundGeometry = (persona) => ({
     RABBIT: { cx: 8.5, cy: 11, rx: 5 },
     HAMSTER: { cx: 7, cy: 12, rx: 5 },
-    PENGUIN: { cx: 7, cy: 22, rx: 6 },
+    PENGUIN: { cx: 7, cy: 17, rx: 6 },
     CAPYBARA_CARROT: { cx: 10, cy: 20, rx: 8 },
     CAPYBARA_SWIM: { cx: 10, cy: 18, rx: 11 },
     GOOSE: { cx: 8, cy: 17, rx: 7 },
@@ -892,15 +899,15 @@ const distributeCharacterRoaming = (svg) => {
   });
 
   const ambientBehaviorStyles = "@keyframes profile-water-bed{"
-    + "0%,100%{transform:scale(.96,.9);opacity:.08;}50%{transform:scale(1.04,1.08);opacity:.2;}}"
+    + "0%,100%{transform:scale(.985,.97);opacity:.1;}50%{transform:scale(1.015,1.03);opacity:.18;}}"
     + "@keyframes profile-water-ripple-inner{"
-    + "0%{transform:scale(.82,.72);opacity:0;}28%{opacity:.48;}72%{opacity:.25;}"
-    + "100%{transform:scale(1.18,1.14);opacity:0;}}"
+    + "0%{transform:scale(.94,.9);opacity:0;}28%{opacity:.44;}72%{opacity:.24;}"
+    + "100%{transform:scale(1.06,1.04);opacity:0;}}"
     + "@keyframes profile-water-ripple-outer{"
-    + "0%{transform:scale(.76,.68);opacity:0;}34%{opacity:.3;}78%{opacity:.14;}"
-    + "100%{transform:scale(1.24,1.18);opacity:0;}}"
+    + "0%{transform:scale(.92,.88);opacity:0;}34%{opacity:.28;}78%{opacity:.14;}"
+    + "100%{transform:scale(1.08,1.06);opacity:0;}}"
     + "@keyframes profile-water-glints{"
-    + "0%,100%{transform:translateX(-.6px);opacity:.24;}50%{transform:translateX(.6px);opacity:.68;}}"
+    + "0%,100%{transform:translateX(-.18px);opacity:.28;}50%{transform:translateX(.18px);opacity:.62;}}"
     + ".profile-ground-layer,.profile-proximity-layer{pointer-events:none;}"
     + ".profile-water-bed,.profile-water-ripple-inner,.profile-water-ripple-outer{"
     + "transform-box:fill-box;transform-origin:center;}"
