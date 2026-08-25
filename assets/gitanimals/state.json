@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "4915",
+  "totalContributions": "4916",
   "personas": [
     {
       "id": "829259874410923323",
@@ -36,7 +36,7 @@
     {
       "id": "829510187139173823",
       "type": "LITTLE_CHICK_EGG_ON_HAT",
-      "level": "203",
+      "level": "204",
       "visible": false,
       "appVisible": false,
       "dropRate": "0%",
@@ -166,7 +166,7 @@
     {
       "id": "839316495001596340",
       "type": "SLIME_RED",
-      "level": "82",
+      "level": "83",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -226,7 +226,7 @@
     {
       "id": "839316523409612356",
       "type": "GOOSE",
-      "level": "74",
+      "level": "75",
       "visible": true,
       "appVisible": false,
       "dropRate": "9%",
@@ -706,7 +706,7 @@
     {
       "id": "878927032094925896",
       "type": "LITTLE_CHICK",
-      "level": "33",
+      "level": "34",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
