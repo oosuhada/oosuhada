@@ -6,7 +6,7 @@ import { chromium } from "playwright";
 
 const root = process.cwd();
 const outputDirectory = path.join(root, "artifacts", "gitanimals-visual-regression");
-const snapshots = [0, 22, 30, 60, 90];
+const snapshots = [0, 4, 22, 30, 60, 90];
 const themes = ["light", "dark"];
 
 const contentType = (filePath) => filePath.endsWith(".svg")
@@ -86,6 +86,9 @@ try {
           visibleProximity: [...document.querySelectorAll("svg[id^='profile-proximity-']")]
             .filter((element) => Number(getComputedStyle(element).opacity) > 0.5)
             .map((element) => element.id),
+          visibleHearts: [...document.querySelectorAll("svg[id^='profile-heart-']")]
+            .filter((element) => Number(getComputedStyle(element).opacity) > 0.5)
+            .map((element) => element.id),
           rabbitThought: (() => {
             const bubble = document.querySelector("#rabbit-think-bubble");
             const emotion = document.querySelector("#rabbit-829259874410923324-emo-4");
@@ -101,12 +104,16 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v31", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v32", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.actions === 9, `${theme} ${seconds}s lost character action wrappers.`);
       assert(geometry.interactions === 10, `${theme} ${seconds}s lost proximity interaction wrappers.`);
       assert(geometry.shadows.length === 9, `${theme} ${seconds}s lost grounding shadows.`);
+      if (seconds === 4) {
+        assert(geometry.visibleHearts.length > 0,
+          `${theme} 4s must exercise a stable head-on meeting heart.`);
+      }
       geometry.levels.forEach((level) => {
         assert(level.width > 0 && level.height > 0, `${theme} ${seconds}s hides ${level.id}.`);
         assert(level.x > -45 && level.x + level.width < 645 && level.y > -25 && level.y < 300,

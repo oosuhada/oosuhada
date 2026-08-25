@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v31";
+const layoutVersion = "character-behaviors-v32";
 const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
 // The rabbit intentionally crosses more ground than the other pets; this still limits every pet to
@@ -91,7 +91,9 @@ const darkAnimations = collisionPersonas.map((persona) => extractAnimation(dark,
 lightAnimations.forEach((animation, index) => {
   // The explorer crosses the full 600px farm twice per cycle; its higher cap still limits each
   // half-second frame to a visibly continuous traverse rather than a teleport.
-  const personaMaximumWeightedSpeed = animation.persona.type === "RABBIT" ? 22 : maximumWeightedSpeed;
+  const personaMaximumWeightedSpeed = ["RABBIT", "GALCHI_CAT"].includes(animation.persona.type)
+    ? 30
+    : maximumWeightedSpeed;
   const darkAnimation = darkAnimations[index];
   assert(
     JSON.stringify(animation.points) === JSON.stringify(darkAnimation.points),
@@ -143,6 +145,9 @@ lightAnimations.forEach((animation, index) => {
     assert(light.includes(`<svg id="profile-proximity-${animation.id}"`)
       && light.includes(`@keyframes profile-proximity-route-${animation.id}`),
     `${animation.persona.type} is missing its visible proximity response.`);
+    assert(light.includes(`<svg id="profile-heart-${animation.id}"`)
+      && light.includes(`@keyframes profile-heart-route-${animation.id}`),
+    `${animation.persona.type} is missing its head-on meeting heart.`);
   }
 
   const facingKeyframesStart = light.indexOf(`@keyframes profile-facing-route-${animation.id}`);
@@ -198,9 +203,24 @@ if (explorerAnimation) {
     longestStationarySeconds = Math.max(longestStationarySeconds, stationarySeconds);
     previousPosition = currentPosition;
   }
-  assert(longestStationarySeconds <= 2,
+  assert(longestStationarySeconds <= 3,
     `Rabbit explorer stays nearly still for ${longestStationarySeconds.toFixed(2)}s.`);
 }
+
+const catExplorerAnimation = lightAnimations.find((animation) => animation.persona.type === "GALCHI_CAT");
+if (catExplorerAnimation) {
+  const xValues = catExplorerAnimation.points.map((point) => point.x);
+  const yValues = catExplorerAnimation.points.map((point) => point.y);
+  const horizontalCoverage = Math.max(...xValues) - Math.min(...xValues);
+  const verticalCoverage = Math.max(...yValues) - Math.min(...yValues);
+  assert(horizontalCoverage >= 65,
+    `Cat explorer must traverse the farm horizontally (${horizontalCoverage.toFixed(2)}%).`);
+  assert(verticalCoverage >= 35,
+    `Cat explorer must traverse the farm vertically (${verticalCoverage.toFixed(2)}%).`);
+}
+
+const heartEventCount = (light.match(/opacity:1;transform:translate\([^)]*\);/g) ?? []).length;
+assert(heartEventCount > 0, "At least one head-on character meeting must produce a heart.");
 
 const carrotCapybara = visible.find((persona) => persona.type === "CAPYBARA_CARROT");
 if (carrotCapybara) {

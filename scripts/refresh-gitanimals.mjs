@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v31";
+const layoutVersion = "character-behaviors-v32";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -505,6 +505,15 @@ const distributeCharacterRoaming = (svg) => {
     { x: 43, y: 73 },
     { x: 12, y: 61 },
   ];
+  const catExplorerWaypoints = [
+    { x: 84, y: 31 },
+    { x: 55, y: 35 },
+    { x: 17, y: 43 },
+    { x: 22, y: 69 },
+    { x: 58, y: 72 },
+    { x: 86, y: 55 },
+  ];
+  const catExplorerPhase = Number.parseFloat(process.env.GITANIMALS_CAT_PHASE ?? "0.12");
   const interpolateClosedRoute = (waypoints, progress) => {
     const scaled = (((progress % 1) + 1) % 1) * waypoints.length;
     const index = Math.floor(scaled) % waypoints.length;
@@ -528,6 +537,11 @@ const distributeCharacterRoaming = (svg) => {
       // Two full circuits per shared 120-second timeline keeps the explorer visibly active while
       // all characters still use the same clock for reliable collision avoidance.
       return interpolateClosedRoute(explorerWaypoints, progress * 2);
+    }
+    if (unit.persona.type === "GALCHI_CAT") {
+      // The cat patrols in the opposite direction on a distinct loop, so the two roamers do not
+      // look like synchronized copies of one another.
+      return interpolateClosedRoute(catExplorerWaypoints, catExplorerPhase - progress * 2);
     }
     const profile = movementProfile(unit.persona, unit.index);
     const phase = unit.index / routeUnits.length;
@@ -577,11 +591,12 @@ const distributeCharacterRoaming = (svg) => {
           let weightedX = (left.x - right.x) * 2;
           let weightedY = left.y - right.y;
           let distance = Math.hypot(weightedX, weightedY);
-          const involvesExplorer = routeUnits[leftIndex].persona.type === "RABBIT"
-            || routeUnits[rightIndex].persona.type === "RABBIT";
+          const isRoamer = (unitIndex) => ["RABBIT", "GALCHI_CAT"]
+            .includes(routeUnits[unitIndex].persona.type);
+          const involvesExplorer = isRoamer(leftIndex) || isRoamer(rightIndex);
           const steeringDistance = separationRadius(routeUnits[leftIndex].persona)
             + separationRadius(routeUnits[rightIndex].persona)
-            + (involvesExplorer ? 8 : routeSafetyMargin);
+            + (involvesExplorer ? 10.5 : routeSafetyMargin);
           if (distance >= steeringDistance) continue;
           if (distance < 0.001) {
             const angle = ((leftIndex + 1) * (rightIndex + 3) * 47 * Math.PI) / 180;
@@ -592,11 +607,11 @@ const distributeCharacterRoaming = (svg) => {
           const strength = (steeringDistance - distance) * 0.09;
           const forceX = (weightedX / distance) * strength;
           const forceY = (weightedY / distance) * strength;
-          const leftIsExplorer = routeUnits[leftIndex].persona.type === "RABBIT";
-          const rightIsExplorer = routeUnits[rightIndex].persona.type === "RABBIT";
-          const leftShare = leftIsExplorer ? 0.8 : rightIsExplorer ? 0.2 : 0.5;
-          const rightShare = rightIsExplorer ? 0.8 : leftIsExplorer ? 0.2 : 0.5;
-          // The roaming rabbit yields most of the way. Resident characters keep their calm local
+          const leftIsExplorer = isRoamer(leftIndex);
+          const rightIsExplorer = isRoamer(rightIndex);
+          const leftShare = leftIsExplorer === rightIsExplorer ? 0.5 : leftIsExplorer ? 0.8 : 0.2;
+          const rightShare = leftIsExplorer === rightIsExplorer ? 0.5 : rightIsExplorer ? 0.8 : 0.2;
+          // Roaming characters yield most of the way. Resident characters keep their calm local
           // paths instead of being shoved across a cell whenever the explorer passes nearby.
           forces[sampleIndex][leftIndex].x += forceX * leftShare;
           forces[sampleIndex][rightIndex].x -= forceX * rightShare;
@@ -827,7 +842,7 @@ const distributeCharacterRoaming = (svg) => {
       const threshold = separationRadius(routeUnits[unitIndex].persona)
         + separationRadius(otherUnit.persona) + 5;
       if (distance < threshold && (!nearest || distance < nearest.distance)) {
-        nearest = { distance, side: weightedX >= 0 ? 1 : -1 };
+        nearest = { distance, side: weightedX >= 0 ? 1 : -1, otherIndex };
       }
     });
     return nearest;
@@ -844,6 +859,43 @@ const distributeCharacterRoaming = (svg) => {
     }
     return `${percentage.toFixed(2)}%{transform:translate(${(proximity.side * 1.25).toFixed(2)}px,-0.75px)`
       + ` rotate(${(proximity.side * 1.2).toFixed(2)}deg);}`;
+  }).join("");
+
+  const headOnMeetingAt = (unitIndex, sampleIndex) => {
+    const current = routeSamples[sampleIndex][unitIndex];
+    let meeting;
+    routeUnits.forEach((otherUnit, otherIndex) => {
+      // One heart per pair: the lower-index unit owns the shared effect.
+      if (otherIndex <= unitIndex) return;
+      const other = routeSamples[sampleIndex][otherIndex];
+      const weightedX = (current.x - other.x) * 2;
+      const weightedY = current.y - other.y;
+      const distance = Math.hypot(weightedX, weightedY);
+      const meetingDistance = separationRadius(routeUnits[unitIndex].persona)
+        + separationRadius(otherUnit.persona) + 10;
+      if (distance >= meetingDistance) return;
+      const currentDirection = directionFor(unitIndex, sampleIndex);
+      const otherDirection = directionFor(otherIndex, sampleIndex);
+      const faceEachOther = current.x <= other.x
+        ? currentDirection === 1 && otherDirection === -1
+        : currentDirection === -1 && otherDirection === 1;
+      if (faceEachOther && (!meeting || distance < meeting.distance)) {
+        meeting = { distance, side: weightedX >= 0 ? 1 : -1 };
+      }
+    });
+    return meeting;
+  };
+
+  const heartKeyframes = (unitIndex, reach) => routeSamples.map((_, sampleIndex) => {
+    const percentage = (sampleIndex / (routeSamples.length - 1)) * 100;
+    const meeting = headOnMeetingAt(unitIndex, sampleIndex);
+    const stableMeeting = meeting && [-2, -1, 1, 2].every((offset) => {
+      const nearbyIndex = (sampleIndex + offset + routeSamples.length - 1) % (routeSamples.length - 1);
+      return headOnMeetingAt(unitIndex, nearbyIndex)?.side === meeting.side;
+    }) ? meeting : null;
+    const towardOther = stableMeeting ? -stableMeeting.side * reach : 0;
+    return `${percentage.toFixed(2)}%{opacity:${stableMeeting ? 1 : 0};`
+      + `transform:translate(${towardOther}px,${stableMeeting ? -1 : 0}px);}`;
   }).join("");
 
   let coordinatedRouteStyles = "";
@@ -938,6 +990,20 @@ const distributeCharacterRoaming = (svg) => {
           + `<rect x="${(sparkX + 2).toFixed(2)}" y="${(sparkY - 2).toFixed(2)}" width=".7" height=".7" fill="#FF9E64"/>`
           + "</svg>";
         insertAtRootEnd(rootId, proximityMarkup);
+
+        const heartId = `profile-heart-${id}`;
+        // CSS translate uses rendered pixels while geometry is expressed in the 200x100 viewBox.
+        // Convert by the farm's 3x scale so the heart clears even a wide capybara body.
+        coordinatedRouteStyles += `@keyframes profile-heart-route-${id}{${heartKeyframes(unitIndex, (geometry.rx + 5) * 3)}}`
+          + `#${heartId}{animation:profile-heart-route-${id} ${routeDuration}s steps(1,end) infinite both;}`;
+        const heartX = geometry.cx - 2.45;
+        const heartY = Math.max(1, geometry.cy - 15);
+        const heartMarkup = `<svg id="${heartId}" class="profile-heart-layer" width="600" height="300" `
+          + `viewBox="0 0 200 100" fill="none" overflow="visible" aria-hidden="true">`
+          + `<g class="profile-heart-shape"><path d="M0 1H1V0H3V1H4V0H6V1H7V4H6V5H5V6H4V7H3V6H2V5H1V4H0Z" `
+          + `transform="translate(${heartX.toFixed(2)} ${heartY.toFixed(2)}) scale(.7)" fill="#FF6B9A"/>`
+          + `</g></svg>`;
+        insertAtRootEnd(rootId, heartMarkup);
       }
 
       // Emotion artwork can extend above the normal sprite bounds. Keep the label above that
@@ -973,7 +1039,11 @@ const distributeCharacterRoaming = (svg) => {
     + "100%{transform:scale(1.08,1.06);opacity:0;}}"
     + "@keyframes profile-water-glints{"
     + "0%,100%{transform:translateX(-.18px);opacity:.28;}50%{transform:translateX(.18px);opacity:.62;}}"
-    + ".profile-ground-layer,.profile-proximity-layer{pointer-events:none;}"
+    + "@keyframes profile-heart-pop{0%,100%{transform:translateY(0) scale(.88);}"
+    + "50%{transform:translateY(-1.2px) scale(1.08);}}"
+    + ".profile-ground-layer,.profile-proximity-layer,.profile-heart-layer{pointer-events:none;}"
+    + ".profile-heart-shape{animation:profile-heart-pop 1.1s ease-in-out infinite;"
+    + "transform-box:fill-box;transform-origin:center;}"
     + ".profile-water-bed,.profile-water-ripple-inner,.profile-water-ripple-outer{"
     + "transform-box:fill-box;transform-origin:center;}"
     + ".profile-water-bed{animation:profile-water-bed 5.6s ease-in-out infinite;}"
@@ -983,7 +1053,8 @@ const distributeCharacterRoaming = (svg) => {
     + "transform-origin:center;}"
     + "@media (prefers-reduced-motion:reduce){"
     + "[id^='profile-actions-'],[id^='profile-interaction-'],[id^='profile-proximity-'],"
-    + "[id^='profile-shadow-shape-'],.profile-water-bed,.profile-water-ripple-inner,"
+    + "[id^='profile-shadow-shape-'],[id^='profile-heart-'],.profile-heart-shape,"
+    + ".profile-water-bed,.profile-water-ripple-inner,"
     + ".profile-water-ripple-outer,.profile-water-glints{animation-duration:240s!important;}}";
   const profileBehaviorStyles = `${coordinatedRouteStyles}${riderActionStyles}${ambientBehaviorStyles}`;
   if (profileBehaviorStyles) {
