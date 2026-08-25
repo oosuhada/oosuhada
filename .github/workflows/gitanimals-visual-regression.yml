@@ -1,0 +1,47 @@
+name: GitAnimals visual regression
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "README.md"
+      - "assets/gitanimals/**"
+      - "scripts/refresh-gitanimals.mjs"
+      - "scripts/verify-gitanimals-layout.mjs"
+      - "scripts/visual-regression-gitanimals.mjs"
+      - ".github/workflows/gitanimals-visual-regression.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  visual-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install browser renderer
+        run: |
+          npm install --no-save --no-package-lock playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Verify generated SVG structure
+        run: node scripts/verify-gitanimals-layout.mjs
+
+      - name: Capture deterministic light and dark frames
+        run: node scripts/visual-regression-gitanimals.mjs
+
+      - name: Upload visual-regression evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitanimals-visual-regression
+          path: artifacts/gitanimals-visual-regression
+          if-no-files-found: error

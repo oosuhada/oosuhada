@@ -8,8 +8,10 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v27";
+const layoutVersion = "character-behaviors-v28";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
+const previousStateData = previousState === "" ? null : JSON.parse(previousState);
+const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
 const existingAssets = await Promise.all(
   [lightPath, darkPath].map((file) => readFile(file, "utf8").catch(() => "")),
 );
@@ -54,6 +56,15 @@ for (let attempt = 1; attempt <= pollAttempts; attempt += 1) {
   }
 
   stateData = await fetchState();
+  const fetchedContributionTotal = Number(stateData.totalContributions ?? 0);
+  if (fetchedContributionTotal < previousContributionTotal) {
+    console.log(
+      `GitAnimals returned a stale contribution total (${fetchedContributionTotal} < `
+      + `${previousContributionTotal}); preserving the last confirmed total and retrying.`,
+    );
+    if (attempt < pollAttempts) continue;
+    stateData.totalContributions = String(previousContributionTotal);
+  }
   state = `${JSON.stringify(stateData, null, 2)}\n`;
 
   if (previousState === "" || state !== previousState || attempt === pollAttempts) {
@@ -363,7 +374,26 @@ const distributeCharacterRoaming = (svg) => {
       + `${result.slice(artworkStart, rootClosingStart)}</g>${result.slice(rootClosingStart)}`;
   };
 
+  const insertAtRootStart = (rootId, markup) => {
+    const rootStart = result.indexOf(`<g id="${rootId}"`);
+    const rootOpeningEnd = result.indexOf(">", rootStart) + 1;
+    if (rootStart === -1 || rootOpeningEnd === 0) {
+      throw new Error(`Unable to insert a leading layer into ${rootId}.`);
+    }
+    result = `${result.slice(0, rootOpeningEnd)}${markup}${result.slice(rootOpeningEnd)}`;
+  };
+
+  const insertAtRootEnd = (rootId, markup) => {
+    const rootStart = result.indexOf(`<g id="${rootId}"`);
+    const rootClosingStart = groupClosingStart(rootStart);
+    if (rootStart === -1 || rootClosingStart === -1) {
+      throw new Error(`Unable to insert a trailing layer into ${rootId}.`);
+    }
+    result = `${result.slice(0, rootClosingStart)}${markup}${result.slice(rootClosingStart)}`;
+  };
+
   let riderActionStyles = "";
+  let riderNeutralizerId = "";
   if (rider && mount && movingPersonaIds.has(String(rider.id)) && movingPersonaIds.has(String(mount.id))) {
     const riderId = String(rider.id);
     const mountId = String(mount.id);
@@ -383,7 +413,7 @@ const distributeCharacterRoaming = (svg) => {
     configureAnimation(`reverse-flip-${riderId}`, mountDuration, "infinite", "alternate");
 
     const riderRootId = `little-chick-${riderId}`;
-    const riderNeutralizerId = `profile-rider-neutralizer-${riderId}`;
+    riderNeutralizerId = `profile-rider-neutralizer-${riderId}`;
     const riderActionId = `profile-rider-action-${riderId}`;
     wrapGroupContents(riderRootId, riderNeutralizerId);
     wrapGroupContents(riderNeutralizerId, riderActionId);
@@ -612,6 +642,138 @@ const distributeCharacterRoaming = (svg) => {
     return frames.join("");
   };
 
+  const actionProfile = (persona, index) => {
+    const profiles = {
+      RABBIT: {
+        duration: 52,
+        body: "0%,8%,18%,30%,46%,64%,82%,100%{transform:translate(0,0) rotate(0deg);}"
+          + "10%{transform:translate(0,1px) rotate(-1deg);}12%{transform:translate(2px,-4px) rotate(3deg);}"
+          + "14%{transform:translate(4px,0) rotate(0deg);}34%{transform:translate(0,-1px) rotate(-4deg);}"
+          + "38%{transform:translate(0,0) rotate(3deg);}50%{transform:translate(0,-3px) rotate(-2deg);}"
+          + "54%{transform:translate(2px,0) rotate(1deg);}68%{transform:translate(0,1px) rotate(0deg);}"
+          + "72%{transform:translate(-1px,-2px) rotate(-3deg);}86%{transform:translate(0,0) rotate(4deg);}"
+          + "90%{transform:translate(0,0) rotate(-3deg);}",
+      },
+      HAMSTER: {
+        duration: 61,
+        body: "0%,12%,26%,42%,58%,76%,100%{transform:translate(0,0) rotate(0deg);}"
+          + "15%{transform:translate(0,-1px) rotate(-3deg);}18%{transform:translate(0,0) rotate(3deg);}"
+          + "30%{transform:translate(1px,0) rotate(5deg);}34%{transform:translate(-1px,0) rotate(-4deg);}"
+          + "46%{transform:translate(0,-2px) rotate(0deg);}49%{transform:translate(0,0) rotate(0deg);}"
+          + "62%{transform:translate(0,1px) rotate(-2deg);}66%{transform:translate(0,-1px) rotate(2deg);}"
+          + "80%{transform:translate(1px,0) rotate(4deg);}86%{transform:translate(0,0) rotate(-2deg);}",
+      },
+      PENGUIN: {
+        duration: 58,
+        body: "0%,10%,24%,40%,56%,74%,90%,100%{transform:translate(0,0) rotate(0deg);}"
+          + "13%{transform:translate(-1px,0) rotate(-4deg);}17%{transform:translate(1px,0) rotate(4deg);}"
+          + "28%{transform:translate(3px,1px) rotate(3deg);}33%{transform:translate(5px,1px) rotate(-2deg);}"
+          + "44%{transform:translate(0,-2px) rotate(-3deg);}48%{transform:translate(1px,0) rotate(2deg);}"
+          + "60%{transform:translate(-1px,0) rotate(-5deg);}65%{transform:translate(1px,0) rotate(5deg);}"
+          + "78%{transform:translate(4px,1px) rotate(2deg);}84%{transform:translate(0,0) rotate(-2deg);}",
+      },
+      CAPYBARA_CARROT: {
+        duration: 72,
+        body: "0%,16%,34%,52%,70%,88%,100%{transform:translate(0,0) rotate(0deg);}"
+          + "20%{transform:translate(0,1px) rotate(1deg);}24%{transform:translate(0,0) rotate(-1deg);}"
+          + "38%{transform:translate(-1px,0) rotate(-2deg);}42%{transform:translate(0,-1px) rotate(2deg);}"
+          + "56%{transform:translate(1px,0) rotate(3deg);}61%{transform:translate(0,0) rotate(-2deg);}"
+          + "74%{transform:translate(0,1px) rotate(0deg);}79%{transform:translate(0,-1px) rotate(0deg);}"
+          + "92%{transform:translate(-1px,0) rotate(-2deg);}96%{transform:translate(0,0) rotate(1deg);}",
+      },
+      CAPYBARA_SWIM: {
+        duration: 68,
+        body: "0%,14%,30%,46%,62%,78%,94%,100%{transform:translate(0,0) rotate(0deg);}"
+          + "18%{transform:translate(0,-1px) rotate(-1deg);}22%{transform:translate(1px,0) rotate(1deg);}"
+          + "34%{transform:translate(-1px,1px) rotate(-1deg);}38%{transform:translate(0,0) rotate(1deg);}"
+          + "50%{transform:translate(1px,-1px) rotate(1deg);}54%{transform:translate(0,0) rotate(-1deg);}"
+          + "66%{transform:translate(0,1px) rotate(0deg);}70%{transform:translate(1px,-1px) rotate(1deg);}"
+          + "82%{transform:translate(-1px,0) rotate(-1deg);}87%{transform:translate(0,-1px) rotate(1deg);}",
+      },
+      GOOSE: {
+        duration: 57,
+        body: "0%,12%,28%,44%,60%,78%,94%,100%{transform:translate(0,0) rotate(0deg);}"
+          + "15%{transform:translate(1px,1px) rotate(5deg);}19%{transform:translate(2px,0) rotate(-3deg);}"
+          + "32%{transform:translate(0,-2px) rotate(-4deg);}36%{transform:translate(1px,0) rotate(4deg);}"
+          + "48%{transform:translate(-1px,1px) rotate(6deg);}52%{transform:translate(0,0) rotate(-4deg);}"
+          + "64%{transform:translate(2px,0) rotate(3deg);}69%{transform:translate(-1px,0) rotate(-3deg);}"
+          + "82%{transform:translate(0,-2px) rotate(4deg);}87%{transform:translate(1px,0) rotate(-2deg);}",
+      },
+      GALCHI_CAT: {
+        duration: 66,
+        body: "0%,14%,30%,48%,64%,82%,100%{transform:translate(0,0) rotate(0deg);}"
+          + "18%{transform:translate(0,1px) rotate(-3deg);}22%{transform:translate(0,0) rotate(3deg);}"
+          + "34%{transform:translate(1px,-1px) rotate(5deg);}39%{transform:translate(-1px,0) rotate(-4deg);}"
+          + "52%{transform:translate(0,-2px) rotate(0deg);}56%{transform:translate(0,0) rotate(2deg);}"
+          + "68%{transform:translate(-1px,0) rotate(-5deg);}73%{transform:translate(1px,0) rotate(4deg);}"
+          + "86%{transform:translate(0,1px) rotate(3deg);}92%{transform:translate(0,0) rotate(-2deg);}",
+      },
+      SHIBA: {
+        duration: 63,
+        body: "0%,10%,26%,42%,58%,76%,92%,100%{transform:translate(0,0) rotate(0deg);}"
+          + "14%{transform:translate(0,-2px) rotate(3deg);}18%{transform:translate(1px,0) rotate(-2deg);}"
+          + "30%{transform:translate(-1px,0) rotate(-6deg);}35%{transform:translate(1px,0) rotate(5deg);}"
+          + "46%{transform:translate(2px,-1px) rotate(2deg);}51%{transform:translate(0,0) rotate(-2deg);}"
+          + "62%{transform:translate(0,1px) rotate(4deg);}67%{transform:translate(0,-1px) rotate(-3deg);}"
+          + "80%{transform:translate(1px,-2px) rotate(4deg);}86%{transform:translate(-1px,0) rotate(-3deg);}",
+      },
+      FLAMINGO: {
+        duration: 70,
+        body: "0%,14%,30%,46%,62%,78%,94%,100%{transform:translate(0,0) rotate(0deg);}"
+          + "18%{transform:translate(0,1px) rotate(-3deg);}22%{transform:translate(0,-1px) rotate(3deg);}"
+          + "34%{transform:translate(1px,0) rotate(5deg);}38%{transform:translate(-1px,0) rotate(-4deg);}"
+          + "50%{transform:translate(0,-2px) rotate(-2deg);}54%{transform:translate(1px,0) rotate(3deg);}"
+          + "66%{transform:translate(-1px,1px) rotate(-5deg);}71%{transform:translate(0,0) rotate(4deg);}"
+          + "82%{transform:translate(2px,-1px) rotate(3deg);}88%{transform:translate(0,0) rotate(-3deg);}",
+      },
+    };
+    const profile = profiles[persona.type] ?? profiles.SHIBA;
+    return { ...profile, delay: -((index * 7) % profile.duration) };
+  };
+
+  const groundGeometry = (persona) => ({
+    RABBIT: { cx: 8.5, cy: 11, rx: 5 },
+    HAMSTER: { cx: 7, cy: 12, rx: 5 },
+    PENGUIN: { cx: 7, cy: 22, rx: 6 },
+    CAPYBARA_CARROT: { cx: 10, cy: 20, rx: 8 },
+    CAPYBARA_SWIM: { cx: 10, cy: 18, rx: 11 },
+    GOOSE: { cx: 8, cy: 17, rx: 7 },
+    GALCHI_CAT: { cx: 5, cy: 14, rx: 5 },
+    SHIBA: { cx: 5, cy: 12, rx: 5 },
+    FLAMINGO: { cx: 8, cy: 24, rx: 6 },
+  })[persona.type] ?? { cx: 7, cy: 16, rx: 5 };
+
+  const proximityAt = (unitIndex, sampleIndex) => {
+    const current = routeSamples[sampleIndex][unitIndex];
+    let nearest;
+    routeUnits.forEach((otherUnit, otherIndex) => {
+      if (otherIndex === unitIndex) return;
+      const other = routeSamples[sampleIndex][otherIndex];
+      const weightedX = (current.x - other.x) * 2;
+      const weightedY = current.y - other.y;
+      const distance = Math.hypot(weightedX, weightedY);
+      const threshold = separationRadius(routeUnits[unitIndex].persona)
+        + separationRadius(otherUnit.persona) + 5;
+      if (distance < threshold && (!nearest || distance < nearest.distance)) {
+        nearest = { distance, side: weightedX >= 0 ? 1 : -1 };
+      }
+    });
+    return nearest;
+  };
+
+  const interactionKeyframes = (unitIndex, opacityOnly = false) => routeSamples.map((_, sampleIndex) => {
+    const percentage = (sampleIndex / (routeSamples.length - 1)) * 100;
+    const proximity = proximityAt(unitIndex, sampleIndex);
+    if (opacityOnly) {
+      return `${percentage.toFixed(2)}%{opacity:${proximity ? 1 : 0};}`;
+    }
+    if (!proximity) {
+      return `${percentage.toFixed(2)}%{transform:translate(0,0) rotate(0deg);}`;
+    }
+    return `${percentage.toFixed(2)}%{transform:translate(${(proximity.side * 1.25).toFixed(2)}px,-0.75px)`
+      + ` rotate(${(proximity.side * 1.2).toFixed(2)}deg);}`;
+  }).join("");
+
   let coordinatedRouteStyles = "";
   routeUnits.forEach((unit, unitIndex) => {
     unit.members.forEach((persona) => {
@@ -639,12 +801,62 @@ const distributeCharacterRoaming = (svg) => {
           + "animation-direction:normal;animation-fill-mode:both;}";
       }
 
+      const actionWrapperId = `profile-actions-${id}`;
+      if (!isRider) {
+        wrapGroupContents(rootId, actionWrapperId);
+      }
+      const interactionWrapperId = `profile-interaction-${id}`;
+      wrapGroupContents(rootId, interactionWrapperId);
+
       const facingWrapperId = `profile-facing-${id}`;
       const pivot = facingPivot(persona);
       wrapArtworkContents(rootId, facingWrapperId, id);
       coordinatedRouteStyles += `@keyframes profile-facing-route-${id}{${facing}}`
         + `#${facingWrapperId}{animation:profile-facing-route-${id} ${routeDuration}s steps(1,end) infinite both;`
         + `transform-origin:${pivot.toFixed(2)}px 0px;}`;
+
+      coordinatedRouteStyles += `@keyframes profile-interaction-route-${id}{${interactionKeyframes(unitIndex)}}`
+        + `#${interactionWrapperId}{animation:profile-interaction-route-${id} ${routeDuration}s linear infinite both;`
+        + `transform-origin:${pivot.toFixed(2)}px 36px;}`;
+
+      if (!isRider) {
+        const profile = actionProfile(persona, unitIndex);
+        const geometry = groundGeometry(persona);
+        const actionSelectors = persona.type === "CAPYBARA_SWIM" && riderNeutralizerId
+          ? `#${actionWrapperId},#${riderNeutralizerId}`
+          : `#${actionWrapperId}`;
+        coordinatedRouteStyles += `@keyframes profile-actions-route-${id}{${profile.body}}`
+          + `${actionSelectors}{animation:profile-actions-route-${id} ${profile.duration}s ease-in-out infinite both;`
+          + `animation-delay:${profile.delay}s;transform-origin:${pivot.toFixed(2)}px ${(geometry.cy * 3).toFixed(2)}px;}`
+          + `@keyframes profile-shadow-route-${id}{`
+          + "0%,14%,32%,50%,68%,86%,100%{transform:scaleX(1);opacity:.18;}"
+          + "18%,54%,90%{transform:scaleX(.78);opacity:.11;}"
+          + "24%,42%,76%{transform:scaleX(1.12);opacity:.21;}}"
+          + `#profile-shadow-shape-${id}{animation:profile-shadow-route-${id} ${profile.duration}s ease-in-out infinite both;`
+          + `animation-delay:${profile.delay}s;transform-origin:${geometry.cx}px ${geometry.cy}px;}`;
+
+        const shadowMarkup = `<svg id="profile-shadow-${id}" class="profile-ground-layer" width="600" height="300" `
+          + `viewBox="0 0 200 100" fill="none" overflow="visible" aria-hidden="true">`
+          + `<g id="profile-shadow-shape-${id}"><ellipse class="profile-ground-shadow" cx="${geometry.cx}" `
+          + `cy="${geometry.cy}" rx="${geometry.rx}" ry="1.15" fill="#57606A" opacity=".18"/></g>`
+          + (persona.type === "CAPYBARA_SWIM"
+            ? `<ellipse class="profile-water-ripple" cx="${geometry.cx}" cy="${geometry.cy - 0.2}" `
+              + `rx="${geometry.rx + 2}" ry="1.8" stroke="#58A6FF" stroke-width=".45" opacity=".38"/>`
+            : "")
+          + "</svg>";
+        insertAtRootStart(rootId, shadowMarkup);
+
+        coordinatedRouteStyles += `@keyframes profile-proximity-route-${id}{${interactionKeyframes(unitIndex, true)}}`
+          + `#profile-proximity-${id}{animation:profile-proximity-route-${id} ${routeDuration}s steps(1,end) infinite both;}`;
+        const sparkX = geometry.cx + geometry.rx * 0.65;
+        const sparkY = Math.max(1, geometry.cy - 10);
+        const proximityMarkup = `<svg id="profile-proximity-${id}" class="profile-proximity-layer" width="600" height="300" `
+          + `viewBox="0 0 200 100" fill="none" overflow="visible" aria-hidden="true">`
+          + `<rect x="${sparkX.toFixed(2)}" y="${sparkY.toFixed(2)}" width="1" height="1" fill="#FFD33D"/>`
+          + `<rect x="${(sparkX + 2).toFixed(2)}" y="${(sparkY - 2).toFixed(2)}" width=".7" height=".7" fill="#FF9E64"/>`
+          + "</svg>";
+        insertAtRootEnd(rootId, proximityMarkup);
+      }
 
       // Emotion artwork can extend above the normal sprite bounds. Keep the label above that
       // artwork instead of letting the rabbit's ! / ... state or the capybara's carrot cover it.
@@ -669,7 +881,14 @@ const distributeCharacterRoaming = (svg) => {
     });
   });
 
-  const profileBehaviorStyles = `${coordinatedRouteStyles}${riderActionStyles}`;
+  const ambientBehaviorStyles = "@keyframes profile-water-ripple{"
+    + "0%,100%{transform:scaleX(.82);opacity:.18;}50%{transform:scaleX(1.12);opacity:.48;}}"
+    + ".profile-ground-layer,.profile-proximity-layer{pointer-events:none;}"
+    + ".profile-water-ripple{animation:profile-water-ripple 4.8s ease-in-out infinite;transform-origin:center;}"
+    + "@media (prefers-reduced-motion:reduce){"
+    + "[id^='profile-actions-'],[id^='profile-interaction-'],[id^='profile-proximity-'],"
+    + "[id^='profile-shadow-shape-'],.profile-water-ripple{animation-duration:240s!important;}}";
+  const profileBehaviorStyles = `${coordinatedRouteStyles}${riderActionStyles}${ambientBehaviorStyles}`;
   if (profileBehaviorStyles) {
     const rootOpeningEnd = result.indexOf(">") + 1;
     result = `${result.slice(0, rootOpeningEnd)}<style>${profileBehaviorStyles}</style>${result.slice(rootOpeningEnd)}`;
@@ -693,6 +912,7 @@ const light = compactUsername(freeRoamSource)
 const darkThemeStyle = [
   "<style>",
   "#username path, #commit path, [id^='level-wrap-'] path { fill: #F0F6FC; }",
+  ".profile-ground-shadow { fill: #8B949E; }",
   "</style>",
 ].join("");
 
