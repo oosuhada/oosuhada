@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "4916",
+  "totalContributions": "4918",
   "personas": [
     {
       "id": "829259874410923323",
@@ -526,7 +526,7 @@
     {
       "id": "874689586759053174",
       "type": "SHIBA",
-      "level": "32",
+      "level": "33",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
@@ -586,7 +586,7 @@
     {
       "id": "878123471811480049",
       "type": "GOOSE",
-      "level": "36",
+      "level": "37",
       "visible": false,
       "appVisible": false,
       "dropRate": "9%",
