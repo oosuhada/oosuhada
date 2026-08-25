@@ -276,7 +276,7 @@
     {
       "id": "839536616395645003",
       "type": "MOLE",
-      "level": "41",
+      "level": "43",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
@@ -456,7 +456,7 @@
     {
       "id": "859359944015713030",
       "type": "GHOST",
-      "level": "26",
+      "level": "27",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.48%",
@@ -466,7 +466,7 @@
     {
       "id": "859600421692475694",
       "type": "SHIBA",
-      "level": "23",
+      "level": "24",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
@@ -676,7 +676,7 @@
     {
       "id": "878617699649946106",
       "type": "SLOTH",
-      "level": "9",
+      "level": "10",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -686,7 +686,7 @@
     {
       "id": "878845800250191598",
       "type": "GOOSE",
-      "level": "4",
+      "level": "5",
       "visible": false,
       "appVisible": false,
       "dropRate": "9%",
