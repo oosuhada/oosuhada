@@ -8,7 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
-const layoutVersion = "character-behaviors-v20";
+const layoutVersion = "character-behaviors-v21";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const existingAssets = await Promise.all(
   [lightPath, darkPath].map((file) => readFile(file, "utf8").catch(() => "")),
@@ -365,9 +365,11 @@ const distributeCharacterRoaming = (svg) => {
   }
 
   const routeDuration = 120;
-  const routeSampleSeconds = 1;
-  const routeSafetyMargin = 8;
-  const routeSampleCount = routeDuration / routeSampleSeconds + 1;
+  const routeSampleSeconds = 0.5;
+  // Begin the gentle turn before sprites visibly overlap. The extra runway lets the temporal
+  // smoother separate them without a sudden correction at the collision boundary.
+  const routeSafetyMargin = 10.5;
+  const routeSampleCount = routeDuration / routeSampleSeconds;
   const routeUnits = prioritizedPersonas.map((persona, index) => ({
     persona,
     index,
@@ -379,7 +381,7 @@ const distributeCharacterRoaming = (svg) => {
 
   const movementProfile = (persona, index) => {
     const type = persona.type;
-    if (type === "RABBIT") return { amplitudeX: 34, amplitudeY: 20, frequencyX: 3, frequencyY: 2 };
+    if (type === "RABBIT") return { amplitudeX: 28, amplitudeY: 18, frequencyX: 3, frequencyY: 2 };
     if (type === "CAPYBARA_SWIM") return { amplitudeX: 15, amplitudeY: 9, frequencyX: 1, frequencyY: 1 };
     if (type.includes("CAPYBARA")) return { amplitudeX: 17, amplitudeY: 11, frequencyX: 1, frequencyY: 2 };
     if (type.includes("PENGUIN") || type.includes("FLAMINGO")) {
@@ -421,9 +423,20 @@ const distributeCharacterRoaming = (svg) => {
     position.y = Math.max(28, Math.min(76, position.y));
   };
 
-  const resolveCollisions = (positions) => {
-    for (let iteration = 0; iteration < 36; iteration += 1) {
-      let adjusted = false;
+  // Build one continuous periodic route instead of resolving every timestamp independently.
+  // Independent resolution kept characters apart, but could move a large pet several cells between
+  // adjacent keyframes. The browser interpolated that in under a second, which looked like teleporting.
+  const preferredSamples = Array.from({ length: routeSampleCount }, (_, sampleIndex) => {
+    const progress = sampleIndex / routeSampleCount;
+    return routeUnits.map((unit) => preferredPosition(unit, progress));
+  });
+  let periodicSamples = preferredSamples.map((sample) => sample.map((position) => ({ ...position })));
+
+  // Collision forces are deliberately soft and are smoothed across neighbouring timestamps. Pets may
+  // meet, but a sustained overlap creates a gradual steering force that sends them apart naturally.
+  for (let iteration = 0; iteration < 240; iteration += 1) {
+    const forces = periodicSamples.map((sample) => sample.map(() => ({ x: 0, y: 0 })));
+    periodicSamples.forEach((positions, sampleIndex) => {
       for (let leftIndex = 0; leftIndex < routeUnits.length; leftIndex += 1) {
         for (let rightIndex = leftIndex + 1; rightIndex < routeUnits.length; rightIndex += 1) {
           const left = positions[leftIndex];
@@ -431,38 +444,46 @@ const distributeCharacterRoaming = (svg) => {
           let weightedX = (left.x - right.x) * 2;
           let weightedY = left.y - right.y;
           let distance = Math.hypot(weightedX, weightedY);
-          const minimumDistance = separationRadius(routeUnits[leftIndex].persona)
+          const steeringDistance = separationRadius(routeUnits[leftIndex].persona)
             + separationRadius(routeUnits[rightIndex].persona)
             + routeSafetyMargin;
-          if (distance >= minimumDistance) continue;
-
+          if (distance >= steeringDistance) continue;
           if (distance < 0.001) {
             const angle = ((leftIndex + 1) * (rightIndex + 3) * 47 * Math.PI) / 180;
             weightedX = Math.cos(angle);
             weightedY = Math.sin(angle);
             distance = 1;
           }
-          const overlap = minimumDistance - distance;
-          const normalX = weightedX / distance;
-          const normalY = weightedY / distance;
-          left.x += (normalX * overlap) / 4;
-          right.x -= (normalX * overlap) / 4;
-          left.y += (normalY * overlap) / 2;
-          right.y -= (normalY * overlap) / 2;
-          clampPosition(left);
-          clampPosition(right);
-          adjusted = true;
+          const strength = (steeringDistance - distance) * 0.09;
+          const forceX = (weightedX / distance) * strength;
+          const forceY = (weightedY / distance) * strength;
+          forces[sampleIndex][leftIndex].x += forceX / 2;
+          forces[sampleIndex][rightIndex].x -= forceX / 2;
+          forces[sampleIndex][leftIndex].y += forceY;
+          forces[sampleIndex][rightIndex].y -= forceY;
         }
       }
-      if (!adjusted) break;
-    }
-    return positions;
-  };
+    });
 
-  const routeSamples = Array.from({ length: routeSampleCount }, (_, sampleIndex) => {
-    const progress = sampleIndex / (routeSampleCount - 1);
-    return resolveCollisions(routeUnits.map((unit) => preferredPosition(unit, progress)));
-  });
+    periodicSamples = periodicSamples.map((sample, sampleIndex) => sample.map((position, unitIndex) => {
+      const previous = periodicSamples[(sampleIndex - 1 + routeSampleCount) % routeSampleCount][unitIndex];
+      const next = periodicSamples[(sampleIndex + 1) % routeSampleCount][unitIndex];
+      const preferred = preferredSamples[sampleIndex][unitIndex];
+      const force = forces[sampleIndex][unitIndex];
+      const smoothed = {
+        x: position.x * 0.56 + previous.x * 0.2 + next.x * 0.2 + preferred.x * 0.04 + force.x,
+        y: position.y * 0.56 + previous.y * 0.2 + next.y * 0.2 + preferred.y * 0.04 + force.y,
+      };
+      clampPosition(smoothed);
+      return smoothed;
+    }));
+  }
+
+  // Duplicate the first frame only at 100%, guaranteeing an identical loop seam with no jump.
+  const routeSamples = [
+    ...periodicSamples,
+    periodicSamples[0].map((position) => ({ ...position })),
+  ];
 
   const directionFor = (unitIndex, sampleIndex) => {
     const current = routeSamples[sampleIndex][unitIndex];
