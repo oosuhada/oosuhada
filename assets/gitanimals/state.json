@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "4689",
+  "totalContributions": "4691",
   "personas": [
     {
       "id": "829259874410923323",
@@ -276,7 +276,7 @@
     {
       "id": "839536616395645003",
       "type": "MOLE",
-      "level": "39",
+      "level": "40",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
@@ -646,7 +646,7 @@
     {
       "id": "878345547788951027",
       "type": "QUOKKA",
-      "level": "6",
+      "level": "7",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
