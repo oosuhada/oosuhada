@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "11079",
+  "totalContributions": "11081",
   "personas": [
     {
       "id": "829259874410923323",
@@ -806,7 +806,7 @@
     {
       "id": "880356598613115907",
       "type": "HAMSTER",
-      "level": "67",
+      "level": "68",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -896,7 +896,7 @@
     {
       "id": "880471396495506557",
       "type": "GALCHI_CAT",
-      "level": "38",
+      "level": "39",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
