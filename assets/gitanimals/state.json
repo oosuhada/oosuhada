@@ -46,7 +46,7 @@
     {
       "id": "829909203517677025",
       "type": "PENGUIN",
-      "level": "332",
+      "level": "334",
       "visible": true,
       "appVisible": false,
       "dropRate": "4%",
@@ -56,7 +56,7 @@
     {
       "id": "833530309566761908",
       "type": "CAPYBARA_CARROT",
-      "level": "376",
+      "level": "377",
       "visible": true,
       "appVisible": false,
       "dropRate": "5%",
@@ -76,7 +76,7 @@
     {
       "id": "835163392054466972",
       "type": "CAPYBARA_CARROT",
-      "level": "183",
+      "level": "184",
       "visible": false,
       "appVisible": false,
       "dropRate": "5%",
@@ -106,7 +106,7 @@
     {
       "id": "836801304456207382",
       "type": "PIG",
-      "level": "170",
+      "level": "171",
       "visible": false,
       "appVisible": false,
       "dropRate": "1%",
@@ -116,7 +116,7 @@
     {
       "id": "838450378003581257",
       "type": "CAPYBARA_CARROT",
-      "level": "143",
+      "level": "144",
       "visible": false,
       "appVisible": false,
       "dropRate": "5%",
@@ -226,7 +226,7 @@
     {
       "id": "839316523409612356",
       "type": "GOOSE",
-      "level": "143",
+      "level": "144",
       "visible": true,
       "appVisible": false,
       "dropRate": "9%",
@@ -256,7 +256,7 @@
     {
       "id": "839316524282022269",
       "type": "CAPYBARA",
-      "level": "251",
+      "level": "253",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -296,7 +296,7 @@
     {
       "id": "840756224457313450",
       "type": "HAMSTER",
-      "level": "142",
+      "level": "144",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -366,7 +366,7 @@
     {
       "id": "857206146853874945",
       "type": "GOOSE",
-      "level": "127",
+      "level": "128",
       "visible": false,
       "appVisible": false,
       "dropRate": "9%",
@@ -376,7 +376,7 @@
     {
       "id": "857516066107135610",
       "type": "GALCHI_CAT",
-      "level": "132",
+      "level": "133",
       "visible": true,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -386,7 +386,7 @@
     {
       "id": "857536199819104257",
       "type": "PENGUIN_SUNGLASSES",
-      "level": "125",
+      "level": "127",
       "visible": false,
       "appVisible": false,
       "dropRate": "1%",
@@ -396,7 +396,7 @@
     {
       "id": "857916316953198484",
       "type": "HAMSTER",
-      "level": "140",
+      "level": "141",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -446,7 +446,7 @@
     {
       "id": "859239294366234650",
       "type": "SLIME_GREEN",
-      "level": "121",
+      "level": "122",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -456,7 +456,7 @@
     {
       "id": "859359944015713030",
       "type": "GHOST",
-      "level": "122",
+      "level": "123",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.48%",
@@ -486,7 +486,7 @@
     {
       "id": "865207314070736797",
       "type": "GOOSE",
-      "level": "104",
+      "level": "105",
       "visible": false,
       "appVisible": false,
       "dropRate": "9%",
@@ -516,7 +516,7 @@
     {
       "id": "874478219099748325",
       "type": "SLOTH",
-      "level": "106",
+      "level": "107",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -576,7 +576,7 @@
     {
       "id": "878088240865850820",
       "type": "PENGUIN",
-      "level": "98",
+      "level": "99",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
@@ -586,7 +586,7 @@
     {
       "id": "878123471811480049",
       "type": "GOOSE",
-      "level": "107",
+      "level": "108",
       "visible": false,
       "appVisible": false,
       "dropRate": "9%",
@@ -606,7 +606,7 @@
     {
       "id": "878172448523140493",
       "type": "SLOTH",
-      "level": "84",
+      "level": "85",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -616,7 +616,7 @@
     {
       "id": "878266697381946909",
       "type": "GOBLIN",
-      "level": "106",
+      "level": "107",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.58%",
@@ -656,7 +656,7 @@
     {
       "id": "878480684983893329",
       "type": "FLAMINGO",
-      "level": "111",
+      "level": "112",
       "visible": true,
       "appVisible": false,
       "dropRate": "0.48%",
@@ -676,7 +676,7 @@
     {
       "id": "878617699649946106",
       "type": "SLOTH",
-      "level": "128",
+      "level": "129",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -696,7 +696,7 @@
     {
       "id": "878908729150509758",
       "type": "CAPYBARA",
-      "level": "97",
+      "level": "98",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -726,7 +726,7 @@
     {
       "id": "879327279266773148",
       "type": "SLOTH",
-      "level": "104",
+      "level": "106",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -766,7 +766,7 @@
     {
       "id": "880085911554077325",
       "type": "GOOSE",
-      "level": "79",
+      "level": "82",
       "visible": false,
       "appVisible": false,
       "dropRate": "9%",
@@ -776,7 +776,7 @@
     {
       "id": "880257153527547327",
       "type": "RABBIT",
-      "level": "77",
+      "level": "78",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
@@ -940,6 +940,16 @@
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
+      "grade": "DEFAULT",
+      "isEvolutionable": false
+    },
+    {
+      "id": "880533044224688567",
+      "type": "MOLE_GRASS",
+      "level": "0",
+      "visible": false,
+      "appVisible": false,
+      "dropRate": "0.96%",
       "grade": "DEFAULT",
       "isEvolutionable": false
     }
