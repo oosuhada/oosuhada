@@ -1,12 +1,12 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "5039",
+  "totalContributions": "5050",
   "personas": [
     {
       "id": "829259874410923323",
       "type": "LITTLE_CHICK_ANGEL",
-      "level": "210",
+      "level": "211",
       "visible": false,
       "appVisible": false,
       "dropRate": "0%",
@@ -36,7 +36,7 @@
     {
       "id": "829510187139173823",
       "type": "LITTLE_CHICK_EGG_ON_HAT",
-      "level": "205",
+      "level": "206",
       "visible": false,
       "appVisible": false,
       "dropRate": "0%",
@@ -186,7 +186,7 @@
     {
       "id": "839316522163902329",
       "type": "PENGUIN",
-      "level": "71",
+      "level": "73",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
@@ -256,7 +256,7 @@
     {
       "id": "839316524282022269",
       "type": "CAPYBARA",
-      "level": "174",
+      "level": "176",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -286,7 +286,7 @@
     {
       "id": "839804521871978019",
       "type": "SLOTH",
-      "level": "64",
+      "level": "65",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -316,7 +316,7 @@
     {
       "id": "842652512849367039",
       "type": "QUOKKA",
-      "level": "71",
+      "level": "72",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
@@ -356,7 +356,7 @@
     {
       "id": "856825497340980190",
       "type": "LITTLE_CHICK_SUNGLASSES",
-      "level": "61",
+      "level": "63",
       "visible": false,
       "appVisible": false,
       "dropRate": "3%",
@@ -796,10 +796,20 @@
     {
       "id": "880323518863082477",
       "type": "PENGUIN",
-      "level": "0",
+      "level": "1",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
+      "grade": "DEFAULT",
+      "isEvolutionable": false
+    },
+    {
+      "id": "880356598613115907",
+      "type": "HAMSTER",
+      "level": "0",
+      "visible": false,
+      "appVisible": false,
+      "dropRate": "7%",
       "grade": "DEFAULT",
       "isEvolutionable": false
     }
