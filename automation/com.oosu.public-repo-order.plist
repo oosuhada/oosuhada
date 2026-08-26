@@ -8,11 +8,11 @@
   <key>ProgramArguments</key>
   <array>
     <string>/bin/bash</string>
-    <string>/Users/gabrieljang/Documents/GitHub/oosuhada/scripts/refresh-public-repo-order.sh</string>
+    <string>/Users/gabrieljang/.local/share/oosuhada-repo-order/refresh-public-repo-order.sh</string>
   </array>
 
   <key>WorkingDirectory</key>
-  <string>/Users/gabrieljang/Documents/GitHub/oosuhada</string>
+  <string>/Users/gabrieljang</string>
 
   <key>EnvironmentVariables</key>
   <dict>
