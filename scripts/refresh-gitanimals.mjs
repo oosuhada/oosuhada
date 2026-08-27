@@ -20,6 +20,8 @@ const assetsUseCurrentLayout = existingAssets.every((asset) =>
 );
 const pollAttempts = Math.max(1, Number.parseInt(process.env.GITANIMALS_POLL_ATTEMPTS ?? "4", 10));
 const pollIntervalMs = Math.max(0, Number.parseInt(process.env.GITANIMALS_POLL_INTERVAL_MS ?? "2000", 10));
+const githubContributionToleranceRatio = 0.1;
+const githubContributionToleranceFloor = 250;
 
 const wait = (milliseconds) => new Promise((resolve) => {
   setTimeout(resolve, milliseconds);
@@ -45,6 +47,29 @@ const fetchState = async () => {
   return response.json();
 };
 
+let githubContributionTotalPromise;
+const fetchGithubContributionTotal = async () => {
+  githubContributionTotalPromise ??= (async () => {
+    const year = new Date().getUTCFullYear();
+    const response = await fetch(
+      `https://github.com/users/${username}/contributions?from=${year}-01-01&to=${year}-12-31`,
+      { headers: { "User-Agent": "oosuhada-profile-gitanimals-refresh" } },
+    );
+    if (!response.ok) {
+      throw new Error(`Unable to load GitHub contribution calendar: ${response.status}`);
+    }
+
+    const calendar = await response.text();
+    const dailyCounts = [...calendar.matchAll(/>(No|[\d,]+) contributions? on [^<]+<\/tool-tip>/g)]
+      .map((match) => (match[1] === "No" ? 0 : Number(match[1].replaceAll(",", ""))));
+    if (dailyCounts.length === 0) {
+      throw new Error("GitHub contribution calendar did not contain daily contribution counts.");
+    }
+    return dailyCounts.reduce((total, count) => total + count, 0);
+  })();
+  return githubContributionTotalPromise;
+};
+
 await fetchFarm("trigger");
 console.log("Triggered GitAnimals refresh through the farm endpoint.");
 
@@ -60,12 +85,39 @@ for (let attempt = 1; attempt <= pollAttempts; attempt += 1) {
   const fetchedContributionTotal = Number(stateData.totalContributions ?? 0);
   latestStateWasStale = fetchedContributionTotal < previousContributionTotal;
   if (fetchedContributionTotal < previousContributionTotal) {
-    console.log(
-      `GitAnimals returned a stale contribution total (${fetchedContributionTotal} < `
-      + `${previousContributionTotal}); preserving the last confirmed total and retrying.`,
-    );
-    if (attempt < pollAttempts) continue;
-    stateData.totalContributions = String(previousContributionTotal);
+    let githubContributionTotal;
+    try {
+      githubContributionTotal = await fetchGithubContributionTotal();
+    } catch (error) {
+      console.log(`Unable to cross-check GitHub contributions: ${error.message}`);
+    }
+
+    const tolerance = githubContributionTotal === undefined
+      ? 0
+      : Math.max(
+        githubContributionToleranceFloor,
+        Math.round(githubContributionTotal * githubContributionToleranceRatio),
+      );
+    const agreesWithGithub = githubContributionTotal !== undefined
+      && Math.abs(fetchedContributionTotal - githubContributionTotal) <= tolerance;
+
+    if (agreesWithGithub) {
+      latestStateWasStale = false;
+      console.log(
+        `Accepted a lower GitAnimals contribution total (${fetchedContributionTotal} < `
+        + `${previousContributionTotal}) because GitHub currently reports ${githubContributionTotal}.`,
+      );
+    } else {
+      const githubContext = githubContributionTotal === undefined
+        ? "GitHub cross-check unavailable"
+        : `GitHub reports ${githubContributionTotal}`;
+      console.log(
+        `GitAnimals returned an unconfirmed lower contribution total (${fetchedContributionTotal} < `
+        + `${previousContributionTotal}; ${githubContext}); preserving the last confirmed total and retrying.`,
+      );
+      if (attempt < pollAttempts) continue;
+      stateData.totalContributions = String(previousContributionTotal);
+    }
   }
   state = `${JSON.stringify(stateData, null, 2)}\n`;
 
