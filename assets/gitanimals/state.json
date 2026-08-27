@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "5185",
+  "totalContributions": "5188",
   "personas": [
     {
       "id": "829259874410923323",
@@ -126,7 +126,7 @@
     {
       "id": "839050644541286026",
       "type": "CAPYBARA_CARROT",
-      "level": "86",
+      "level": "87",
       "visible": false,
       "appVisible": false,
       "dropRate": "5%",
@@ -196,7 +196,7 @@
     {
       "id": "839316522537205209",
       "type": "PENGUIN",
-      "level": "76",
+      "level": "77",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
@@ -756,7 +756,7 @@
     {
       "id": "880005761743294266",
       "type": "LITTLE_CHICK",
-      "level": "21",
+      "level": "22",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
