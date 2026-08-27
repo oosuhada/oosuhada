@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "6461",
+  "totalContributions": "6468",
   "personas": [
     {
       "id": "829259874410923323",
@@ -286,7 +286,7 @@
     {
       "id": "839804521871978019",
       "type": "SLOTH",
-      "level": "141",
+      "level": "142",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -296,7 +296,7 @@
     {
       "id": "840756224457313450",
       "type": "HAMSTER",
-      "level": "159",
+      "level": "160",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -416,7 +416,7 @@
     {
       "id": "858157756757153384",
       "type": "RABBIT",
-      "level": "144",
+      "level": "145",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
@@ -516,7 +516,7 @@
     {
       "id": "874478219099748325",
       "type": "SLOTH",
-      "level": "129",
+      "level": "130",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -676,7 +676,7 @@
     {
       "id": "878617699649946106",
       "type": "SLOTH",
-      "level": "140",
+      "level": "141",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -696,7 +696,7 @@
     {
       "id": "878908729150509758",
       "type": "CAPYBARA",
-      "level": "110",
+      "level": "111",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -716,7 +716,7 @@
     {
       "id": "879140463284686520",
       "type": "HAMSTER",
-      "level": "127",
+      "level": "128",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
