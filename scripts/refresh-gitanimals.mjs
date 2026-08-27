@@ -8,6 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
+const readmePath = path.join(root, "README.md");
 const layoutVersion = "character-behaviors-v33";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
@@ -1188,4 +1189,15 @@ await Promise.all([
   writeFile(statePath, state),
 ]);
 
-console.log("Refreshed light and dark GitAnimals artwork.");
+const readme = await readFile(readmePath, "utf8");
+const cacheVersion = Date.now();
+const refreshedReadme = readme.replace(
+  /(assets\/gitanimals\/farm-(?:dark|light)\.svg\?v=)[^"')\s]+/g,
+  `$1${cacheVersion}`,
+);
+if (refreshedReadme === readme) {
+  throw new Error("Unable to update the GitAnimals README cache-busting version.");
+}
+await writeFile(readmePath, refreshedReadme);
+
+console.log(`Refreshed light and dark GitAnimals artwork and README cache key (${cacheVersion}).`);
