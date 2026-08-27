@@ -166,28 +166,41 @@ for ROW in "${REPOSITORIES[@]}"; do
   mkdir -p "${REPOSITORY_DIR}"
   # 조용한 모드로 로컬 Git 메타데이터만 만든다.
   git -C "${REPOSITORY_DIR}" init --quiet
-  # 현재 public 저장소를 origin으로 등록한다.
+  # 현재 owner 저장소를 origin으로 등록한다.
   git -C "${REPOSITORY_DIR}" remote add origin "https://github.com/${OWNER}/${REPOSITORY}.git"
-
-  # 최신 default-branch commit과 tree만 가져오고 blob 파일은 내려받지 않아 대형 저장소도 빠르게 처리한다.
-  if ! git -C "${REPOSITORY_DIR}" fetch --quiet --depth 1 --filter=blob:none origin "refs/heads/${DEFAULT_BRANCH}"; then
-    echo "Fetch failed: ${REPOSITORY}" >&2
-    FAILURES+=("${REPOSITORY}:fetch")
-    rm -rf "${REPOSITORY_DIR}"
-    continue
-  fi
-
-  # 원격 default branch의 현재 최신 commit SHA를 부모 commit으로 사용한다.
-  PARENT_COMMIT="$(git -C "${REPOSITORY_DIR}" rev-parse FETCH_HEAD)"
-  # 부모 commit과 동일한 tree SHA를 재사용해 파일 내용은 단 한 바이트도 바꾸지 않는다.
-  PARENT_TREE="$(git -C "${REPOSITORY_DIR}" show -s --format=%T "${PARENT_COMMIT}")"
   # 새 commit의 author/committer를 GitHub 계정에 연결된 정보로 설정한다.
   git -C "${REPOSITORY_DIR}" config user.name "${GIT_AUTHOR_NAME}"
   # noreply 이메일을 사용해 GitHub contribution 연결을 유지한다.
   git -C "${REPOSITORY_DIR}" config user.email "${GIT_AUTHOR_EMAIL}"
 
-  # 동일한 tree를 부모 commit 위에 얹는 진짜 empty commit을 low-level commit-tree로 생성한다.
-  if ! NEW_COMMIT="$(printf '%s\n' "${COMMIT_MESSAGE}" | git -C "${REPOSITORY_DIR}" commit-tree "${PARENT_TREE}" -p "${PARENT_COMMIT}")"; then
+  # 최신 default-branch commit과 tree만 가져오고 blob 파일은 내려받지 않아 대형 저장소도 빠르게 처리한다.
+  HAS_PARENT=true
+  if ! git -C "${REPOSITORY_DIR}" fetch --quiet --depth 1 --filter=blob:none origin "refs/heads/${DEFAULT_BRANCH}"; then
+    # GitHub가 default branch 이름만 갖고 있지만 아직 첫 commit이 없는 빈 저장소는 루트 commit을 만든다.
+    REPOSITORY_SIZE="$(gh api "repos/${OWNER}/${REPOSITORY}" --jq '.size')"
+    if [[ "${REPOSITORY_SIZE}" == "0" ]]; then
+      HAS_PARENT=false
+      echo "No remote branch found; creating the initial empty commit for ${REPOSITORY}."
+    else
+      echo "Fetch failed: ${REPOSITORY}" >&2
+      FAILURES+=("${REPOSITORY}:fetch")
+      rm -rf "${REPOSITORY_DIR}"
+      continue
+    fi
+  fi
+
+  if [[ "${HAS_PARENT}" == "true" ]]; then
+    # 원격 default branch의 현재 최신 commit과 동일한 tree를 재사용한다.
+    PARENT_COMMIT="$(git -C "${REPOSITORY_DIR}" rev-parse FETCH_HEAD)"
+    PARENT_TREE="$(git -C "${REPOSITORY_DIR}" show -s --format=%T "${PARENT_COMMIT}")"
+    NEW_COMMIT="$(printf '%s\n' "${COMMIT_MESSAGE}" | git -C "${REPOSITORY_DIR}" commit-tree "${PARENT_TREE}" -p "${PARENT_COMMIT}")" || NEW_COMMIT=""
+  else
+    # 완전히 빈 저장소에는 빈 tree를 가진 최초 root commit을 만든다.
+    PARENT_TREE="$(git -C "${REPOSITORY_DIR}" mktree </dev/null)"
+    NEW_COMMIT="$(printf '%s\n' "${COMMIT_MESSAGE}" | git -C "${REPOSITORY_DIR}" commit-tree "${PARENT_TREE}")" || NEW_COMMIT=""
+  fi
+
+  if [[ -z "${NEW_COMMIT}" ]]; then
     echo "Commit creation failed: ${REPOSITORY}" >&2
     FAILURES+=("${REPOSITORY}:commit")
     rm -rf "${REPOSITORY_DIR}"
