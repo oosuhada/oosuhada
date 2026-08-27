@@ -25,7 +25,9 @@
     <key>PUSH_DELAY_SECONDS</key>
     <string>3</string>
     <key>RECOVERY_GRACE_SECONDS</key>
-    <string>420</string>
+    <string>120</string>
+    <key>PRIMARY_STALE_SECONDS</key>
+    <string>1800</string>
     <key>MIN_LOCAL_HOUR</key>
     <string>5</string>
     <key>WATCH_TIMEZONE</key>
