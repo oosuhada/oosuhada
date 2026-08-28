@@ -31,6 +31,9 @@ Lingo
 javalingo
 pylingo
 codetest-study
+gitanimals
+gitanimals-api
+Netx
 health-reflection-ios
 memory-atlas-server
 iBridge-Studio

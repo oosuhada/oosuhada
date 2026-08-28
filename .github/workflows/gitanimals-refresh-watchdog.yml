@@ -1,10 +1,11 @@
-name: Refresh GitAnimals artwork
+name: GitAnimals refresh watchdog
 
 on:
   workflow_dispatch:
   schedule:
-    # Avoid GitHub Actions' busiest :00/:30 scheduler slots.
-    - cron: "7,37 * * * *"
+    # Independent fallback slots. If the primary :07/:37 trigger is delayed or dropped,
+    # this path gets another chance 15 minutes later.
+    - cron: "22,52 * * * *"
 
 concurrency:
   group: gitanimals-refresh
@@ -14,8 +15,9 @@ permissions:
   contents: write
 
 jobs:
-  refresh:
+  refresh-if-needed:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
 
@@ -24,22 +26,22 @@ jobs:
           node-version: 24
           package-manager-cache: false
 
-      - name: Refresh theme-aware farm images
+      - name: Check GitAnimals and refresh stale artwork
         run: node scripts/refresh-gitanimals.mjs
 
       - name: Verify coordinated movement and collision recovery
         run: node scripts/verify-gitanimals-layout.mjs
 
-      - name: Commit meaningful GitAnimals changes
+      - name: Commit watchdog recovery when needed
         run: |
           if git diff --quiet; then
-            echo "GitAnimals state is unchanged."
+            echo "GitAnimals artwork is already current."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add README.md assets/gitanimals
-          git commit -m "chore: refresh GitAnimals artwork"
+          git commit -m "chore: recover stale GitAnimals artwork"
           git pull --rebase origin main
           git push
