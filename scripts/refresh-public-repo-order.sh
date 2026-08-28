@@ -13,15 +13,19 @@ DRY_RUN="${DRY_RUN:-0}"
 START_INDEX="${START_INDEX:-1}"
 # 프로필 README 저장소는 GitHub 목록에서 항상 가장 위에 보이도록 마지막에 push한다.
 PROFILE_REPOSITORY="${PROFILE_REPOSITORY:-${OWNER}}"
+# 실제 개발 history와 표시 순서용 automation commit을 분리한다.
+AUTOMATION_BRANCH="${AUTOMATION_BRANCH:-repo-order}"
+# 현재 GitHub pushed_at 순서가 이미 목표 순서와 같으면 아무 commit도 만들지 않는다.
+CHECK_DISPLAY_DRIFT="${CHECK_DISPLAY_DRIFT:-1}"
 # 고정 저장소 표시 순서는 스크립트와 같은 디렉터리의 텍스트 파일에서 읽는다.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ORDER_FILE="${ORDER_FILE:-${SCRIPT_DIR}/repository-display-order.txt}"
-# 자동 커밋의 작성자 이름을 GitHub 계정과 일치시킨다.
-GIT_AUTHOR_NAME="${GIT_AUTHOR_NAME:-Oosu}"
-# 자동 커밋의 작성자 이메일을 GitHub 계정에 연결된 noreply 주소로 고정한다.
-GIT_AUTHOR_EMAIL="${GIT_AUTHOR_EMAIL:-185910926+oosuhada@users.noreply.github.com}"
-# 매일 생성되는 empty commit임을 명확히 하고 일반 push CI 연쇄 실행을 줄이기 위해 skip-ci 표식을 사용한다.
-COMMIT_MESSAGE="${COMMIT_MESSAGE:-chore: preserve repository creation order [skip ci]}"
+# 자동 커밋임이 commit log에서 즉시 보이도록 별도 bot identity를 사용한다.
+GIT_AUTHOR_NAME="${GIT_AUTHOR_NAME:-Repository Order Bot}"
+# 사람 contribution과 automation contribution을 구분하기 위해 bot 전용 noreply identity를 사용한다.
+GIT_AUTHOR_EMAIL="${GIT_AUTHOR_EMAIL:-repo-order-bot@users.noreply.github.com}"
+# 표시 순서용 automation commit임을 명확히 하고 일반 push CI 연쇄 실행을 줄이기 위해 skip-ci 표식을 사용한다.
+COMMIT_MESSAGE="${COMMIT_MESSAGE:-chore(repo-order): automated display-order refresh [skip ci]}"
 
 # 필수 CLI가 runner 또는 로컬 환경에 존재하는지 먼저 확인한다.
 command -v gh >/dev/null 2>&1 || { echo "gh CLI is required." >&2; exit 1; }
@@ -131,9 +135,51 @@ if [[ "${#REPOSITORIES[@]}" -eq 0 ]]; then
   exit 0
 fi
 
+# GitHub Repository 목록은 pushed_at 내림차순으로 보이므로 실제 화면 목표 순서는 push 배열의 역순이다.
+EXPECTED_DISPLAY_ORDER=()
+for ((ORDER_INDEX=${#REPOSITORIES[@]}-1; ORDER_INDEX>=0; ORDER_INDEX--)); do
+  IFS=$'\t' read -r ROW_CREATED_AT REPOSITORY_NAME ROW_DEFAULT_BRANCH ROW_ARCHIVED <<< "${REPOSITORIES[${ORDER_INDEX}]}"
+  EXPECTED_DISPLAY_ORDER+=("${REPOSITORY_NAME}")
+done
+
+# 현재 GitHub display order를 API의 pushed 정렬로 읽는다. 동일하면 default branch와 automation branch 모두 건드리지 않는다.
+if [[ "${CHECK_DISPLAY_DRIFT}" == "1" ]]; then
+  CURRENT_DISPLAY_ORDER=()
+  while IFS= read -r REPOSITORY_NAME; do
+    [[ -n "${REPOSITORY_NAME}" ]] && CURRENT_DISPLAY_ORDER+=("${REPOSITORY_NAME}")
+  done < <(
+    gh api --paginate "user/repos?per_page=100&visibility=all&affiliation=owner&sort=pushed&direction=desc" \
+      | jq -r --arg owner "${OWNER}" '
+          .[]
+          | select(.owner.login == $owner)
+          | select(.disabled == false and .default_branch != null)
+          | .name
+        '
+  )
+
+  DISPLAY_DRIFT=false
+  if [[ "${#CURRENT_DISPLAY_ORDER[@]}" -ne "${#EXPECTED_DISPLAY_ORDER[@]}" ]]; then
+    DISPLAY_DRIFT=true
+  else
+    for ((ORDER_INDEX=0; ORDER_INDEX<${#EXPECTED_DISPLAY_ORDER[@]}; ORDER_INDEX++)); do
+      if [[ "${CURRENT_DISPLAY_ORDER[${ORDER_INDEX}]}" != "${EXPECTED_DISPLAY_ORDER[${ORDER_INDEX}]}" ]]; then
+        DISPLAY_DRIFT=true
+        echo "Display-order drift at position $((ORDER_INDEX + 1)): expected=${EXPECTED_DISPLAY_ORDER[${ORDER_INDEX}]} actual=${CURRENT_DISPLAY_ORDER[${ORDER_INDEX}]}"
+        break
+      fi
+    done
+  fi
+
+  if [[ "${DISPLAY_DRIFT}" == "false" ]]; then
+    echo "Repository display order already matches the configured order; no refresh required."
+    exit 0
+  fi
+fi
+
 # 실제 실행 전에 총 대상 수와 정렬 기준을 로그에 남긴다.
 echo "Found ${#REPOSITORIES[@]} eligible repositories for ${OWNER}."
 echo "Push order: reverse fixed display order -> unlisted repositories oldest to newest -> profile repository last."
+echo "Automation branch: ${AUTOMATION_BRANCH}; default branches remain untouched."
 
 # 실패한 저장소를 모아서 중간 한 건의 실패가 나머지 정렬 작업을 막지 않도록 한다.
 FAILURES=()
@@ -190,12 +236,21 @@ for ROW in "${REPOSITORIES[@]}"; do
   fi
 
   if [[ "${HAS_PARENT}" == "true" ]]; then
-    # 원격 default branch의 현재 최신 commit과 동일한 tree를 재사용한다.
-    PARENT_COMMIT="$(git -C "${REPOSITORY_DIR}" rev-parse FETCH_HEAD)"
-    PARENT_TREE="$(git -C "${REPOSITORY_DIR}" show -s --format=%T "${PARENT_COMMIT}")"
-    NEW_COMMIT="$(printf '%s\n' "${COMMIT_MESSAGE}" | git -C "${REPOSITORY_DIR}" commit-tree "${PARENT_TREE}" -p "${PARENT_COMMIT}")" || NEW_COMMIT=""
+    # default branch는 source tree만 읽고 절대 push하지 않는다.
+    DEFAULT_COMMIT="$(git -C "${REPOSITORY_DIR}" rev-parse FETCH_HEAD)"
+    DEFAULT_TREE="$(git -C "${REPOSITORY_DIR}" show -s --format=%T "${DEFAULT_COMMIT}")"
+
+    # 기존 automation branch가 있으면 그 HEAD를 parent로 사용해 별도 선형 history를 유지한다.
+    if git -C "${REPOSITORY_DIR}" fetch --quiet --depth 1 --filter=blob:none origin \
+      "refs/heads/${AUTOMATION_BRANCH}:refs/remotes/origin/${AUTOMATION_BRANCH}" 2>/dev/null; then
+      AUTOMATION_PARENT="$(git -C "${REPOSITORY_DIR}" rev-parse "refs/remotes/origin/${AUTOMATION_BRANCH}")"
+    else
+      # 최초 전환 시에는 현재 default HEAD를 parent로 삼아 automation branch를 시작한다.
+      AUTOMATION_PARENT="${DEFAULT_COMMIT}"
+    fi
+    NEW_COMMIT="$(printf '%s\n' "${COMMIT_MESSAGE}" | git -C "${REPOSITORY_DIR}" commit-tree "${DEFAULT_TREE}" -p "${AUTOMATION_PARENT}")" || NEW_COMMIT=""
   else
-    # 완전히 빈 저장소에는 빈 tree를 가진 최초 root commit을 만든다.
+    # 완전히 빈 저장소에는 default branch 대신 automation branch에만 빈 root commit을 만든다.
     PARENT_TREE="$(git -C "${REPOSITORY_DIR}" mktree </dev/null)"
     NEW_COMMIT="$(printf '%s\n' "${COMMIT_MESSAGE}" | git -C "${REPOSITORY_DIR}" commit-tree "${PARENT_TREE}")" || NEW_COMMIT=""
   fi
@@ -217,8 +272,8 @@ for ROW in "${REPOSITORIES[@]}"; do
     fi
   fi
 
-  # 새 empty commit SHA를 해당 저장소의 실제 default branch로 직접 push해 pushed_at을 갱신한다.
-  if ! git -C "${REPOSITORY_DIR}" push --quiet origin "${NEW_COMMIT}:refs/heads/${DEFAULT_BRANCH}"; then
+  # 새 empty commit은 전용 automation branch에만 push한다. 어떤 branch push도 GitHub pushed_at을 갱신하므로 표시 순서는 유지된다.
+  if ! git -C "${REPOSITORY_DIR}" push --quiet origin "${NEW_COMMIT}:refs/heads/${AUTOMATION_BRANCH}"; then
     echo "Push failed: ${REPOSITORY}" >&2
     FAILURES+=("${REPOSITORY}:push")
     [[ "${IS_ARCHIVED}" == "true" ]] && gh api --method PATCH "repos/${OWNER}/${REPOSITORY}" -F archived=true >/dev/null || true
@@ -255,5 +310,5 @@ if [[ "${#FAILURES[@]}" -gt 0 ]]; then
   exit 1
 fi
 
-# 모든 public 저장소의 push가 생성일 순서대로 성공했음을 명시한다.
-echo "Repository ordering completed successfully for all ${#REPOSITORIES[@]} repositories."
+# 모든 대상 저장소의 automation branch push가 목표 표시 순서대로 성공했음을 명시한다.
+echo "Repository ordering completed successfully for all ${#REPOSITORIES[@]} repositories without modifying default-branch history."
