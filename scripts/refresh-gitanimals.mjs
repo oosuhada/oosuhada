@@ -551,6 +551,7 @@ const distributeCharacterRoaming = (svg) => {
   // quietly collapse them back into one grid cell. Catmull-Rom interpolation keeps every route
   // continuous through turns, including the loop seam.
   const explorerTypes = new Set(["RABBIT", "GALCHI_CAT", "SHIBA", "GOOSE"]);
+  const personaArchetype = (type) => type === "PENGUIN_SUNGLASSES" ? "PENGUIN" : type;
   const explorerWaypoints = [
     { x: 15, y: 33 },
     { x: 47, y: 29 },
@@ -772,7 +773,7 @@ const distributeCharacterRoaming = (svg) => {
     GALCHI_CAT: 11.75,
     SHIBA: 11.98,
     FLAMINGO: 24.24,
-  })[persona.type] ?? 0;
+  })[personaArchetype(persona.type)] ?? 0;
 
   const routeKeyframes = (unitIndex, offsetX = 0, offsetY = 0) => {
     const frames = [];
@@ -895,7 +896,7 @@ const distributeCharacterRoaming = (svg) => {
           + "82%{transform:translate(2px,-1px) rotate(3deg);}88%{transform:translate(0,0) rotate(-3deg);}",
       },
     };
-    const profile = profiles[persona.type] ?? profiles.SHIBA;
+    const profile = profiles[personaArchetype(persona.type)] ?? profiles.SHIBA;
     return { ...profile, delay: -((index * 7) % profile.duration) };
   };
 
@@ -909,7 +910,7 @@ const distributeCharacterRoaming = (svg) => {
     GALCHI_CAT: { cx: 5, cy: 14, rx: 5 },
     SHIBA: { cx: 5, cy: 12, rx: 5 },
     FLAMINGO: { cx: 8, cy: 24, rx: 6 },
-  })[persona.type] ?? { cx: 7, cy: 16, rx: 5 };
+  })[personaArchetype(persona.type)] ?? { cx: 7, cy: 16, rx: 5 };
 
   const proximityAt = (unitIndex, sampleIndex) => {
     const current = routeSamples[sampleIndex][unitIndex];

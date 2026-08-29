@@ -25,6 +25,7 @@ const expectedFacingPivots = {
   SHIBA: "11.98",
   FLAMINGO: "24.24",
 };
+const personaArchetype = (type) => type === "PENGUIN_SUNGLASSES" ? "PENGUIN" : type;
 
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
@@ -122,7 +123,7 @@ lightAnimations.forEach((animation, index) => {
   assert(facingRule.includes("steps(1,end)"), `${animation.persona.type} facing must use a discrete turn.`);
   assert(/transform-origin:[\d.]+px 0px/.test(facingRule) && !facingRule.includes("transform-box:fill-box"),
     `${animation.persona.type} must use its measured local sprite pivot.`);
-  assert(facingRule.includes(`transform-origin:${expectedFacingPivots[animation.persona.type]}px 0px`),
+  assert(facingRule.includes(`transform-origin:${expectedFacingPivots[personaArchetype(animation.persona.type)]}px 0px`),
     `${animation.persona.type} measured pivot changed unexpectedly.`);
 
   const interactionId = `profile-interaction-${animation.id}`;
