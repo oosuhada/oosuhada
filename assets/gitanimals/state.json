@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10110",
+  "totalContributions": "10111",
   "personas": [
     {
       "id": "764406126012079806",
@@ -456,7 +456,7 @@
     {
       "id": "839316524282022269",
       "type": "CAPYBARA",
-      "level": "303",
+      "level": "304",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
