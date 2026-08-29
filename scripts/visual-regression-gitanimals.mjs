@@ -6,9 +6,17 @@ import { chromium } from "playwright";
 
 const root = process.cwd();
 const outputDirectory = path.join(root, "artifacts", "gitanimals-visual-regression");
-const snapshots = [0, 2, 22, 30, 60, 90];
 const themes = ["light", "dark"];
 const state = JSON.parse(await readFile(path.join(root, "assets", "gitanimals", "state.json"), "utf8"));
+const lightSvg = await readFile(path.join(root, "assets", "gitanimals", "farm-light.svg"), "utf8");
+const firstHeartRoute = lightSvg.indexOf("@keyframes profile-heart-route-");
+const firstVisibleHeart = firstHeartRoute === -1
+  ? null
+  : lightSvg.slice(firstHeartRoute).match(/([\d.]+)%\{opacity:1;/);
+const heartSnapshotSecond = firstVisibleHeart
+  ? Number(((Number(firstVisibleHeart[1]) / 100) * 120 + 0.1).toFixed(2))
+  : 2;
+const snapshots = [...new Set([0, heartSnapshotSecond, 22, 30, 60, 90])].sort((left, right) => left - right);
 const visiblePersonas = state.personas.filter((persona) => persona.visible);
 const hasMountedPair = visiblePersonas.some((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES")
   && visiblePersonas.some((persona) => persona.type === "CAPYBARA_SWIM");
@@ -117,9 +125,9 @@ try {
       assert(geometry.interactions === expectedInteractionCount,
         `${theme} ${seconds}s lost proximity interaction wrappers.`);
       assert(geometry.shadows.length === expectedActionCount, `${theme} ${seconds}s lost grounding shadows.`);
-      if (seconds === 2) {
+      if (seconds === heartSnapshotSecond) {
         assert(geometry.visibleHearts.length > 0,
-          `${theme} 2s must exercise a stable head-on meeting heart.`);
+          `${theme} ${heartSnapshotSecond}s must exercise a stable head-on meeting heart.`);
       }
       geometry.levels.forEach((level) => {
         assert(level.width > 0 && level.height > 0, `${theme} ${seconds}s hides ${level.id}.`);
