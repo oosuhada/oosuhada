@@ -26,8 +26,8 @@
     {
       "id": "764406894337267759",
       "type": "LITTLE_CHICK_TUBE",
-      "level": "2",
-      "visible": false,
+      "level": "96",
+      "visible": true,
       "appVisible": false,
       "dropRate": "0.1%",
       "grade": "DEFAULT",
@@ -56,8 +56,8 @@
     {
       "id": "764408738857953239",
       "type": "RABBIT_TUBE",
-      "level": "0",
-      "visible": false,
+      "level": "101",
+      "visible": true,
       "appVisible": false,
       "dropRate": "0.1%",
       "grade": "DEFAULT",
@@ -186,8 +186,8 @@
     {
       "id": "799170701929564302",
       "type": "HAMSTER_TUBE",
-      "level": "3",
-      "visible": false,
+      "level": "97",
+      "visible": true,
       "appVisible": false,
       "dropRate": "0.1%",
       "grade": "DEFAULT",
@@ -364,16 +364,6 @@
       "isEvolutionable": false
     },
     {
-      "id": "839316494477300055",
-      "type": "HAMSTER",
-      "level": "188",
-      "visible": false,
-      "appVisible": false,
-      "dropRate": "7%",
-      "grade": "DEFAULT",
-      "isEvolutionable": false
-    },
-    {
       "id": "839316495001596340",
       "type": "SLIME_RED",
       "level": "195",
@@ -500,26 +490,6 @@
       "visible": false,
       "appVisible": false,
       "dropRate": "0.77%",
-      "grade": "DEFAULT",
-      "isEvolutionable": false
-    },
-    {
-      "id": "840756224457313450",
-      "type": "HAMSTER",
-      "level": "202",
-      "visible": false,
-      "appVisible": false,
-      "dropRate": "7%",
-      "grade": "DEFAULT",
-      "isEvolutionable": false
-    },
-    {
-      "id": "841913451012563552",
-      "type": "CAPYBARA_CARROT",
-      "level": "188",
-      "visible": false,
-      "appVisible": false,
-      "dropRate": "5%",
       "grade": "DEFAULT",
       "isEvolutionable": false
     },
@@ -670,16 +640,6 @@
       "visible": true,
       "appVisible": false,
       "dropRate": "1%",
-      "grade": "DEFAULT",
-      "isEvolutionable": false
-    },
-    {
-      "id": "857916316953198484",
-      "type": "HAMSTER",
-      "level": "187",
-      "visible": false,
-      "appVisible": false,
-      "dropRate": "7%",
       "grade": "DEFAULT",
       "isEvolutionable": false
     },
@@ -856,8 +816,8 @@
     {
       "id": "875503095130466455",
       "type": "DESSERT_FOX",
-      "level": "4",
-      "visible": false,
+      "level": "97",
+      "visible": true,
       "appVisible": false,
       "dropRate": "0.48%",
       "grade": "DEFAULT",

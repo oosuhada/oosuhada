@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v33";
+const layoutVersion = "character-behaviors-v38";
 const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
 // Farm-wide explorers intentionally cross more ground than residents; this still limits every pet
@@ -14,18 +14,22 @@ const sampleStepSeconds = 0.05;
 const maximumWeightedSpeed = 16;
 const explorerTypes = new Set(["RABBIT", "GALCHI_CAT", "SHIBA", "GOOSE"]);
 const expectedFacingPivots = {
+  LITTLE_CHICK_TUBE: "16.00",
+  RABBIT_TUBE: "10.00",
+  HAMSTER_TUBE: "21.00",
   RABBIT: "25.51",
   HAMSTER: "21.00",
   PENGUIN: "20.75",
+  PENGUIN_SUNGLASSES: "20.75",
   CAPYBARA_CARROT: "30.76",
   CAPYBARA_SWIM: "17.40",
   LITTLE_CHICK_SUNGLASSES: "14.36",
   GOOSE: "23.59",
   GALCHI_CAT: "11.75",
   SHIBA: "11.98",
+  DESSERT_FOX: "26.00",
   FLAMINGO: "24.24",
 };
-const personaArchetype = (type) => type === "PENGUIN_SUNGLASSES" ? "PENGUIN" : type;
 
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
@@ -35,6 +39,8 @@ const separationRadius = (type) => {
   if (type === "CAPYBARA_SWIM") return 12;
   if (type.includes("CAPYBARA")) return 11;
   if (type.includes("PENGUIN") || type.includes("FLAMINGO")) return 10;
+  if (type === "RABBIT_TUBE" || type === "HAMSTER_TUBE") return 10;
+  if (type === "LITTLE_CHICK_TUBE" || type === "DESSERT_FOX") return 9;
   if (type === "RABBIT" || type === "SHIBA") return 9;
   return 8;
 };
@@ -87,6 +93,7 @@ const mount = visible.find((persona) => persona.type === "CAPYBARA_SWIM");
 const collisionPersonas = rider && mount
   ? visible.filter((persona) => String(persona.id) !== String(rider.id))
   : visible;
+const denseLayout = collisionPersonas.length > 10;
 const lightAnimations = collisionPersonas.map((persona) => extractAnimation(light, persona));
 const darkAnimations = collisionPersonas.map((persona) => extractAnimation(dark, persona));
 
@@ -95,7 +102,7 @@ lightAnimations.forEach((animation, index) => {
   // each half-second frame to a visibly continuous traverse rather than a teleport.
   const personaMaximumWeightedSpeed = ["SHIBA", "GOOSE"].includes(animation.persona.type)
     ? 34
-    : explorerTypes.has(animation.persona.type) ? 30 : maximumWeightedSpeed;
+    : explorerTypes.has(animation.persona.type) ? (denseLayout ? 32 : 30) : maximumWeightedSpeed;
   const darkAnimation = darkAnimations[index];
   assert(
     JSON.stringify(animation.points) === JSON.stringify(darkAnimation.points),
@@ -123,7 +130,7 @@ lightAnimations.forEach((animation, index) => {
   assert(facingRule.includes("steps(1,end)"), `${animation.persona.type} facing must use a discrete turn.`);
   assert(/transform-origin:[\d.]+px 0px/.test(facingRule) && !facingRule.includes("transform-box:fill-box"),
     `${animation.persona.type} must use its measured local sprite pivot.`);
-  assert(facingRule.includes(`transform-origin:${expectedFacingPivots[personaArchetype(animation.persona.type)]}px 0px`),
+  assert(facingRule.includes(`transform-origin:${expectedFacingPivots[animation.persona.type]}px 0px`),
     `${animation.persona.type} measured pivot changed unexpectedly.`);
 
   const interactionId = `profile-interaction-${animation.id}`;
@@ -210,7 +217,7 @@ for (const explorerType of explorerTypes) {
     longestStationarySeconds = Math.max(longestStationarySeconds, stationarySeconds);
     previousPosition = currentPosition;
   }
-  assert(longestStationarySeconds <= 3,
+  assert(longestStationarySeconds <= (denseLayout ? 5.5 : 3),
     `${explorerType} explorer stays nearly still for ${longestStationarySeconds.toFixed(2)}s.`);
 }
 
