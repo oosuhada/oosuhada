@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v38";
+const layoutVersion = "character-behaviors-v40";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -557,12 +557,34 @@ const distributeCharacterRoaming = (svg) => {
       : [persona],
   }));
 
+  // Seven of the fourteen visible pets use the faster cadence. Four of them are the established
+  // farm-wide explorers; the three tube pets keep local patrols but move them at roughly 2x pace.
+  // This preserves the dense layout while making about half of the scene feel substantially livelier.
+  const fastMovementTypes = new Set([
+    "RABBIT",
+    "GALCHI_CAT",
+    "SHIBA",
+    "GOOSE",
+    "RABBIT_TUBE",
+    "HAMSTER_TUBE",
+    "LITTLE_CHICK_TUBE",
+  ]);
+  const farmRoamerTypes = new Set(["RABBIT", "GALCHI_CAT", "SHIBA", "GOOSE"]);
+
   const movementProfile = (persona, index) => {
     const type = persona.type;
     if (denseLayout) {
       if (type === "CAPYBARA_SWIM") return { amplitudeX: 9, amplitudeY: 5, frequencyX: 1, frequencyY: 1 };
       if (type.includes("CAPYBARA")) return { amplitudeX: 10, amplitudeY: 6, frequencyX: 1, frequencyY: 2 };
-      if (type.includes("TUBE")) return { amplitudeX: 8, amplitudeY: 5, frequencyX: 1, frequencyY: 1 };
+      if (type.includes("TUBE")) {
+        const fast = fastMovementTypes.has(type);
+        return {
+          amplitudeX: fast ? 16 : 8,
+          amplitudeY: fast ? 9 : 5,
+          frequencyX: fast ? 3 : 1,
+          frequencyY: fast ? 3 : 1,
+        };
+      }
       if (type === "DESSERT_FOX") return { amplitudeX: 12, amplitudeY: 6, frequencyX: 2, frequencyY: 1 };
       if (type.includes("PENGUIN") || type.includes("FLAMINGO")) {
         return { amplitudeX: 10, amplitudeY: 6, frequencyX: 1, frequencyY: 1 };
@@ -588,10 +610,6 @@ const distributeCharacterRoaming = (svg) => {
     };
   };
 
-  // Fast explorers use independent, farm-wide routes so source refreshes and cosmetic edits cannot
-  // quietly collapse them back into one grid cell. Catmull-Rom interpolation keeps every route
-  // continuous through turns, including the loop seam.
-  const explorerTypes = new Set(["RABBIT", "GALCHI_CAT", "SHIBA", "GOOSE"]);
   const explorerWaypoints = [
     { x: 15, y: 33 },
     { x: 47, y: 29 },
@@ -626,7 +644,8 @@ const distributeCharacterRoaming = (svg) => {
     { x: 66, y: 32 },
     { x: 88, y: 46 },
   ];
-  const catExplorerPhase = Number.parseFloat(process.env.GITANIMALS_CAT_PHASE ?? "0.12");
+  const catExplorerPhase = Number.parseFloat(process.env.GITANIMALS_CAT_PHASE ?? "0.24");
+  const shibaExplorerPhase = Number.parseFloat(process.env.GITANIMALS_SHIBA_PHASE ?? "0.04");
   const interpolateClosedRoute = (waypoints, progress) => {
     const scaled = (((progress % 1) + 1) % 1) * waypoints.length;
     const index = Math.floor(scaled) % waypoints.length;
@@ -647,24 +666,19 @@ const distributeCharacterRoaming = (svg) => {
 
   const preferredPosition = (unit, progress) => {
     if (unit.persona.type === "RABBIT") {
-      // Two full circuits per shared 120-second timeline keeps the explorer visibly active while
-      // all characters still use the same clock for reliable collision avoidance.
-      return interpolateClosedRoute(explorerWaypoints, progress * (denseLayout ? 1 : 2));
+      return interpolateClosedRoute(explorerWaypoints, progress * (denseLayout ? 2 : 4));
     }
     if (unit.persona.type === "GALCHI_CAT") {
-      // The cat patrols in the opposite direction on a distinct loop, so the two roamers do not
-      // look like synchronized copies of one another.
-      return interpolateClosedRoute(catExplorerWaypoints, catExplorerPhase - progress * (denseLayout ? 1 : 2));
+      return interpolateClosedRoute(catExplorerWaypoints, catExplorerPhase - progress * (denseLayout ? 2 : 4));
     }
     if (unit.persona.type === "SHIBA") {
-      // Three circuits per timeline make the Shiba visibly energetic without sacrificing the
-      // half-second samples used for smooth collision steering and direction changes.
-      return interpolateClosedRoute(shibaExplorerWaypoints, progress * (denseLayout ? 2 : 3));
+      return interpolateClosedRoute(
+        shibaExplorerWaypoints,
+        shibaExplorerPhase + progress * (denseLayout ? 4 : 6),
+      );
     }
     if (unit.persona.type === "GOOSE") {
-      // The duck-like goose takes a separate reverse loop so it does not move in formation with
-      // the Shiba or repeatedly meet the same residents at the same timestamps.
-      return interpolateClosedRoute(gooseExplorerWaypoints, 0.18 - progress * (denseLayout ? 2 : 3));
+      return interpolateClosedRoute(gooseExplorerWaypoints, 0.18 - progress * (denseLayout ? 4 : 6));
     }
     const profile = movementProfile(unit.persona, unit.index);
     const phase = unit.index / routeUnits.length;
@@ -716,11 +730,11 @@ const distributeCharacterRoaming = (svg) => {
           let weightedX = (left.x - right.x) * 2;
           let weightedY = left.y - right.y;
           let distance = Math.hypot(weightedX, weightedY);
-          const isRoamer = (unitIndex) => explorerTypes.has(routeUnits[unitIndex].persona.type);
+          const isRoamer = (unitIndex) => farmRoamerTypes.has(routeUnits[unitIndex].persona.type);
           const involvesExplorer = isRoamer(leftIndex) || isRoamer(rightIndex);
           const steeringDistance = separationRadius(routeUnits[leftIndex].persona)
             + separationRadius(routeUnits[rightIndex].persona)
-            + (involvesExplorer ? (denseLayout ? 15 : 12.5) : routeSafetyMargin);
+            + (involvesExplorer ? (denseLayout ? 16 : 12.5) : routeSafetyMargin);
           if (distance >= steeringDistance) continue;
           if (distance < 0.001) {
             const angle = ((leftIndex + 1) * (rightIndex + 3) * 47 * Math.PI) / 180;
@@ -728,17 +742,19 @@ const distributeCharacterRoaming = (svg) => {
             weightedY = Math.sin(angle);
             distance = 1;
           }
-          const strength = (steeringDistance - distance) * (denseLayout ? 0.10 : 0.09);
+          const strength = (steeringDistance - distance) * (denseLayout ? 0.11 : 0.09);
           const forceX = (weightedX / distance) * strength;
           const forceY = (weightedY / distance) * strength;
           const leftIsExplorer = isRoamer(leftIndex);
           const rightIsExplorer = isRoamer(rightIndex);
-          const leftShare = leftIsExplorer === rightIsExplorer
-            ? 0.5
-            : denseLayout ? (leftIsExplorer ? 0.65 : 0.35) : (leftIsExplorer ? 0.8 : 0.2);
-          const rightShare = leftIsExplorer === rightIsExplorer
-            ? 0.5
-            : denseLayout ? (rightIsExplorer ? 0.65 : 0.35) : (rightIsExplorer ? 0.8 : 0.2);
+          const leftIsFast = fastMovementTypes.has(routeUnits[leftIndex].persona.type);
+          const rightIsFast = fastMovementTypes.has(routeUnits[rightIndex].persona.type);
+          const leftShare = denseLayout && leftIsFast !== rightIsFast
+            ? (leftIsFast ? 0.85 : 0.15)
+            : leftIsExplorer === rightIsExplorer ? 0.5 : (leftIsExplorer ? 0.8 : 0.2);
+          const rightShare = denseLayout && leftIsFast !== rightIsFast
+            ? (rightIsFast ? 0.85 : 0.15)
+            : leftIsExplorer === rightIsExplorer ? 0.5 : (rightIsExplorer ? 0.8 : 0.2);
           // Roaming characters yield most of the way. Resident characters keep their calm local
           // paths instead of being shoved across a cell whenever the explorer passes nearby.
           forces[sampleIndex][leftIndex].x += forceX * leftShare;

@@ -6,13 +6,22 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v38";
+const layoutVersion = "character-behaviors-v40";
 const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
 // Farm-wide explorers intentionally cross more ground than residents; this still limits every pet
 // to a smooth multi-second traverse rather than a sub-second collision-correction jump.
 const maximumWeightedSpeed = 16;
-const explorerTypes = new Set(["RABBIT", "GALCHI_CAT", "SHIBA", "GOOSE"]);
+const fastMovementTypes = new Set([
+  "RABBIT",
+  "GALCHI_CAT",
+  "SHIBA",
+  "GOOSE",
+  "RABBIT_TUBE",
+  "HAMSTER_TUBE",
+  "LITTLE_CHICK_TUBE",
+]);
+const farmRoamerTypes = new Set(["RABBIT", "GALCHI_CAT", "SHIBA", "GOOSE"]);
 const expectedFacingPivots = {
   LITTLE_CHICK_TUBE: "16.00",
   RABBIT_TUBE: "10.00",
@@ -100,9 +109,9 @@ const darkAnimations = collisionPersonas.map((persona) => extractAnimation(dark,
 lightAnimations.forEach((animation, index) => {
   // Explorers cross the full 600px farm multiple times per cycle; their higher caps still limit
   // each half-second frame to a visibly continuous traverse rather than a teleport.
-  const personaMaximumWeightedSpeed = ["SHIBA", "GOOSE"].includes(animation.persona.type)
-    ? 34
-    : explorerTypes.has(animation.persona.type) ? (denseLayout ? 32 : 30) : maximumWeightedSpeed;
+  const personaMaximumWeightedSpeed = fastMovementTypes.has(animation.persona.type)
+    ? (denseLayout ? 72 : 84)
+    : maximumWeightedSpeed;
   const darkAnimation = darkAnimations[index];
   assert(
     JSON.stringify(animation.points) === JSON.stringify(darkAnimation.points),
@@ -188,7 +197,7 @@ lightAnimations.forEach((animation, index) => {
   }
 });
 
-for (const explorerType of explorerTypes) {
+for (const explorerType of farmRoamerTypes) {
   const explorerAnimation = lightAnimations.find((animation) => animation.persona.type === explorerType);
   if (!explorerAnimation) continue;
   const xValues = explorerAnimation.points.map((point) => point.x);
@@ -217,7 +226,7 @@ for (const explorerType of explorerTypes) {
     longestStationarySeconds = Math.max(longestStationarySeconds, stationarySeconds);
     previousPosition = currentPosition;
   }
-  assert(longestStationarySeconds <= (denseLayout ? 5.5 : 3),
+  assert(longestStationarySeconds <= (denseLayout ? 4.5 : 3),
     `${explorerType} explorer stays nearly still for ${longestStationarySeconds.toFixed(2)}s.`);
 }
 
