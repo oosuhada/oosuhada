@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v40";
+const layoutVersion = "character-behaviors-v41";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -185,6 +185,14 @@ const personaArchetype = (type) => {
   return type;
 };
 
+const personaFamily = (type) => {
+  if (type.startsWith("CAPYBARA")) return "CAPYBARA";
+  if (type.startsWith("RABBIT")) return "RABBIT";
+  if (type.startsWith("HAMSTER")) return "HAMSTER";
+  if (type.startsWith("LITTLE_CHICK")) return "LITTLE_CHICK";
+  return null;
+};
+
 const distributeCharacterRoaming = (svg) => {
   if (visiblePersonas.length === 0) {
     return svg;
@@ -282,9 +290,53 @@ const distributeCharacterRoaming = (svg) => {
   const prioritizedPersonas = [...placementPersonas].sort(
     (left, right) => footprintPriority(right) - footprintPriority(left),
   );
-  const anchorAssignments = new Map(
-    prioritizedPersonas.map((persona, index) => [String(persona.id), footprintAwareAnchors[index]]),
+  const placementFamilies = (persona) => {
+    const families = new Set();
+    const primaryFamily = personaFamily(persona.type);
+    if (primaryFamily) families.add(primaryFamily);
+    if (hasMountedPair && String(persona.id) === String(mount.id)) {
+      families.add("LITTLE_CHICK");
+    }
+    return families;
+  };
+  const weightedAnchorDistance = (left, right) => Math.hypot(
+    (left.x - right.x) * 2,
+    left.y - right.y,
   );
+  const sharesAnyFamily = (leftFamilies, rightFamilies) =>
+    [...leftFamilies].some((family) => rightFamilies.has(family));
+  const anchorAssignments = new Map();
+  const assignedAnchors = [];
+  const availableAnchors = [...footprintAwareAnchors];
+
+  prioritizedPersonas.forEach((persona) => {
+    const families = placementFamilies(persona);
+    let bestIndex = 0;
+    let bestScore = Number.NEGATIVE_INFINITY;
+    availableAnchors.forEach((candidate, index) => {
+      const sameFamilyAssignments = assignedAnchors.filter((assigned) =>
+        sharesAnyFamily(families, assigned.families));
+      const sameFamilyDistance = sameFamilyAssignments.length === 0
+        ? 0
+        : Math.min(...sameFamilyAssignments.map((assigned) =>
+          weightedAnchorDistance(candidate, assigned.anchor)));
+      const overallDistance = assignedAnchors.length === 0
+        ? 0
+        : Math.min(...assignedAnchors.map((assigned) =>
+          weightedAnchorDistance(candidate, assigned.anchor)));
+      // Duplicate species get first choice of the farthest remaining home point. This keeps their
+      // patrol centres apart before collision steering has to do any work.
+      const score = (sameFamilyAssignments.length > 0 ? 10000 + sameFamilyDistance * 100 : 0)
+        + overallDistance;
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    });
+    const [anchor] = availableAnchors.splice(bestIndex, 1);
+    anchorAssignments.set(String(persona.id), anchor);
+    assignedAnchors.push({ persona, families, anchor });
+  });
   if (hasMountedPair) {
     anchorAssignments.set(String(rider.id), anchorAssignments.get(String(mount.id)));
   }
@@ -548,14 +600,23 @@ const distributeCharacterRoaming = (svg) => {
   // smoother separate them without a sudden correction at the collision boundary.
   const routeSafetyMargin = denseLayout ? 12 : 10.5;
   const routeSampleCount = routeDuration / routeSampleSeconds;
-  const routeUnits = prioritizedPersonas.map((persona, index) => ({
-    persona,
-    index,
-    anchor: anchorAssignments.get(String(persona.id)),
-    members: hasMountedPair && String(persona.id) === String(mount.id)
+  const routeUnits = prioritizedPersonas.map((persona, index) => {
+    const members = hasMountedPair && String(persona.id) === String(mount.id)
       ? [mount, rider]
-      : [persona],
-  }));
+      : [persona];
+    const families = new Set(
+      members.map((member) => personaFamily(member.type)).filter(Boolean),
+    );
+    return {
+      persona,
+      index,
+      anchor: anchorAssignments.get(String(persona.id)),
+      members,
+      families,
+    };
+  });
+  const unitsShareFamily = (leftIndex, rightIndex) =>
+    [...routeUnits[leftIndex].families].some((family) => routeUnits[rightIndex].families.has(family));
 
   // Seven of the fourteen visible pets use the faster cadence. Four of them are the established
   // farm-wide explorers; the three tube pets keep local patrols but move them at roughly 2x pace.
@@ -732,9 +793,12 @@ const distributeCharacterRoaming = (svg) => {
           let distance = Math.hypot(weightedX, weightedY);
           const isRoamer = (unitIndex) => farmRoamerTypes.has(routeUnits[unitIndex].persona.type);
           const involvesExplorer = isRoamer(leftIndex) || isRoamer(rightIndex);
+          const sameFamily = unitsShareFamily(leftIndex, rightIndex);
           const steeringDistance = separationRadius(routeUnits[leftIndex].persona)
             + separationRadius(routeUnits[rightIndex].persona)
-            + (involvesExplorer ? (denseLayout ? 16 : 12.5) : routeSafetyMargin);
+            + (sameFamily
+              ? (denseLayout ? 30 : 24)
+              : (involvesExplorer ? (denseLayout ? 16 : 12.5) : routeSafetyMargin));
           if (distance >= steeringDistance) continue;
           if (distance < 0.001) {
             const angle = ((leftIndex + 1) * (rightIndex + 3) * 47 * Math.PI) / 180;
@@ -742,7 +806,8 @@ const distributeCharacterRoaming = (svg) => {
             weightedY = Math.sin(angle);
             distance = 1;
           }
-          const strength = (steeringDistance - distance) * (denseLayout ? 0.11 : 0.09);
+          const strength = (steeringDistance - distance)
+            * (sameFamily ? (denseLayout ? 0.19 : 0.16) : (denseLayout ? 0.11 : 0.09));
           const forceX = (weightedX / distance) * strength;
           const forceY = (weightedY / distance) * strength;
           const leftIsExplorer = isRoamer(leftIndex);
@@ -1016,6 +1081,7 @@ const distributeCharacterRoaming = (svg) => {
     let nearest;
     routeUnits.forEach((otherUnit, otherIndex) => {
       if (otherIndex === unitIndex) return;
+      if (unitsShareFamily(unitIndex, otherIndex)) return;
       const other = routeSamples[sampleIndex][otherIndex];
       const weightedX = (current.x - other.x) * 2;
       const weightedY = current.y - other.y;
@@ -1048,6 +1114,7 @@ const distributeCharacterRoaming = (svg) => {
     routeUnits.forEach((otherUnit, otherIndex) => {
       // One heart per pair: the lower-index unit owns the shared effect.
       if (otherIndex <= unitIndex) return;
+      if (unitsShareFamily(unitIndex, otherIndex)) return;
       const other = routeSamples[sampleIndex][otherIndex];
       const weightedX = (current.x - other.x) * 2;
       const weightedY = current.y - other.y;

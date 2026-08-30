@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v40";
+const layoutVersion = "character-behaviors-v41";
 const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
 // Farm-wide explorers intentionally cross more ground than residents; this still limits every pet
@@ -52,6 +52,14 @@ const separationRadius = (type) => {
   if (type === "LITTLE_CHICK_TUBE" || type === "DESSERT_FOX") return 9;
   if (type === "RABBIT" || type === "SHIBA") return 9;
   return 8;
+};
+
+const personaFamily = (type) => {
+  if (type.startsWith("CAPYBARA")) return "CAPYBARA";
+  if (type.startsWith("RABBIT")) return "RABBIT";
+  if (type.startsWith("HAMSTER")) return "HAMSTER";
+  if (type.startsWith("LITTLE_CHICK")) return "LITTLE_CHICK";
+  return null;
 };
 
 const extractAnimation = (svg, persona) => {
@@ -105,6 +113,20 @@ const collisionPersonas = rider && mount
 const denseLayout = collisionPersonas.length > 10;
 const lightAnimations = collisionPersonas.map((persona) => extractAnimation(light, persona));
 const darkAnimations = collisionPersonas.map((persona) => extractAnimation(dark, persona));
+const animationFamilies = (animation) => {
+  const families = new Set();
+  const family = personaFamily(animation.persona.type);
+  if (family) families.add(family);
+  if (rider && mount && String(animation.persona.id) === String(mount.id)) {
+    families.add("LITTLE_CHICK");
+  }
+  return families;
+};
+const animationsShareFamily = (left, right) => {
+  const leftFamilies = animationFamilies(left);
+  const rightFamilies = animationFamilies(right);
+  return [...leftFamilies].some((family) => rightFamilies.has(family));
+};
 
 lightAnimations.forEach((animation, index) => {
   // Explorers cross the full 600px farm multiple times per cycle; their higher caps still limit
@@ -312,14 +334,19 @@ if (rider && mount) {
 
 let longestOverlap = 0;
 let longestPair = "";
+let closestSameFamilyGap = Number.POSITIVE_INFINITY;
+let closestSameFamilyPair = "";
 const cycleSeconds = Math.max(...lightAnimations.map((animation) => animation.duration));
 for (let leftIndex = 0; leftIndex < lightAnimations.length; leftIndex += 1) {
   for (let rightIndex = leftIndex + 1; rightIndex < lightAnimations.length; rightIndex += 1) {
     const left = lightAnimations[leftIndex];
     const right = lightAnimations[rightIndex];
     const threshold = separationRadius(left.persona.type) + separationRadius(right.persona.type);
+    const sameFamily = animationsShareFamily(left, right);
+    const sameFamilyMinimumDistance = threshold + 10;
     let overlapStartedAt = null;
     let pairLongestOverlap = 0;
+    let pairMinimumDistance = Number.POSITIVE_INFINITY;
     for (let seconds = 0; seconds <= cycleSeconds; seconds += sampleStepSeconds) {
       const leftPosition = positionAt(left, seconds);
       const rightPosition = positionAt(right, seconds);
@@ -327,6 +354,7 @@ for (let leftIndex = 0; leftIndex < lightAnimations.length; leftIndex += 1) {
         (leftPosition.x - rightPosition.x) * 2,
         leftPosition.y - rightPosition.y,
       );
+      pairMinimumDistance = Math.min(pairMinimumDistance, distance);
       if (distance < threshold && overlapStartedAt === null) overlapStartedAt = seconds;
       if (distance >= threshold && overlapStartedAt !== null) {
         pairLongestOverlap = Math.max(pairLongestOverlap, seconds - overlapStartedAt);
@@ -340,6 +368,18 @@ for (let leftIndex = 0; leftIndex < lightAnimations.length; leftIndex += 1) {
       longestOverlap = pairLongestOverlap;
       longestPair = `${left.persona.type} / ${right.persona.type}`;
     }
+    if (sameFamily) {
+      assert(
+        pairMinimumDistance >= sameFamilyMinimumDistance,
+        `${left.persona.type} / ${right.persona.type} are duplicate-family pets but approach to `
+          + `${pairMinimumDistance.toFixed(2)} units; expected >= ${sameFamilyMinimumDistance.toFixed(2)}.`,
+      );
+      const gap = pairMinimumDistance - threshold;
+      if (gap < closestSameFamilyGap) {
+        closestSameFamilyGap = gap;
+        closestSameFamilyPair = `${left.persona.type} / ${right.persona.type}`;
+      }
+    }
   }
 }
 
@@ -350,5 +390,8 @@ assert(
 
 console.log(
   `Verified ${lightAnimations.length} coordinated units; longest overlap ${longestOverlap.toFixed(2)}s`
-  + `${longestPair ? ` (${longestPair})` : ""}.`,
+  + `${longestPair ? ` (${longestPair})` : ""}`
+  + `${Number.isFinite(closestSameFamilyGap)
+    ? `; closest duplicate-family gap ${closestSameFamilyGap.toFixed(2)} units (${closestSameFamilyPair})`
+    : ""}.`,
 );
