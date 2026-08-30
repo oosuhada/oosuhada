@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v33";
+const layoutVersion = "character-behaviors-v42";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -177,6 +177,22 @@ const visiblePersonas = stateData.personas.filter((persona) => {
   return persona.visible && (movingPersonaIds.has(id) || staticPersonaRoots.has(id));
 });
 
+const personaArchetype = (type) => {
+  if (type.startsWith("RABBIT")) return "RABBIT";
+  if (type.startsWith("HAMSTER")) return "HAMSTER";
+  if (type.startsWith("PENGUIN")) return "PENGUIN";
+  if (type.startsWith("LITTLE_CHICK")) return "LITTLE_CHICK";
+  return type;
+};
+
+const personaFamily = (type) => {
+  if (type.startsWith("CAPYBARA")) return "CAPYBARA";
+  if (type.startsWith("RABBIT")) return "RABBIT";
+  if (type.startsWith("HAMSTER")) return "HAMSTER";
+  if (type.startsWith("LITTLE_CHICK")) return "LITTLE_CHICK";
+  return null;
+};
+
 const distributeCharacterRoaming = (svg) => {
   if (visiblePersonas.length === 0) {
     return svg;
@@ -195,28 +211,48 @@ const distributeCharacterRoaming = (svg) => {
   const placementPersonas = hasMountedPair
     ? visiblePersonas.filter((persona) => String(persona.id) !== String(rider.id))
     : visiblePersonas;
-  const columns = placementPersonas.length <= 3
-    ? placementPersonas.length
-    : Math.ceil(placementPersonas.length / 2);
-  const rows = Math.ceil(placementPersonas.length / columns);
-  const anchorBounds = { left: 15, right: 85, top: 38, bottom: 68 };
+  const denseLayout = placementPersonas.length > 10;
+  const anchorBounds = denseLayout
+    ? { left: 14, right: 86, top: 34, bottom: 70 }
+    : { left: 15, right: 85, top: 38, bottom: 68 };
   // Keep the full distance between 5x2 home points, then add an overlapping movement halo.
   // A halo is wider than a grid cell, so characters can cross cell boundaries without piling up.
-  const horizontalFreedom = 0.36;
-  const verticalFreedom = 0.46;
+  const horizontalFreedom = denseLayout ? 0.24 : 0.36;
+  const verticalFreedom = denseLayout ? 0.30 : 0.46;
 
-  const anchors = Array.from({ length: rows * columns }, (_, index) => {
-    const column = index % columns;
-    const row = Math.floor(index / columns);
-    return {
-      x: columns === 1
-        ? 50
-        : anchorBounds.left + column * ((anchorBounds.right - anchorBounds.left) / (columns - 1)),
-      y: rows === 1
-        ? 55
-        : anchorBounds.top + row * ((anchorBounds.bottom - anchorBounds.top) / (rows - 1)),
-    };
-  });
+  const anchors = denseLayout
+    ? [
+      // A staggered 5 / 4 / 5 field keeps 13-14 spatial units readable inside the existing
+      // 600x300 farm. The middle row is half a cell offset so tall labels and wide tube pets do
+      // not form three vertical collision columns.
+      { x: 14, y: 34 }, { x: 32, y: 34 }, { x: 50, y: 34 }, { x: 68, y: 34 }, { x: 86, y: 34 },
+      { x: 23, y: 52 }, { x: 41, y: 52 }, { x: 59, y: 52 }, { x: 77, y: 52 },
+      { x: 14, y: 70 }, { x: 32, y: 70 }, { x: 50, y: 70 }, { x: 68, y: 70 }, { x: 86, y: 70 },
+    ]
+    : (() => {
+      const columns = placementPersonas.length <= 3
+        ? placementPersonas.length
+        : Math.ceil(placementPersonas.length / 2);
+      const rows = Math.ceil(placementPersonas.length / columns);
+      return Array.from({ length: rows * columns }, (_, index) => {
+        const column = index % columns;
+        const row = Math.floor(index / columns);
+        return {
+          x: columns === 1
+            ? 50
+            : anchorBounds.left + column * ((anchorBounds.right - anchorBounds.left) / (columns - 1)),
+          y: rows === 1
+            ? 55
+            : anchorBounds.top + row * ((anchorBounds.bottom - anchorBounds.top) / (rows - 1)),
+        };
+      });
+    })();
+
+  if (placementPersonas.length > anchors.length) {
+    throw new Error(
+      `The coordinated farm supports at most ${anchors.length} spatial units; received ${placementPersonas.length}.`,
+    );
+  }
 
   const remainingAnchors = anchors.slice(1);
   const spreadAnchors = [anchors[0]];
@@ -237,11 +273,8 @@ const distributeCharacterRoaming = (svg) => {
     spreadAnchors.push(remainingAnchors.splice(bestIndex, 1)[0]);
   }
 
-  const footprintAwareAnchors = rows === 2 && columns === 5
-    ? (hasMountedPair && placementPersonas.length === 9
-      // Leave the top-centre slot empty: its roaming halo intersects the mounted pair at top-right.
-      ? [0, 9, 3, 7, 1, 5, 4, 6, 8].map((index) => anchors[index])
-      : [0, 9, 3, 7, 1, 5, 4, 6, 2, 8].map((index) => anchors[index]))
+  const footprintAwareAnchors = denseLayout
+    ? spreadAnchors.slice(0, placementPersonas.length)
     : spreadAnchors;
 
   const footprintPriority = (persona) => {
@@ -249,6 +282,7 @@ const distributeCharacterRoaming = (svg) => {
     const staticPriority = staticPersonaRoots.has(String(persona.id)) ? 100 : 0;
     if (type.includes("CAPYBARA")) return staticPriority + 5;
     if (type.includes("PENGUIN") || type.includes("FLAMINGO")) return staticPriority + 4;
+    if (type.includes("TUBE") || type === "DESSERT_FOX") return staticPriority + 4;
     if (type.includes("RABBIT") || type.includes("HAMSTER")) return staticPriority + 3;
     return staticPriority + 2;
   };
@@ -256,9 +290,53 @@ const distributeCharacterRoaming = (svg) => {
   const prioritizedPersonas = [...placementPersonas].sort(
     (left, right) => footprintPriority(right) - footprintPriority(left),
   );
-  const anchorAssignments = new Map(
-    prioritizedPersonas.map((persona, index) => [String(persona.id), footprintAwareAnchors[index]]),
+  const placementFamilies = (persona) => {
+    const families = new Set();
+    const primaryFamily = personaFamily(persona.type);
+    if (primaryFamily) families.add(primaryFamily);
+    if (hasMountedPair && String(persona.id) === String(mount.id)) {
+      families.add("LITTLE_CHICK");
+    }
+    return families;
+  };
+  const weightedAnchorDistance = (left, right) => Math.hypot(
+    (left.x - right.x) * 2,
+    left.y - right.y,
   );
+  const sharesAnyFamily = (leftFamilies, rightFamilies) =>
+    [...leftFamilies].some((family) => rightFamilies.has(family));
+  const anchorAssignments = new Map();
+  const assignedAnchors = [];
+  const availableAnchors = [...footprintAwareAnchors];
+
+  prioritizedPersonas.forEach((persona) => {
+    const families = placementFamilies(persona);
+    let bestIndex = 0;
+    let bestScore = Number.NEGATIVE_INFINITY;
+    availableAnchors.forEach((candidate, index) => {
+      const sameFamilyAssignments = assignedAnchors.filter((assigned) =>
+        sharesAnyFamily(families, assigned.families));
+      const sameFamilyDistance = sameFamilyAssignments.length === 0
+        ? 0
+        : Math.min(...sameFamilyAssignments.map((assigned) =>
+          weightedAnchorDistance(candidate, assigned.anchor)));
+      const overallDistance = assignedAnchors.length === 0
+        ? 0
+        : Math.min(...assignedAnchors.map((assigned) =>
+          weightedAnchorDistance(candidate, assigned.anchor)));
+      // Duplicate species get first choice of the farthest remaining home point. This keeps their
+      // patrol centres apart before collision steering has to do any work.
+      const score = (sameFamilyAssignments.length > 0 ? 10000 + sameFamilyDistance * 100 : 0)
+        + overallDistance;
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    });
+    const [anchor] = availableAnchors.splice(bestIndex, 1);
+    anchorAssignments.set(String(persona.id), anchor);
+    assignedAnchors.push({ persona, families, anchor });
+  });
   if (hasMountedPair) {
     anchorAssignments.set(String(rider.id), anchorAssignments.get(String(mount.id)));
   }
@@ -520,19 +598,65 @@ const distributeCharacterRoaming = (svg) => {
   const routeSampleSeconds = 0.5;
   // Begin the gentle turn before sprites visibly overlap. The extra runway lets the temporal
   // smoother separate them without a sudden correction at the collision boundary.
-  const routeSafetyMargin = 10.5;
+  const routeSafetyMargin = denseLayout ? 12 : 10.5;
   const routeSampleCount = routeDuration / routeSampleSeconds;
-  const routeUnits = prioritizedPersonas.map((persona, index) => ({
-    persona,
-    index,
-    anchor: anchorAssignments.get(String(persona.id)),
-    members: hasMountedPair && String(persona.id) === String(mount.id)
+  const routeUnits = prioritizedPersonas.map((persona, index) => {
+    const members = hasMountedPair && String(persona.id) === String(mount.id)
       ? [mount, rider]
-      : [persona],
-  }));
+      : [persona];
+    const families = new Set(
+      members.map((member) => personaFamily(member.type)).filter(Boolean),
+    );
+    return {
+      persona,
+      index,
+      anchor: anchorAssignments.get(String(persona.id)),
+      members,
+      families,
+    };
+  });
+  const unitsShareFamily = (leftIndex, rightIndex) =>
+    [...routeUnits[leftIndex].families].some((family) => routeUnits[rightIndex].families.has(family));
+
+  // Seven of the fourteen visible pets use the faster cadence. Four of them are the established
+  // farm-wide explorers; the three tube pets keep local patrols but move them at roughly 2x pace.
+  // This preserves the dense layout while making about half of the scene feel substantially livelier.
+  const fastMovementTypes = new Set([
+    "RABBIT",
+    "GALCHI_CAT",
+    "SHIBA",
+    "GOOSE",
+    "RABBIT_TUBE",
+    "HAMSTER_TUBE",
+    "LITTLE_CHICK_TUBE",
+  ]);
+  const farmRoamerTypes = new Set(["RABBIT", "GALCHI_CAT", "SHIBA", "GOOSE"]);
 
   const movementProfile = (persona, index) => {
     const type = persona.type;
+    if (denseLayout) {
+      if (type === "CAPYBARA_SWIM") return { amplitudeX: 9, amplitudeY: 5, frequencyX: 1, frequencyY: 1 };
+      if (type.includes("CAPYBARA")) return { amplitudeX: 10, amplitudeY: 6, frequencyX: 1, frequencyY: 2 };
+      if (type.includes("TUBE")) {
+        const fast = fastMovementTypes.has(type);
+        return {
+          amplitudeX: fast ? 16 : 8,
+          amplitudeY: fast ? 9 : 5,
+          frequencyX: fast ? 3 : 1,
+          frequencyY: fast ? 3 : 1,
+        };
+      }
+      if (type === "DESSERT_FOX") return { amplitudeX: 12, amplitudeY: 6, frequencyX: 2, frequencyY: 1 };
+      if (type.includes("PENGUIN") || type.includes("FLAMINGO")) {
+        return { amplitudeX: 10, amplitudeY: 6, frequencyX: 1, frequencyY: 1 };
+      }
+      return {
+        amplitudeX: 9 + (index % 3),
+        amplitudeY: 5 + (index % 2),
+        frequencyX: 1 + (index % 2),
+        frequencyY: 1 + ((index + 1) % 2),
+      };
+    }
     if (type === "RABBIT") return { amplitudeX: 28, amplitudeY: 18, frequencyX: 3, frequencyY: 2 };
     if (type === "CAPYBARA_SWIM") return { amplitudeX: 15, amplitudeY: 9, frequencyX: 1, frequencyY: 1 };
     if (type.includes("CAPYBARA")) return { amplitudeX: 17, amplitudeY: 11, frequencyX: 1, frequencyY: 2 };
@@ -547,10 +671,6 @@ const distributeCharacterRoaming = (svg) => {
     };
   };
 
-  // Fast explorers use independent, farm-wide routes so source refreshes and cosmetic edits cannot
-  // quietly collapse them back into one grid cell. Catmull-Rom interpolation keeps every route
-  // continuous through turns, including the loop seam.
-  const explorerTypes = new Set(["RABBIT", "GALCHI_CAT", "SHIBA", "GOOSE"]);
   const explorerWaypoints = [
     { x: 15, y: 33 },
     { x: 47, y: 29 },
@@ -585,7 +705,8 @@ const distributeCharacterRoaming = (svg) => {
     { x: 66, y: 32 },
     { x: 88, y: 46 },
   ];
-  const catExplorerPhase = Number.parseFloat(process.env.GITANIMALS_CAT_PHASE ?? "0.12");
+  const catExplorerPhase = Number.parseFloat(process.env.GITANIMALS_CAT_PHASE ?? "0.24");
+  const shibaExplorerPhase = Number.parseFloat(process.env.GITANIMALS_SHIBA_PHASE ?? "0.04");
   const interpolateClosedRoute = (waypoints, progress) => {
     const scaled = (((progress % 1) + 1) % 1) * waypoints.length;
     const index = Math.floor(scaled) % waypoints.length;
@@ -606,24 +727,19 @@ const distributeCharacterRoaming = (svg) => {
 
   const preferredPosition = (unit, progress) => {
     if (unit.persona.type === "RABBIT") {
-      // Two full circuits per shared 120-second timeline keeps the explorer visibly active while
-      // all characters still use the same clock for reliable collision avoidance.
-      return interpolateClosedRoute(explorerWaypoints, progress * 2);
+      return interpolateClosedRoute(explorerWaypoints, progress * (denseLayout ? 2 : 4));
     }
     if (unit.persona.type === "GALCHI_CAT") {
-      // The cat patrols in the opposite direction on a distinct loop, so the two roamers do not
-      // look like synchronized copies of one another.
-      return interpolateClosedRoute(catExplorerWaypoints, catExplorerPhase - progress * 2);
+      return interpolateClosedRoute(catExplorerWaypoints, catExplorerPhase - progress * (denseLayout ? 2 : 4));
     }
     if (unit.persona.type === "SHIBA") {
-      // Three circuits per timeline make the Shiba visibly energetic without sacrificing the
-      // half-second samples used for smooth collision steering and direction changes.
-      return interpolateClosedRoute(shibaExplorerWaypoints, progress * 3);
+      return interpolateClosedRoute(
+        shibaExplorerWaypoints,
+        shibaExplorerPhase + progress * (denseLayout ? 4 : 6),
+      );
     }
     if (unit.persona.type === "GOOSE") {
-      // The duck-like goose takes a separate reverse loop so it does not move in formation with
-      // the Shiba or repeatedly meet the same residents at the same timestamps.
-      return interpolateClosedRoute(gooseExplorerWaypoints, 0.18 - progress * 3);
+      return interpolateClosedRoute(gooseExplorerWaypoints, 0.18 - progress * (denseLayout ? 4 : 6));
     }
     const profile = movementProfile(unit.persona, unit.index);
     const phase = unit.index / routeUnits.length;
@@ -643,6 +759,8 @@ const distributeCharacterRoaming = (svg) => {
     if (type === "CAPYBARA_SWIM") return 12;
     if (type.includes("CAPYBARA")) return 11;
     if (type.includes("PENGUIN") || type.includes("FLAMINGO")) return 10;
+    if (type === "RABBIT_TUBE" || type === "HAMSTER_TUBE") return 10;
+    if (type === "LITTLE_CHICK_TUBE" || type === "DESSERT_FOX") return 9;
     if (type === "RABBIT" || type === "SHIBA") return 9;
     return 8;
   };
@@ -663,7 +781,7 @@ const distributeCharacterRoaming = (svg) => {
 
   // Collision forces are deliberately soft and are smoothed across neighbouring timestamps. Pets may
   // meet, but a sustained overlap creates a gradual steering force that sends them apart naturally.
-  for (let iteration = 0; iteration < 240; iteration += 1) {
+  for (let iteration = 0; iteration < (denseLayout ? 360 : 240); iteration += 1) {
     const forces = periodicSamples.map((sample) => sample.map(() => ({ x: 0, y: 0 })));
     periodicSamples.forEach((positions, sampleIndex) => {
       for (let leftIndex = 0; leftIndex < routeUnits.length; leftIndex += 1) {
@@ -673,11 +791,14 @@ const distributeCharacterRoaming = (svg) => {
           let weightedX = (left.x - right.x) * 2;
           let weightedY = left.y - right.y;
           let distance = Math.hypot(weightedX, weightedY);
-          const isRoamer = (unitIndex) => explorerTypes.has(routeUnits[unitIndex].persona.type);
+          const isRoamer = (unitIndex) => farmRoamerTypes.has(routeUnits[unitIndex].persona.type);
           const involvesExplorer = isRoamer(leftIndex) || isRoamer(rightIndex);
+          const sameFamily = unitsShareFamily(leftIndex, rightIndex);
           const steeringDistance = separationRadius(routeUnits[leftIndex].persona)
             + separationRadius(routeUnits[rightIndex].persona)
-            + (involvesExplorer ? 12.5 : routeSafetyMargin);
+            + (sameFamily
+              ? (denseLayout ? 30 : 24)
+              : (involvesExplorer ? (denseLayout ? 16 : 12.5) : routeSafetyMargin));
           if (distance >= steeringDistance) continue;
           if (distance < 0.001) {
             const angle = ((leftIndex + 1) * (rightIndex + 3) * 47 * Math.PI) / 180;
@@ -685,13 +806,20 @@ const distributeCharacterRoaming = (svg) => {
             weightedY = Math.sin(angle);
             distance = 1;
           }
-          const strength = (steeringDistance - distance) * 0.09;
+          const strength = (steeringDistance - distance)
+            * (sameFamily ? (denseLayout ? 0.19 : 0.16) : (denseLayout ? 0.11 : 0.09));
           const forceX = (weightedX / distance) * strength;
           const forceY = (weightedY / distance) * strength;
           const leftIsExplorer = isRoamer(leftIndex);
           const rightIsExplorer = isRoamer(rightIndex);
-          const leftShare = leftIsExplorer === rightIsExplorer ? 0.5 : leftIsExplorer ? 0.8 : 0.2;
-          const rightShare = leftIsExplorer === rightIsExplorer ? 0.5 : rightIsExplorer ? 0.8 : 0.2;
+          const leftIsFast = fastMovementTypes.has(routeUnits[leftIndex].persona.type);
+          const rightIsFast = fastMovementTypes.has(routeUnits[rightIndex].persona.type);
+          const leftShare = denseLayout && leftIsFast !== rightIsFast
+            ? (leftIsFast ? 0.85 : 0.15)
+            : leftIsExplorer === rightIsExplorer ? 0.5 : (leftIsExplorer ? 0.8 : 0.2);
+          const rightShare = denseLayout && leftIsFast !== rightIsFast
+            ? (rightIsFast ? 0.85 : 0.15)
+            : leftIsExplorer === rightIsExplorer ? 0.5 : (rightIsExplorer ? 0.8 : 0.2);
           // Roaming characters yield most of the way. Resident characters keep their calm local
           // paths instead of being shoved across a cell whenever the explorer passes nearby.
           forces[sampleIndex][leftIndex].x += forceX * leftShare;
@@ -762,6 +890,11 @@ const distributeCharacterRoaming = (svg) => {
   // Measured from paired +1/-1 renders of each sprite at the same animation timestamp. These local
   // pivots keep the visible artwork centre fixed even when hidden emotion states enlarge its SVG box.
   const facingPivot = (persona) => ({
+    RABBIT_TUBE: 10.00,
+    HAMSTER_TUBE: 21.00,
+    LITTLE_CHICK_TUBE: 16.00,
+    PENGUIN_SUNGLASSES: 20.75,
+    DESSERT_FOX: 26.00,
     RABBIT: 25.51,
     HAMSTER: 21.00,
     PENGUIN: 20.75,
@@ -772,7 +905,12 @@ const distributeCharacterRoaming = (svg) => {
     GALCHI_CAT: 11.75,
     SHIBA: 11.98,
     FLAMINGO: 24.24,
-  })[persona.type] ?? 0;
+  })[persona.type] ?? ({
+    RABBIT: 25.51,
+    HAMSTER: 21.00,
+    PENGUIN: 20.75,
+    LITTLE_CHICK: 16.00,
+  })[personaArchetype(persona.type)] ?? 0;
 
   const routeKeyframes = (unitIndex, offsetX = 0, offsetY = 0) => {
     const frames = [];
@@ -894,12 +1032,36 @@ const distributeCharacterRoaming = (svg) => {
           + "66%{transform:translate(-1px,1px) rotate(-5deg);}71%{transform:translate(0,0) rotate(4deg);}"
           + "82%{transform:translate(2px,-1px) rotate(3deg);}88%{transform:translate(0,0) rotate(-3deg);}",
       },
+      LITTLE_CHICK: {
+        duration: 54,
+        body: "0%,12%,28%,44%,60%,76%,92%,100%{transform:translate(0,0) rotate(0deg);}"
+          + "16%{transform:translate(0,-2px) rotate(-3deg);}20%{transform:translate(1px,0) rotate(3deg);}"
+          + "32%{transform:translate(-1px,0) rotate(-4deg);}36%{transform:translate(1px,-1px) rotate(4deg);}"
+          + "48%{transform:translate(0,-2px) rotate(2deg);}52%{transform:translate(0,0) rotate(-2deg);}"
+          + "64%{transform:translate(1px,0) rotate(4deg);}68%{transform:translate(-1px,0) rotate(-3deg);}"
+          + "80%{transform:translate(0,-2px) rotate(-2deg);}86%{transform:translate(1px,0) rotate(3deg);}",
+      },
+      DESSERT_FOX: {
+        duration: 64,
+        body: "0%,12%,28%,44%,60%,76%,92%,100%{transform:translate(0,0) rotate(0deg);}"
+          + "16%{transform:translate(2px,0) rotate(4deg);}20%{transform:translate(0,-1px) rotate(-3deg);}"
+          + "32%{transform:translate(-2px,0) rotate(-5deg);}36%{transform:translate(1px,-2px) rotate(4deg);}"
+          + "48%{transform:translate(2px,0) rotate(5deg);}52%{transform:translate(0,0) rotate(-4deg);}"
+          + "64%{transform:translate(-1px,-1px) rotate(-5deg);}68%{transform:translate(1px,0) rotate(4deg);}"
+          + "80%{transform:translate(2px,-1px) rotate(3deg);}86%{transform:translate(0,0) rotate(-3deg);}",
+      },
     };
-    const profile = profiles[persona.type] ?? profiles.SHIBA;
+    const profile = profiles[personaArchetype(persona.type)] ?? profiles.SHIBA;
     return { ...profile, delay: -((index * 7) % profile.duration) };
   };
 
   const groundGeometry = (persona) => ({
+    // These newer sprites sit higher inside their upstream SVG boxes. Keep the established action
+    // pivot, but paint the shadow at the visible feet instead of leaving a large floating gap.
+    RABBIT_TUBE: { cx: 10, cy: 13, rx: 8, actionCy: 18 },
+    HAMSTER_TUBE: { cx: 10, cy: 11, rx: 8, actionCy: 18 },
+    LITTLE_CHICK_TUBE: { cx: 8, cy: 10, rx: 7, actionCy: 17 },
+    DESSERT_FOX: { cx: 10, cy: 14.5, rx: 7, actionCy: 18 },
     RABBIT: { cx: 8.5, cy: 11, rx: 5 },
     HAMSTER: { cx: 7, cy: 12, rx: 5 },
     PENGUIN: { cx: 7, cy: 17, rx: 6 },
@@ -909,13 +1071,19 @@ const distributeCharacterRoaming = (svg) => {
     GALCHI_CAT: { cx: 5, cy: 14, rx: 5 },
     SHIBA: { cx: 5, cy: 12, rx: 5 },
     FLAMINGO: { cx: 8, cy: 24, rx: 6 },
-  })[persona.type] ?? { cx: 7, cy: 16, rx: 5 };
+  })[persona.type] ?? ({
+    RABBIT: { cx: 8.5, cy: 11, rx: 5 },
+    HAMSTER: { cx: 7, cy: 12, rx: 5 },
+    PENGUIN: { cx: 7, cy: 17, rx: 6 },
+    LITTLE_CHICK: { cx: 6, cy: 13, rx: 5 },
+  })[personaArchetype(persona.type)] ?? { cx: 7, cy: 16, rx: 5 };
 
   const proximityAt = (unitIndex, sampleIndex) => {
     const current = routeSamples[sampleIndex][unitIndex];
     let nearest;
     routeUnits.forEach((otherUnit, otherIndex) => {
       if (otherIndex === unitIndex) return;
+      if (unitsShareFamily(unitIndex, otherIndex)) return;
       const other = routeSamples[sampleIndex][otherIndex];
       const weightedX = (current.x - other.x) * 2;
       const weightedY = current.y - other.y;
@@ -948,6 +1116,7 @@ const distributeCharacterRoaming = (svg) => {
     routeUnits.forEach((otherUnit, otherIndex) => {
       // One heart per pair: the lower-index unit owns the shared effect.
       if (otherIndex <= unitIndex) return;
+      if (unitsShareFamily(unitIndex, otherIndex)) return;
       const other = routeSamples[sampleIndex][otherIndex];
       const weightedX = (current.x - other.x) * 2;
       const weightedY = current.y - other.y;
@@ -1032,7 +1201,7 @@ const distributeCharacterRoaming = (svg) => {
           : `#${actionWrapperId}`;
         coordinatedRouteStyles += `@keyframes profile-actions-route-${id}{${profile.body}}`
           + `${actionSelectors}{animation:profile-actions-route-${id} ${profile.duration}s ease-in-out infinite both;`
-          + `animation-delay:${profile.delay}s;transform-origin:${pivot.toFixed(2)}px ${(geometry.cy * 3).toFixed(2)}px;}`
+          + `animation-delay:${profile.delay}s;transform-origin:${pivot.toFixed(2)}px ${((geometry.actionCy ?? geometry.cy) * 3).toFixed(2)}px;}`
           + `@keyframes profile-shadow-route-${id}{`
           + "0%,14%,32%,50%,68%,86%,100%{transform:scaleX(1);opacity:.18;}"
           + "18%,54%,90%{transform:scaleX(.78);opacity:.11;}"

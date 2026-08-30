@@ -6,8 +6,26 @@ import { chromium } from "playwright";
 
 const root = process.cwd();
 const outputDirectory = path.join(root, "artifacts", "gitanimals-visual-regression");
-const snapshots = [0, 2, 22, 30, 60, 90];
 const themes = ["light", "dark"];
+const state = JSON.parse(await readFile(path.join(root, "assets", "gitanimals", "state.json"), "utf8"));
+const lightSvg = await readFile(path.join(root, "assets", "gitanimals", "farm-light.svg"), "utf8");
+const firstHeartRoute = lightSvg.indexOf("@keyframes profile-heart-route-");
+const firstVisibleHeart = firstHeartRoute === -1
+  ? null
+  : lightSvg.slice(firstHeartRoute).match(/([\d.]+)%\{opacity:1;/);
+const heartSnapshotSecond = firstVisibleHeart
+  ? Number(((Number(firstVisibleHeart[1]) / 100) * 120 + 0.1).toFixed(2))
+  : 2;
+const snapshots = [...new Set([0, heartSnapshotSecond, 22, 30, 60, 90])].sort((left, right) => left - right);
+const visiblePersonas = state.personas.filter((persona) => persona.visible);
+const hasMountedPair = visiblePersonas.some((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES")
+  && visiblePersonas.some((persona) => persona.type === "CAPYBARA_SWIM");
+const expectedInteractionCount = visiblePersonas.length;
+const expectedActionCount = visiblePersonas.length - (hasMountedPair ? 1 : 0);
+const closeShadowTypes = new Set(["RABBIT_TUBE", "HAMSTER_TUBE", "LITTLE_CHICK_TUBE", "DESSERT_FOX"]);
+const closeShadowIds = new Set(
+  visiblePersonas.filter((persona) => closeShadowTypes.has(persona.type)).map((persona) => String(persona.id)),
+);
 
 const contentType = (filePath) => filePath.endsWith(".svg")
   ? "image/svg+xml"
@@ -81,6 +99,16 @@ try {
             id: element.id,
             ...rectFor(element),
           })),
+          grounding: [...document.querySelectorAll("svg[id^='profile-shadow-']")].map((element) => {
+            const id = element.id.replace("profile-shadow-", "");
+            const artwork = document.querySelector(`#profile-facing-${id}`);
+            const ellipse = element.querySelector(".profile-ground-shadow");
+            return artwork && ellipse ? {
+              id,
+              artwork: rectFor(artwork),
+              shadow: rectFor(ellipse),
+            } : null;
+          }).filter(Boolean),
           actions: document.querySelectorAll("[id^='profile-actions-']").length,
           interactions: document.querySelectorAll("[id^='profile-interaction-']").length,
           visibleProximity: [...document.querySelectorAll("svg[id^='profile-proximity-']")]
@@ -104,15 +132,25 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v33", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v42", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
-      assert(geometry.actions === 9, `${theme} ${seconds}s lost character action wrappers.`);
-      assert(geometry.interactions === 10, `${theme} ${seconds}s lost proximity interaction wrappers.`);
-      assert(geometry.shadows.length === 9, `${theme} ${seconds}s lost grounding shadows.`);
-      if (seconds === 2) {
+      assert(geometry.actions === expectedActionCount, `${theme} ${seconds}s lost character action wrappers.`);
+      assert(geometry.interactions === expectedInteractionCount,
+        `${theme} ${seconds}s lost proximity interaction wrappers.`);
+      assert(geometry.shadows.length === expectedActionCount, `${theme} ${seconds}s lost grounding shadows.`);
+      geometry.grounding
+        .filter((entry) => closeShadowIds.has(entry.id))
+        .forEach((entry) => {
+          const artworkBottom = entry.artwork.y + entry.artwork.height;
+          const shadowCenter = entry.shadow.y + entry.shadow.height / 2;
+          const footGap = shadowCenter - artworkBottom;
+          assert(Math.abs(footGap) <= 8,
+            `${theme} ${seconds}s leaves ${entry.id} floating ${footGap.toFixed(2)}px above its shadow.`);
+        });
+      if (seconds === heartSnapshotSecond) {
         assert(geometry.visibleHearts.length > 0,
-          `${theme} 2s must exercise a stable head-on meeting heart.`);
+          `${theme} ${heartSnapshotSecond}s must exercise a stable head-on meeting heart.`);
       }
       geometry.levels.forEach((level) => {
         assert(level.width > 0 && level.height > 0, `${theme} ${seconds}s hides ${level.id}.`);

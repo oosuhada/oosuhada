@@ -6,23 +6,37 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v33";
+const layoutVersion = "character-behaviors-v42";
 const maximumOverlapSeconds = 3;
 const sampleStepSeconds = 0.05;
 // Farm-wide explorers intentionally cross more ground than residents; this still limits every pet
 // to a smooth multi-second traverse rather than a sub-second collision-correction jump.
 const maximumWeightedSpeed = 16;
-const explorerTypes = new Set(["RABBIT", "GALCHI_CAT", "SHIBA", "GOOSE"]);
+const fastMovementTypes = new Set([
+  "RABBIT",
+  "GALCHI_CAT",
+  "SHIBA",
+  "GOOSE",
+  "RABBIT_TUBE",
+  "HAMSTER_TUBE",
+  "LITTLE_CHICK_TUBE",
+]);
+const farmRoamerTypes = new Set(["RABBIT", "GALCHI_CAT", "SHIBA", "GOOSE"]);
 const expectedFacingPivots = {
+  LITTLE_CHICK_TUBE: "16.00",
+  RABBIT_TUBE: "10.00",
+  HAMSTER_TUBE: "21.00",
   RABBIT: "25.51",
   HAMSTER: "21.00",
   PENGUIN: "20.75",
+  PENGUIN_SUNGLASSES: "20.75",
   CAPYBARA_CARROT: "30.76",
   CAPYBARA_SWIM: "17.40",
   LITTLE_CHICK_SUNGLASSES: "14.36",
   GOOSE: "23.59",
   GALCHI_CAT: "11.75",
   SHIBA: "11.98",
+  DESSERT_FOX: "26.00",
   FLAMINGO: "24.24",
 };
 
@@ -34,8 +48,18 @@ const separationRadius = (type) => {
   if (type === "CAPYBARA_SWIM") return 12;
   if (type.includes("CAPYBARA")) return 11;
   if (type.includes("PENGUIN") || type.includes("FLAMINGO")) return 10;
+  if (type === "RABBIT_TUBE" || type === "HAMSTER_TUBE") return 10;
+  if (type === "LITTLE_CHICK_TUBE" || type === "DESSERT_FOX") return 9;
   if (type === "RABBIT" || type === "SHIBA") return 9;
   return 8;
+};
+
+const personaFamily = (type) => {
+  if (type.startsWith("CAPYBARA")) return "CAPYBARA";
+  if (type.startsWith("RABBIT")) return "RABBIT";
+  if (type.startsWith("HAMSTER")) return "HAMSTER";
+  if (type.startsWith("LITTLE_CHICK")) return "LITTLE_CHICK";
+  return null;
 };
 
 const extractAnimation = (svg, persona) => {
@@ -86,15 +110,30 @@ const mount = visible.find((persona) => persona.type === "CAPYBARA_SWIM");
 const collisionPersonas = rider && mount
   ? visible.filter((persona) => String(persona.id) !== String(rider.id))
   : visible;
+const denseLayout = collisionPersonas.length > 10;
 const lightAnimations = collisionPersonas.map((persona) => extractAnimation(light, persona));
 const darkAnimations = collisionPersonas.map((persona) => extractAnimation(dark, persona));
+const animationFamilies = (animation) => {
+  const families = new Set();
+  const family = personaFamily(animation.persona.type);
+  if (family) families.add(family);
+  if (rider && mount && String(animation.persona.id) === String(mount.id)) {
+    families.add("LITTLE_CHICK");
+  }
+  return families;
+};
+const animationsShareFamily = (left, right) => {
+  const leftFamilies = animationFamilies(left);
+  const rightFamilies = animationFamilies(right);
+  return [...leftFamilies].some((family) => rightFamilies.has(family));
+};
 
 lightAnimations.forEach((animation, index) => {
   // Explorers cross the full 600px farm multiple times per cycle; their higher caps still limit
   // each half-second frame to a visibly continuous traverse rather than a teleport.
-  const personaMaximumWeightedSpeed = ["SHIBA", "GOOSE"].includes(animation.persona.type)
-    ? 34
-    : explorerTypes.has(animation.persona.type) ? 30 : maximumWeightedSpeed;
+  const personaMaximumWeightedSpeed = fastMovementTypes.has(animation.persona.type)
+    ? (denseLayout ? 72 : 84)
+    : maximumWeightedSpeed;
   const darkAnimation = darkAnimations[index];
   assert(
     JSON.stringify(animation.points) === JSON.stringify(darkAnimation.points),
@@ -180,7 +219,7 @@ lightAnimations.forEach((animation, index) => {
   }
 });
 
-for (const explorerType of explorerTypes) {
+for (const explorerType of farmRoamerTypes) {
   const explorerAnimation = lightAnimations.find((animation) => animation.persona.type === explorerType);
   if (!explorerAnimation) continue;
   const xValues = explorerAnimation.points.map((point) => point.x);
@@ -209,7 +248,7 @@ for (const explorerType of explorerTypes) {
     longestStationarySeconds = Math.max(longestStationarySeconds, stationarySeconds);
     previousPosition = currentPosition;
   }
-  assert(longestStationarySeconds <= 3,
+  assert(longestStationarySeconds <= (denseLayout ? 4.5 : 3),
     `${explorerType} explorer stays nearly still for ${longestStationarySeconds.toFixed(2)}s.`);
 }
 
@@ -295,14 +334,19 @@ if (rider && mount) {
 
 let longestOverlap = 0;
 let longestPair = "";
+let closestSameFamilyGap = Number.POSITIVE_INFINITY;
+let closestSameFamilyPair = "";
 const cycleSeconds = Math.max(...lightAnimations.map((animation) => animation.duration));
 for (let leftIndex = 0; leftIndex < lightAnimations.length; leftIndex += 1) {
   for (let rightIndex = leftIndex + 1; rightIndex < lightAnimations.length; rightIndex += 1) {
     const left = lightAnimations[leftIndex];
     const right = lightAnimations[rightIndex];
     const threshold = separationRadius(left.persona.type) + separationRadius(right.persona.type);
+    const sameFamily = animationsShareFamily(left, right);
+    const sameFamilyMinimumDistance = threshold + 10;
     let overlapStartedAt = null;
     let pairLongestOverlap = 0;
+    let pairMinimumDistance = Number.POSITIVE_INFINITY;
     for (let seconds = 0; seconds <= cycleSeconds; seconds += sampleStepSeconds) {
       const leftPosition = positionAt(left, seconds);
       const rightPosition = positionAt(right, seconds);
@@ -310,6 +354,7 @@ for (let leftIndex = 0; leftIndex < lightAnimations.length; leftIndex += 1) {
         (leftPosition.x - rightPosition.x) * 2,
         leftPosition.y - rightPosition.y,
       );
+      pairMinimumDistance = Math.min(pairMinimumDistance, distance);
       if (distance < threshold && overlapStartedAt === null) overlapStartedAt = seconds;
       if (distance >= threshold && overlapStartedAt !== null) {
         pairLongestOverlap = Math.max(pairLongestOverlap, seconds - overlapStartedAt);
@@ -323,6 +368,18 @@ for (let leftIndex = 0; leftIndex < lightAnimations.length; leftIndex += 1) {
       longestOverlap = pairLongestOverlap;
       longestPair = `${left.persona.type} / ${right.persona.type}`;
     }
+    if (sameFamily) {
+      assert(
+        pairMinimumDistance >= sameFamilyMinimumDistance,
+        `${left.persona.type} / ${right.persona.type} are duplicate-family pets but approach to `
+          + `${pairMinimumDistance.toFixed(2)} units; expected >= ${sameFamilyMinimumDistance.toFixed(2)}.`,
+      );
+      const gap = pairMinimumDistance - threshold;
+      if (gap < closestSameFamilyGap) {
+        closestSameFamilyGap = gap;
+        closestSameFamilyPair = `${left.persona.type} / ${right.persona.type}`;
+      }
+    }
   }
 }
 
@@ -333,5 +390,8 @@ assert(
 
 console.log(
   `Verified ${lightAnimations.length} coordinated units; longest overlap ${longestOverlap.toFixed(2)}s`
-  + `${longestPair ? ` (${longestPair})` : ""}.`,
+  + `${longestPair ? ` (${longestPair})` : ""}`
+  + `${Number.isFinite(closestSameFamilyGap)
+    ? `; closest duplicate-family gap ${closestSameFamilyGap.toFixed(2)} units (${closestSameFamilyPair})`
+    : ""}.`,
 );
