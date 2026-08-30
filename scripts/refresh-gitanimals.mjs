@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v41";
+const layoutVersion = "character-behaviors-v42";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -1056,10 +1056,12 @@ const distributeCharacterRoaming = (svg) => {
   };
 
   const groundGeometry = (persona) => ({
-    RABBIT_TUBE: { cx: 10, cy: 18, rx: 8 },
-    HAMSTER_TUBE: { cx: 10, cy: 18, rx: 8 },
-    LITTLE_CHICK_TUBE: { cx: 8, cy: 17, rx: 7 },
-    DESSERT_FOX: { cx: 10, cy: 18, rx: 7 },
+    // These newer sprites sit higher inside their upstream SVG boxes. Keep the established action
+    // pivot, but paint the shadow at the visible feet instead of leaving a large floating gap.
+    RABBIT_TUBE: { cx: 10, cy: 13, rx: 8, actionCy: 18 },
+    HAMSTER_TUBE: { cx: 10, cy: 11, rx: 8, actionCy: 18 },
+    LITTLE_CHICK_TUBE: { cx: 8, cy: 10, rx: 7, actionCy: 17 },
+    DESSERT_FOX: { cx: 10, cy: 14.5, rx: 7, actionCy: 18 },
     RABBIT: { cx: 8.5, cy: 11, rx: 5 },
     HAMSTER: { cx: 7, cy: 12, rx: 5 },
     PENGUIN: { cx: 7, cy: 17, rx: 6 },
@@ -1199,7 +1201,7 @@ const distributeCharacterRoaming = (svg) => {
           : `#${actionWrapperId}`;
         coordinatedRouteStyles += `@keyframes profile-actions-route-${id}{${profile.body}}`
           + `${actionSelectors}{animation:profile-actions-route-${id} ${profile.duration}s ease-in-out infinite both;`
-          + `animation-delay:${profile.delay}s;transform-origin:${pivot.toFixed(2)}px ${(geometry.cy * 3).toFixed(2)}px;}`
+          + `animation-delay:${profile.delay}s;transform-origin:${pivot.toFixed(2)}px ${((geometry.actionCy ?? geometry.cy) * 3).toFixed(2)}px;}`
           + `@keyframes profile-shadow-route-${id}{`
           + "0%,14%,32%,50%,68%,86%,100%{transform:scaleX(1);opacity:.18;}"
           + "18%,54%,90%{transform:scaleX(.78);opacity:.11;}"
