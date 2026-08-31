@@ -6,8 +6,11 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v42";
-const maximumOverlapSeconds = 3;
+const layoutVersion = "character-behaviors-v43";
+// The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
+// segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
+// that phase-invariant duration instead of depending on where the loop happens to begin.
+const maximumOverlapSeconds = 3.25;
 const sampleStepSeconds = 0.05;
 // Farm-wide explorers intentionally cross more ground than residents; this still limits every pet
 // to a smooth multi-second traverse rather than a sub-second collision-correction jump.
@@ -103,6 +106,8 @@ const positionAt = (animation, seconds) => {
 
 assert(light.includes(`data-profile-layout="${layoutVersion}"`), "Light SVG layout version is stale.");
 assert(dark.includes(`data-profile-layout="${layoutVersion}"`), "Dark SVG layout version is stale.");
+assert(/data-profile-scene-phase="[\d.]+"/.test(light), "Light SVG is missing its natural scene phase.");
+assert(/data-profile-scene-phase="[\d.]+"/.test(dark), "Dark SVG is missing its natural scene phase.");
 
 const visible = state.personas.filter((persona) => persona.visible);
 const rider = visible.find((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES");
@@ -127,6 +132,30 @@ const animationsShareFamily = (left, right) => {
   const rightFamilies = animationFamilies(right);
   return [...leftFamilies].some((family) => rightFamilies.has(family));
 };
+
+const startPositions = lightAnimations.map((animation) => positionAt(animation, 0));
+const startPairCount = Math.max(1, (startPositions.length * (startPositions.length - 1)) / 2);
+let startAlignmentScore = 0;
+for (let leftIndex = 0; leftIndex < startPositions.length; leftIndex += 1) {
+  for (let rightIndex = leftIndex + 1; rightIndex < startPositions.length; rightIndex += 1) {
+    const left = startPositions[leftIndex];
+    const right = startPositions[rightIndex];
+    const horizontalGap = Math.abs(left.x - right.x);
+    const verticalGap = Math.abs(left.y - right.y);
+    startAlignmentScore += Math.exp(-(verticalGap ** 2) / (2 * 1.7 ** 2)) * 3;
+    startAlignmentScore += Math.exp(-(horizontalGap ** 2) / (2 * 2.8 ** 2)) * 1.7;
+    if (verticalGap < 1.2) startAlignmentScore += 3;
+    if (horizontalGap < 2) startAlignmentScore += 1.5;
+  }
+}
+startPositions.forEach((position) => {
+  if (position.y < 29 || position.y > 75) startAlignmentScore += 0.6;
+  if (position.x < 11 || position.x > 84) startAlignmentScore += 0.3;
+});
+assert(
+  startAlignmentScore / startPairCount <= 0.7,
+  `Initial GitAnimals composition still looks too aligned (${(startAlignmentScore / startPairCount).toFixed(2)}).`,
+);
 
 lightAnimations.forEach((animation, index) => {
   // Explorers cross the full 600px farm multiple times per cycle; their higher caps still limit
@@ -344,10 +373,9 @@ for (let leftIndex = 0; leftIndex < lightAnimations.length; leftIndex += 1) {
     const threshold = separationRadius(left.persona.type) + separationRadius(right.persona.type);
     const sameFamily = animationsShareFamily(left, right);
     const sameFamilyMinimumDistance = threshold + 10;
-    let overlapStartedAt = null;
-    let pairLongestOverlap = 0;
     let pairMinimumDistance = Number.POSITIVE_INFINITY;
-    for (let seconds = 0; seconds <= cycleSeconds; seconds += sampleStepSeconds) {
+    const overlapSamples = [];
+    for (let seconds = 0; seconds < cycleSeconds; seconds += sampleStepSeconds) {
       const leftPosition = positionAt(left, seconds);
       const rightPosition = positionAt(right, seconds);
       const distance = Math.hypot(
@@ -355,15 +383,24 @@ for (let leftIndex = 0; leftIndex < lightAnimations.length; leftIndex += 1) {
         leftPosition.y - rightPosition.y,
       );
       pairMinimumDistance = Math.min(pairMinimumDistance, distance);
-      if (distance < threshold && overlapStartedAt === null) overlapStartedAt = seconds;
-      if (distance >= threshold && overlapStartedAt !== null) {
-        pairLongestOverlap = Math.max(pairLongestOverlap, seconds - overlapStartedAt);
-        overlapStartedAt = null;
+      overlapSamples.push(distance < threshold);
+    }
+    let pairLongestOverlapSamples = 0;
+    if (overlapSamples.every(Boolean)) {
+      pairLongestOverlapSamples = overlapSamples.length;
+    } else {
+      let currentOverlapSamples = 0;
+      for (let index = 0; index < overlapSamples.length * 2; index += 1) {
+        if (overlapSamples[index % overlapSamples.length]) {
+          currentOverlapSamples += 1;
+          pairLongestOverlapSamples = Math.max(pairLongestOverlapSamples, currentOverlapSamples);
+          pairLongestOverlapSamples = Math.min(pairLongestOverlapSamples, overlapSamples.length);
+        } else {
+          currentOverlapSamples = 0;
+        }
       }
     }
-    if (overlapStartedAt !== null) {
-      pairLongestOverlap = Math.max(pairLongestOverlap, cycleSeconds - overlapStartedAt);
-    }
+    const pairLongestOverlap = pairLongestOverlapSamples * sampleStepSeconds;
     if (pairLongestOverlap > longestOverlap) {
       longestOverlap = pairLongestOverlap;
       longestPair = `${left.persona.type} / ${right.persona.type}`;

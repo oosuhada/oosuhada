@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v42";
+const layoutVersion = "character-behaviors-v43";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -849,6 +849,53 @@ const distributeCharacterRoaming = (svg) => {
       return smoothed;
     }));
   }
+
+  // Choose the most natural-looking global start frame without changing any relative character
+  // timing. Rotating every unit by the same amount preserves collision recovery, same-family
+  // separation, speed, and interactions, but avoids presenting the farm at a grid-like instant.
+  const sceneNaturalnessScore = (sample) => {
+    let score = 0;
+    for (let leftIndex = 0; leftIndex < sample.length; leftIndex += 1) {
+      for (let rightIndex = leftIndex + 1; rightIndex < sample.length; rightIndex += 1) {
+        const left = sample[leftIndex];
+        const right = sample[rightIndex];
+        const horizontalGap = Math.abs(left.x - right.x);
+        const verticalGap = Math.abs(left.y - right.y);
+        score += Math.exp(-(verticalGap ** 2) / (2 * 1.7 ** 2)) * 3;
+        score += Math.exp(-(horizontalGap ** 2) / (2 * 2.8 ** 2)) * 1.7;
+        if (verticalGap < 1.2) score += 3;
+        if (horizontalGap < 2) score += 1.5;
+      }
+    }
+    sample.forEach((position) => {
+      if (position.y < 29 || position.y > 75) score += 0.6;
+      if (position.x < 11 || position.x > 84) score += 0.3;
+    });
+    return score;
+  };
+
+  let naturalStartIndex = 0;
+  let naturalStartScore = Number.POSITIVE_INFINITY;
+  periodicSamples.forEach((sample, sampleIndex) => {
+    const score = sceneNaturalnessScore(sample);
+    if (score < naturalStartScore) {
+      naturalStartScore = score;
+      naturalStartIndex = sampleIndex;
+    }
+  });
+  periodicSamples = [
+    ...periodicSamples.slice(naturalStartIndex),
+    ...periodicSamples.slice(0, naturalStartIndex),
+  ];
+  const scenePhaseSeconds = naturalStartIndex * routeSampleSeconds;
+  result = result.replace(
+    `data-profile-layout="${layoutVersion}"`,
+    `data-profile-layout="${layoutVersion}" data-profile-scene-phase="${scenePhaseSeconds.toFixed(1)}"`,
+  );
+  console.log(
+    `Selected natural GitAnimals scene phase ${scenePhaseSeconds.toFixed(1)}s `
+      + `(alignment score ${naturalStartScore.toFixed(2)}).`,
+  );
 
   // Duplicate the first frame only at 100%, guaranteeing an identical loop seam with no jump.
   const routeSamples = [
