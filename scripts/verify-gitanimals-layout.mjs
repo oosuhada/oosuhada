@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v45";
+const layoutVersion = "character-behaviors-v46";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -17,6 +17,7 @@ const sampleStepSeconds = 0.05;
 const maximumWeightedSpeed = 16;
 const fastMovementTypes = new Set([
   "RABBIT",
+  "HAMSTER",
   "GALCHI_CAT",
   "SHIBA",
   "GOOSE",
@@ -24,7 +25,15 @@ const fastMovementTypes = new Set([
   "HAMSTER_TUBE",
   "LITTLE_CHICK_TUBE",
 ]);
-const farmRoamerTypes = new Set(["RABBIT", "GALCHI_CAT", "SHIBA", "GOOSE"]);
+const farmRoamerTypes = new Set([
+  "RABBIT",
+  "RABBIT_TUBE",
+  "HAMSTER",
+  "HAMSTER_TUBE",
+  "GALCHI_CAT",
+  "SHIBA",
+  "GOOSE",
+]);
 const expectedFacingPivots = {
   LITTLE_CHICK_TUBE: "16.00",
   RABBIT_TUBE: "10.00",
@@ -72,7 +81,7 @@ const characterScale = (type) => ({
   RABBIT_TUBE: 0.9,
   GALCHI_CAT: 0.8,
   HAMSTER: 0.6,
-  HAMSTER_TUBE: 0.6,
+  HAMSTER_TUBE: 0.7,
   DESSERT_FOX: 0.6,
   PENGUIN: 0.9,
   PENGUIN_SUNGLASSES: 0.9,
@@ -272,6 +281,33 @@ lightAnimations.forEach((animation, index) => {
   }
 });
 
+// These four are intentionally the most visibly active members of their two families. Guard both
+// coverage and average travel speed so later visual/layout changes cannot silently turn them back
+// into short local idles while still passing the generic maximum-speed checks.
+const activeMovementContracts = {
+  RABBIT: { horizontalCoverage: 65, averageWeightedSpeed: 8.0 },
+  RABBIT_TUBE: { horizontalCoverage: 65, averageWeightedSpeed: 7.8 },
+  HAMSTER: { horizontalCoverage: 60, averageWeightedSpeed: 7.5 },
+  HAMSTER_TUBE: { horizontalCoverage: 60, averageWeightedSpeed: 7.5 },
+};
+for (const [type, contract] of Object.entries(activeMovementContracts)) {
+  const animation = lightAnimations.find((entry) => entry.persona.type === type);
+  if (!animation) continue;
+  const xValues = animation.points.map((point) => point.x);
+  const horizontalCoverage = Math.max(...xValues) - Math.min(...xValues);
+  let weightedDistance = 0;
+  for (let index = 1; index < animation.points.length; index += 1) {
+    const previous = animation.points[index - 1];
+    const current = animation.points[index];
+    weightedDistance += Math.hypot((current.x - previous.x) * 2, current.y - previous.y);
+  }
+  const averageWeightedSpeed = weightedDistance / animation.duration;
+  assert(horizontalCoverage >= contract.horizontalCoverage,
+    `${type} active patrol covers only ${horizontalCoverage.toFixed(2)}%; expected >= ${contract.horizontalCoverage}%.`);
+  assert(averageWeightedSpeed >= contract.averageWeightedSpeed,
+    `${type} active patrol averages ${averageWeightedSpeed.toFixed(2)} units/s; expected >= ${contract.averageWeightedSpeed}.`);
+}
+
 for (const explorerType of farmRoamerTypes) {
   const explorerAnimation = lightAnimations.find((animation) => animation.persona.type === explorerType);
   if (!explorerAnimation) continue;
@@ -279,7 +315,8 @@ for (const explorerType of farmRoamerTypes) {
   const yValues = explorerAnimation.points.map((point) => point.y);
   const horizontalCoverage = Math.max(...xValues) - Math.min(...xValues);
   const verticalCoverage = Math.max(...yValues) - Math.min(...yValues);
-  assert(horizontalCoverage >= 65,
+  const minimumHorizontalCoverage = explorerType.startsWith("HAMSTER") ? 60 : 65;
+  assert(horizontalCoverage >= minimumHorizontalCoverage,
     `${explorerType} explorer must traverse the farm horizontally (${horizontalCoverage.toFixed(2)}%).`);
   assert(verticalCoverage >= 35,
     `${explorerType} explorer must traverse the farm vertically (${verticalCoverage.toFixed(2)}%).`);
@@ -372,6 +409,20 @@ if (swimmingCapybara) {
       && svg.includes("transform:translateX(.18px)"),
     `${theme} swimming capybara water motion must remain subtle and local.`);
   }
+}
+
+const hamster = visible.find((persona) => persona.type === "HAMSTER");
+if (hamster) {
+  assert(light.includes(`#level-wrap-${hamster.id}{translate:0 20px;}`)
+    && dark.includes(`#level-wrap-${hamster.id}{translate:0 20px;}`),
+  "Hamster level label must stay attached to its 0.6x artwork.");
+}
+
+const hamsterTube = visible.find((persona) => persona.type === "HAMSTER_TUBE");
+if (hamsterTube) {
+  assert(light.includes(`#level-wrap-${hamsterTube.id}{translate:0 15px;}`)
+    && dark.includes(`#level-wrap-${hamsterTube.id}{translate:0 15px;}`),
+  "Hamster Tube level label must stay attached to its 0.7x artwork.");
 }
 
 if (rider && mount) {

@@ -132,7 +132,7 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v45", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v46", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.actions === expectedActionCount, `${theme} ${seconds}s lost character action wrappers.`);

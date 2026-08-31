@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v45";
+const layoutVersion = "character-behaviors-v46";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -200,7 +200,7 @@ const characterScale = (persona) => ({
   RABBIT_TUBE: 0.9,
   GALCHI_CAT: 0.8,
   HAMSTER: 0.6,
-  HAMSTER_TUBE: 0.6,
+  HAMSTER_TUBE: 0.7,
   DESSERT_FOX: 0.6,
   PENGUIN: 0.9,
   PENGUIN_SUNGLASSES: 0.9,
@@ -631,11 +631,12 @@ const distributeCharacterRoaming = (svg) => {
   const unitsShareFamily = (leftIndex, rightIndex) =>
     [...routeUnits[leftIndex].families].some((family) => routeUnits[rightIndex].families.has(family));
 
-  // Seven of the fourteen visible pets use the faster cadence. Four of them are the established
-  // farm-wide explorers; the three tube pets keep local patrols but move them at roughly 2x pace.
-  // This preserves the dense layout while making about half of the scene feel substantially livelier.
+  // Keep the established fast movers, and explicitly make the rabbit/hamster family feel like the
+  // active runners of the farm. Rabbit, Rabbit Tube, Hamster, and Hamster Tube now use farm-wide
+  // runner loops; the duplicate-family partner starts half a loop away so speed does not create a pileup.
   const fastMovementTypes = new Set([
     "RABBIT",
+    "HAMSTER",
     "GALCHI_CAT",
     "SHIBA",
     "GOOSE",
@@ -643,7 +644,15 @@ const distributeCharacterRoaming = (svg) => {
     "HAMSTER_TUBE",
     "LITTLE_CHICK_TUBE",
   ]);
-  const farmRoamerTypes = new Set(["RABBIT", "GALCHI_CAT", "SHIBA", "GOOSE"]);
+  const farmRoamerTypes = new Set([
+    "RABBIT",
+    "RABBIT_TUBE",
+    "HAMSTER",
+    "HAMSTER_TUBE",
+    "GALCHI_CAT",
+    "SHIBA",
+    "GOOSE",
+  ]);
 
   const movementProfile = (persona, index) => {
     const type = persona.type;
@@ -691,6 +700,15 @@ const distributeCharacterRoaming = (svg) => {
     { x: 76, y: 67 },
     { x: 43, y: 73 },
     { x: 12, y: 61 },
+  ];
+  const hamsterRunnerWaypoints = [
+    { x: 18, y: 42 },
+    { x: 43, y: 31 },
+    { x: 76, y: 35 },
+    { x: 82, y: 58 },
+    { x: 58, y: 72 },
+    { x: 26, y: 68 },
+    { x: 12, y: 54 },
   ];
   const catExplorerWaypoints = [
     { x: 84, y: 31 },
@@ -740,7 +758,18 @@ const distributeCharacterRoaming = (svg) => {
 
   const preferredPosition = (unit, progress) => {
     if (unit.persona.type === "RABBIT") {
-      return interpolateClosedRoute(explorerWaypoints, progress * (denseLayout ? 2 : 4));
+      return interpolateClosedRoute(explorerWaypoints, progress * (denseLayout ? 3 : 5));
+    }
+    if (unit.persona.type === "RABBIT_TUBE") {
+      // Share Rabbit's farm-wide loop at the opposite phase. They cover the same ground quickly
+      // without ever starting nose-to-nose as duplicate-family pets.
+      return interpolateClosedRoute(explorerWaypoints, 0.5 + progress * (denseLayout ? 3 : 5));
+    }
+    if (unit.persona.type === "HAMSTER") {
+      return interpolateClosedRoute(hamsterRunnerWaypoints, progress * (denseLayout ? 3 : 5));
+    }
+    if (unit.persona.type === "HAMSTER_TUBE") {
+      return interpolateClosedRoute(hamsterRunnerWaypoints, 0.5 + progress * (denseLayout ? 3 : 5));
     }
     if (unit.persona.type === "GALCHI_CAT") {
       return interpolateClosedRoute(catExplorerWaypoints, catExplorerPhase - progress * (denseLayout ? 2 : 4));
@@ -796,7 +825,7 @@ const distributeCharacterRoaming = (svg) => {
 
   // Collision forces are deliberately soft and are smoothed across neighbouring timestamps. Pets may
   // meet, but a sustained overlap creates a gradual steering force that sends them apart naturally.
-  for (let iteration = 0; iteration < (denseLayout ? 360 : 240); iteration += 1) {
+  for (let iteration = 0; iteration < (denseLayout ? 420 : 260); iteration += 1) {
     const forces = periodicSamples.map((sample) => sample.map(() => ({ x: 0, y: 0 })));
     periodicSamples.forEach((positions, sampleIndex) => {
       for (let leftIndex = 0; leftIndex < routeUnits.length; leftIndex += 1) {
@@ -813,7 +842,7 @@ const distributeCharacterRoaming = (svg) => {
             + separationRadius(routeUnits[rightIndex].persona)
             + (sameFamily
               ? (denseLayout ? 30 : 24)
-              : (involvesExplorer ? (denseLayout ? 16 : 12.5) : routeSafetyMargin));
+              : (involvesExplorer ? (denseLayout ? 18 : 13.5) : routeSafetyMargin));
           if (distance >= steeringDistance) continue;
           if (distance < 0.001) {
             const angle = ((leftIndex + 1) * (rightIndex + 3) * 47 * Math.PI) / 180;
@@ -822,7 +851,9 @@ const distributeCharacterRoaming = (svg) => {
             distance = 1;
           }
           const strength = (steeringDistance - distance)
-            * (sameFamily ? (denseLayout ? 0.19 : 0.16) : (denseLayout ? 0.11 : 0.09));
+            * (sameFamily
+              ? (denseLayout ? 0.19 : 0.16)
+              : involvesExplorer ? (denseLayout ? 0.12 : 0.10) : (denseLayout ? 0.11 : 0.09));
           const forceX = (weightedX / distance) * strength;
           const forceY = (weightedY / distance) * strength;
           const leftIsExplorer = isRoamer(leftIndex);
@@ -1351,10 +1382,12 @@ const distributeCharacterRoaming = (svg) => {
       } else if (persona.type === "CAPYBARA_CARROT") {
         // The carrot is part of the scaled artwork. Move the level with the new 1.1x silhouette.
         coordinatedRouteStyles += `#level-wrap-${id}{translate:0 -18px;}`;
-      } else if (persona.type === "HAMSTER" || persona.type === "HAMSTER_TUBE") {
-        // At 0.6x the body top moves down around twenty pixels when scaling from its feet. Keep the
-        // level visually attached instead of leaving it at the former full-size height.
+      } else if (persona.type === "HAMSTER") {
+        // At 0.6x the body top moves down around twenty pixels when scaling from its feet.
         coordinatedRouteStyles += `#level-wrap-${id}{translate:0 20px;}`;
+      } else if (persona.type === "HAMSTER_TUBE") {
+        // The tube hamster is slightly larger at 0.7x, so its label needs less downward correction.
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 15px;}`;
       }
     });
   });
