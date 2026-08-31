@@ -152,18 +152,18 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v47", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v48", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
-      assert(geometry.swimZone?.width > 200 && geometry.swimZone?.width < 280,
+      assert(geometry.swimZone?.width > 150 && geometry.swimZone?.width < 210,
         `${theme} ${seconds}s lost the dedicated left-side swim zone.`);
       geometry.characters.forEach((character) => {
         const right = character.x + character.width;
         if (swimZoneIds.has(character.id)) {
-          assert(right <= 275,
+          assert(right <= 225,
             `${theme} ${seconds}s lets swim-zone character ${character.id} cross into the land area (${right.toFixed(2)}px).`);
         } else if (landZoneIds.has(character.id)) {
-          assert(character.x >= 290,
+          assert(character.x >= 245,
             `${theme} ${seconds}s lets land character ${character.id} cross into the swim area (${character.x.toFixed(2)}px).`);
         }
       });

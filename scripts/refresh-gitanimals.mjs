@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v47";
+const layoutVersion = "character-behaviors-v48";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -211,9 +211,9 @@ const isSwimZonePersona = (persona) => (
   || persona.type.includes("_TUBE")
 );
 
-const swimZoneSplitPercent = 43;
-const swimZoneBounds = { left: 8, right: 36, top: 28, bottom: 76 };
-const landZoneBounds = { left: 51, right: 85, top: 28, bottom: 76 };
+const swimZoneSplitPercent = 32;
+const swimZoneBounds = { left: 8, right: 29, top: 28, bottom: 76 };
+const landZoneBounds = { left: 44, right: 85, top: 28, bottom: 76 };
 
 const distributeCharacterRoaming = (svg) => {
   if (visiblePersonas.length === 0) {
@@ -240,14 +240,14 @@ const distributeCharacterRoaming = (svg) => {
   const horizontalFreedom = denseLayout ? 0.24 : 0.36;
   const verticalFreedom = denseLayout ? 0.30 : 0.46;
   const swimAnchors = [
-    { x: 10, y: 32 }, { x: 29, y: 36 }, { x: 15, y: 50 }, { x: 34, y: 56 },
-    { x: 10, y: 70 }, { x: 29, y: 72 }, { x: 23, y: 61 },
+    { x: 10, y: 32 }, { x: 25, y: 36 }, { x: 14, y: 50 }, { x: 28, y: 56 },
+    { x: 10, y: 70 }, { x: 24, y: 72 }, { x: 20, y: 61 },
   ];
   const landAnchors = [
-    { x: 52, y: 31 }, { x: 63, y: 35 }, { x: 75, y: 30 }, { x: 85, y: 37 },
-    { x: 56, y: 46 }, { x: 69, y: 49 }, { x: 82, y: 47 },
-    { x: 52, y: 61 }, { x: 63, y: 65 }, { x: 76, y: 60 }, { x: 85, y: 64 },
-    { x: 54, y: 73 }, { x: 69, y: 71 }, { x: 83, y: 74 },
+    { x: 45, y: 31 }, { x: 57, y: 35 }, { x: 71, y: 30 }, { x: 85, y: 37 },
+    { x: 48, y: 46 }, { x: 62, y: 49 }, { x: 77, y: 47 },
+    { x: 45, y: 61 }, { x: 58, y: 65 }, { x: 72, y: 60 }, { x: 85, y: 64 },
+    { x: 47, y: 73 }, { x: 64, y: 71 }, { x: 82, y: 74 },
   ];
   const swimCount = placementPersonas.filter(isSwimZonePersona).length;
   const landCount = placementPersonas.length - swimCount;
@@ -334,16 +334,16 @@ const distributeCharacterRoaming = (svg) => {
   );
 
   const swimZoneMarkup = '<g id="profile-swim-zone" pointer-events="none">'
-    + '<rect x="8" y="12" width="246" height="276" rx="20" fill="#58A6FF" opacity=".105"/>'
-    + '<path d="M20 73 C55 58 92 85 128 70 S198 58 242 76" fill="none" stroke="#58A6FF" '
+    + '<rect x="8" y="12" width="184" height="276" rx="18" fill="#58A6FF" opacity=".105"/>'
+    + '<path d="M15 73 C41 58 69 85 96 70 S149 58 182 76" fill="none" stroke="#58A6FF" '
     + 'stroke-width="2.2" stroke-linecap="round" opacity=".28"/>'
-    + '<path d="M17 126 C51 111 88 138 124 123 S195 111 239 129" fill="none" stroke="#79C0FF" '
+    + '<path d="M13 126 C38 111 66 138 93 123 S146 111 179 129" fill="none" stroke="#79C0FF" '
     + 'stroke-width="1.8" stroke-linecap="round" opacity=".24"/>'
-    + '<path d="M21 184 C58 169 94 196 131 181 S199 169 241 187" fill="none" stroke="#58A6FF" '
+    + '<path d="M16 184 C44 169 71 196 98 181 S149 169 181 187" fill="none" stroke="#58A6FF" '
     + 'stroke-width="2" stroke-linecap="round" opacity=".23"/>'
-    + '<path d="M18 240 C53 225 91 252 127 237 S196 225 240 243" fill="none" stroke="#79C0FF" '
+    + '<path d="M14 240 C40 225 68 252 95 237 S147 225 180 243" fill="none" stroke="#79C0FF" '
     + 'stroke-width="1.7" stroke-linecap="round" opacity=".22"/>'
-    + '<path d="M258 18 C250 65 266 108 257 151 S267 237 258 282" fill="none" stroke="#58A6FF" '
+    + '<path d="M196 18 C190 65 202 108 195 151 S203 237 196 282" fill="none" stroke="#58A6FF" '
     + 'stroke-width="1.5" stroke-dasharray="5 7" opacity=".26"/>'
     + '</g>';
   result = result.replace(
@@ -689,20 +689,20 @@ const distributeCharacterRoaming = (svg) => {
   };
 
   const landRunnerWaypoints = [
-    { x: 52, y: 34 }, { x: 64, y: 29 }, { x: 83, y: 36 },
-    { x: 84, y: 61 }, { x: 69, y: 73 }, { x: 52, y: 66 },
+    { x: 45, y: 34 }, { x: 58, y: 29 }, { x: 83, y: 36 },
+    { x: 84, y: 61 }, { x: 66, y: 73 }, { x: 45, y: 66 },
   ];
   const swimRunnerWaypoints = [
-    { x: 9, y: 35 }, { x: 22, y: 29 }, { x: 35, y: 39 },
-    { x: 35, y: 65 }, { x: 21, y: 73 }, { x: 8, y: 59 },
+    { x: 9, y: 35 }, { x: 18, y: 29 }, { x: 28, y: 39 },
+    { x: 28, y: 65 }, { x: 18, y: 73 }, { x: 8, y: 59 },
   ];
   const landHamsterWaypoints = [
-    { x: 52, y: 42 }, { x: 64, y: 31 }, { x: 82, y: 38 }, { x: 84, y: 61 },
-    { x: 70, y: 72 }, { x: 55, y: 65 }, { x: 51, y: 53 },
+    { x: 45, y: 42 }, { x: 58, y: 31 }, { x: 82, y: 38 }, { x: 84, y: 61 },
+    { x: 67, y: 72 }, { x: 48, y: 65 }, { x: 44, y: 53 },
   ];
   const swimHamsterWaypoints = [
-    { x: 9, y: 42 }, { x: 21, y: 31 }, { x: 34, y: 39 }, { x: 35, y: 61 },
-    { x: 26, y: 72 }, { x: 11, y: 65 }, { x: 8, y: 52 },
+    { x: 9, y: 42 }, { x: 18, y: 31 }, { x: 27, y: 39 }, { x: 28, y: 61 },
+    { x: 21, y: 72 }, { x: 10, y: 65 }, { x: 8, y: 52 },
   ];
   const remapToLandZone = (waypoints) => waypoints.map(({ x, y }) => ({
     x: landZoneBounds.left + ((x - 10) / 78) * (landZoneBounds.right - landZoneBounds.left),
@@ -745,13 +745,13 @@ const distributeCharacterRoaming = (svg) => {
       return interpolateClosedRoute(landRunnerWaypoints, progress * (denseLayout ? 4 : 6));
     }
     if (unit.persona.type === "RABBIT_TUBE") {
-      return interpolateClosedRoute(swimRunnerWaypoints, progress * (denseLayout ? 6 : 8));
+      return interpolateClosedRoute(swimRunnerWaypoints, progress * (denseLayout ? 8 : 10));
     }
     if (unit.persona.type === "HAMSTER") {
-      return interpolateClosedRoute(landHamsterWaypoints, progress * (denseLayout ? 5 : 7));
+      return interpolateClosedRoute(landHamsterWaypoints, progress * (denseLayout ? 6 : 8));
     }
     if (unit.persona.type === "HAMSTER_TUBE") {
-      return interpolateClosedRoute(swimHamsterWaypoints, 0.5 + progress * (denseLayout ? 6 : 8));
+      return interpolateClosedRoute(swimHamsterWaypoints, 0.5 + progress * (denseLayout ? 8 : 10));
     }
     if (unit.persona.type === "GALCHI_CAT") {
       return interpolateClosedRoute(catExplorerWaypoints, catExplorerPhase - progress * (denseLayout ? 2 : 4));
