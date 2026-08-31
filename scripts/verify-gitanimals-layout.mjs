@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v46";
+const layoutVersion = "character-behaviors-v47";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -87,6 +87,10 @@ const characterScale = (type) => ({
   PENGUIN_SUNGLASSES: 0.9,
 })[type] ?? 1;
 
+const isSwimZoneType = (type) => type.includes("_SWIM") || type.includes("_TUBE");
+const swimZoneBounds = { left: 8, right: 36 };
+const landZoneBounds = { left: 51, right: 85 };
+
 const extractAnimation = (svg, persona) => {
   const id = String(persona.id);
   const names = [`move-${id}`, `profile-route-${id}`];
@@ -128,6 +132,10 @@ const positionAt = (animation, seconds) => {
 
 assert(light.includes(`data-profile-layout="${layoutVersion}"`), "Light SVG layout version is stale.");
 assert(dark.includes(`data-profile-layout="${layoutVersion}"`), "Dark SVG layout version is stale.");
+assert(light.includes('data-profile-zone-split="43"'), "Light SVG is missing the swim/land zone split.");
+assert(dark.includes('data-profile-zone-split="43"'), "Dark SVG is missing the swim/land zone split.");
+assert(light.includes('<g id="profile-swim-zone"'), "Light SVG is missing the visible swim zone.");
+assert(dark.includes('<g id="profile-swim-zone"'), "Dark SVG is missing the visible swim zone.");
 assert(/data-profile-scene-phase="[\d.]+"/.test(light), "Light SVG is missing its natural scene phase.");
 assert(/data-profile-scene-phase="[\d.]+"/.test(dark), "Dark SVG is missing its natural scene phase.");
 
@@ -190,6 +198,11 @@ lightAnimations.forEach((animation, index) => {
     JSON.stringify(animation.points) === JSON.stringify(darkAnimation.points),
     `Light and dark routes differ for ${animation.persona.type} (${animation.id}).`,
   );
+  const zoneBounds = isSwimZoneType(animation.persona.type) ? swimZoneBounds : landZoneBounds;
+  animation.points.forEach((point) => {
+    assert(point.x >= zoneBounds.left - 0.01 && point.x <= zoneBounds.right + 0.01,
+      `${animation.persona.type} leaves its ${isSwimZoneType(animation.persona.type) ? "swim" : "land"} zone at x=${point.x.toFixed(2)}.`);
+  });
   const movementStart = light.indexOf(`@keyframes ${animation.name}`);
   const movementRuleStart = light.indexOf(`animation-name:${animation.name}`, movementStart) >= 0
     ? light.indexOf(`animation-name:${animation.name}`, movementStart)
@@ -285,10 +298,12 @@ lightAnimations.forEach((animation, index) => {
 // coverage and average travel speed so later visual/layout changes cannot silently turn them back
 // into short local idles while still passing the generic maximum-speed checks.
 const activeMovementContracts = {
-  RABBIT: { horizontalCoverage: 65, averageWeightedSpeed: 8.0 },
-  RABBIT_TUBE: { horizontalCoverage: 65, averageWeightedSpeed: 7.8 },
-  HAMSTER: { horizontalCoverage: 60, averageWeightedSpeed: 7.5 },
-  HAMSTER_TUBE: { horizontalCoverage: 60, averageWeightedSpeed: 7.5 },
+  // Full-screen roaming is now intentionally split into two habitats. Preserve the fast cadence
+  // inside each habitat instead of requiring these runners to cross the shoreline.
+  RABBIT: { horizontalCoverage: 29, averageWeightedSpeed: 6.3 },
+  RABBIT_TUBE: { horizontalCoverage: 24, averageWeightedSpeed: 6.5 },
+  HAMSTER: { horizontalCoverage: 28, averageWeightedSpeed: 6.2 },
+  HAMSTER_TUBE: { horizontalCoverage: 23, averageWeightedSpeed: 6.2 },
 };
 for (const [type, contract] of Object.entries(activeMovementContracts)) {
   const animation = lightAnimations.find((entry) => entry.persona.type === type);
@@ -315,7 +330,9 @@ for (const explorerType of farmRoamerTypes) {
   const yValues = explorerAnimation.points.map((point) => point.y);
   const horizontalCoverage = Math.max(...xValues) - Math.min(...xValues);
   const verticalCoverage = Math.max(...yValues) - Math.min(...yValues);
-  const minimumHorizontalCoverage = explorerType.startsWith("HAMSTER") ? 60 : 65;
+  const minimumHorizontalCoverage = isSwimZoneType(explorerType)
+    ? 22
+    : explorerType.startsWith("HAMSTER") ? 28 : 30;
   assert(horizontalCoverage >= minimumHorizontalCoverage,
     `${explorerType} explorer must traverse the farm horizontally (${horizontalCoverage.toFixed(2)}%).`);
   assert(verticalCoverage >= 35,

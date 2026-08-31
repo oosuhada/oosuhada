@@ -22,6 +22,18 @@ const hasMountedPair = visiblePersonas.some((persona) => persona.type === "LITTL
   && visiblePersonas.some((persona) => persona.type === "CAPYBARA_SWIM");
 const expectedInteractionCount = visiblePersonas.length;
 const expectedActionCount = visiblePersonas.length - (hasMountedPair ? 1 : 0);
+const swimZoneIds = new Set(
+  visiblePersonas
+    .filter((persona) => persona.type.includes("_SWIM") || persona.type.includes("_TUBE"))
+    .map((persona) => String(persona.id)),
+);
+if (hasMountedPair) {
+  const rider = visiblePersonas.find((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES");
+  if (rider) swimZoneIds.add(String(rider.id));
+}
+const landZoneIds = new Set(
+  visiblePersonas.map((persona) => String(persona.id)).filter((id) => !swimZoneIds.has(id)),
+);
 const closeShadowTypes = new Set(["RABBIT_TUBE", "HAMSTER_TUBE", "LITTLE_CHICK_TUBE", "DESSERT_FOX"]);
 const closeShadowIds = new Set(
   visiblePersonas.filter((persona) => closeShadowTypes.has(persona.type)).map((persona) => String(persona.id)),
@@ -91,6 +103,14 @@ try {
         return {
           layout: rootSvg.dataset.profileLayout,
           root: rectFor(rootSvg),
+          swimZone: (() => {
+            const zone = document.querySelector("#profile-swim-zone");
+            return zone ? rectFor(zone) : null;
+          })(),
+          characters: [...document.querySelectorAll("[id^='profile-facing-']")].map((element) => ({
+            id: element.id.replace("profile-facing-", ""),
+            ...rectFor(element),
+          })),
           levels: [...document.querySelectorAll("[id^='level-wrap-']")].map((element) => ({
             id: element.id,
             ...rectFor(element),
@@ -132,9 +152,21 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v46", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v47", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
+      assert(geometry.swimZone?.width > 200 && geometry.swimZone?.width < 280,
+        `${theme} ${seconds}s lost the dedicated left-side swim zone.`);
+      geometry.characters.forEach((character) => {
+        const right = character.x + character.width;
+        if (swimZoneIds.has(character.id)) {
+          assert(right <= 275,
+            `${theme} ${seconds}s lets swim-zone character ${character.id} cross into the land area (${right.toFixed(2)}px).`);
+        } else if (landZoneIds.has(character.id)) {
+          assert(character.x >= 290,
+            `${theme} ${seconds}s lets land character ${character.id} cross into the swim area (${character.x.toFixed(2)}px).`);
+        }
+      });
       assert(geometry.actions === expectedActionCount, `${theme} ${seconds}s lost character action wrappers.`);
       assert(geometry.interactions === expectedInteractionCount,
         `${theme} ${seconds}s lost proximity interaction wrappers.`);

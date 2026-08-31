@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v46";
+const layoutVersion = "character-behaviors-v47";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -206,6 +206,15 @@ const characterScale = (persona) => ({
   PENGUIN_SUNGLASSES: 0.9,
 })[persona.type] ?? 1;
 
+const isSwimZonePersona = (persona) => (
+  persona.type.includes("_SWIM")
+  || persona.type.includes("_TUBE")
+);
+
+const swimZoneSplitPercent = 43;
+const swimZoneBounds = { left: 8, right: 36, top: 28, bottom: 76 };
+const landZoneBounds = { left: 51, right: 85, top: 28, bottom: 76 };
+
 const distributeCharacterRoaming = (svg) => {
   if (visiblePersonas.length === 0) {
     return svg;
@@ -225,70 +234,29 @@ const distributeCharacterRoaming = (svg) => {
     ? visiblePersonas.filter((persona) => String(persona.id) !== String(rider.id))
     : visiblePersonas;
   const denseLayout = placementPersonas.length > 10;
-  const anchorBounds = denseLayout
-    ? { left: 14, right: 86, top: 34, bottom: 70 }
-    : { left: 15, right: 85, top: 38, bottom: 68 };
-  // Keep the full distance between 5x2 home points, then add an overlapping movement halo.
-  // A halo is wider than a grid cell, so characters can cross cell boundaries without piling up.
+  // The left side is a dedicated water zone for SWIM/TUBE characters. Land characters live on the
+  // right. Both sides still use overlapping movement halos, but no route is allowed to cross the
+  // shoreline, so a later speed/layout tweak cannot silently mix the two populations again.
   const horizontalFreedom = denseLayout ? 0.24 : 0.36;
   const verticalFreedom = denseLayout ? 0.30 : 0.46;
-
-  const anchors = denseLayout
-    ? [
-      // A staggered 5 / 4 / 5 field keeps 13-14 spatial units readable inside the existing
-      // 600x300 farm. The middle row is half a cell offset so tall labels and wide tube pets do
-      // not form three vertical collision columns.
-      { x: 14, y: 34 }, { x: 32, y: 34 }, { x: 50, y: 34 }, { x: 68, y: 34 }, { x: 86, y: 34 },
-      { x: 23, y: 52 }, { x: 41, y: 52 }, { x: 59, y: 52 }, { x: 77, y: 52 },
-      { x: 14, y: 70 }, { x: 32, y: 70 }, { x: 50, y: 70 }, { x: 68, y: 70 }, { x: 86, y: 70 },
-    ]
-    : (() => {
-      const columns = placementPersonas.length <= 3
-        ? placementPersonas.length
-        : Math.ceil(placementPersonas.length / 2);
-      const rows = Math.ceil(placementPersonas.length / columns);
-      return Array.from({ length: rows * columns }, (_, index) => {
-        const column = index % columns;
-        const row = Math.floor(index / columns);
-        return {
-          x: columns === 1
-            ? 50
-            : anchorBounds.left + column * ((anchorBounds.right - anchorBounds.left) / (columns - 1)),
-          y: rows === 1
-            ? 55
-            : anchorBounds.top + row * ((anchorBounds.bottom - anchorBounds.top) / (rows - 1)),
-        };
-      });
-    })();
-
-  if (placementPersonas.length > anchors.length) {
+  const swimAnchors = [
+    { x: 10, y: 32 }, { x: 29, y: 36 }, { x: 15, y: 50 }, { x: 34, y: 56 },
+    { x: 10, y: 70 }, { x: 29, y: 72 }, { x: 23, y: 61 },
+  ];
+  const landAnchors = [
+    { x: 52, y: 31 }, { x: 63, y: 35 }, { x: 75, y: 30 }, { x: 85, y: 37 },
+    { x: 56, y: 46 }, { x: 69, y: 49 }, { x: 82, y: 47 },
+    { x: 52, y: 61 }, { x: 63, y: 65 }, { x: 76, y: 60 }, { x: 85, y: 64 },
+    { x: 54, y: 73 }, { x: 69, y: 71 }, { x: 83, y: 74 },
+  ];
+  const swimCount = placementPersonas.filter(isSwimZonePersona).length;
+  const landCount = placementPersonas.length - swimCount;
+  if (swimCount > swimAnchors.length || landCount > landAnchors.length) {
     throw new Error(
-      `The coordinated farm supports at most ${anchors.length} spatial units; received ${placementPersonas.length}.`,
+      `The zoned farm supports ${swimAnchors.length} swim and ${landAnchors.length} land units; `
+      + `received ${swimCount} swim and ${landCount} land units.`,
     );
   }
-
-  const remainingAnchors = anchors.slice(1);
-  const spreadAnchors = [anchors[0]];
-  while (remainingAnchors.length > 0) {
-    let bestIndex = 0;
-    let bestDistance = -1;
-    remainingAnchors.forEach((candidate, index) => {
-      const nearestAssignedDistance = Math.min(...spreadAnchors.map((assigned) => {
-        const horizontalDistance = (candidate.x - assigned.x) * 2;
-        const verticalDistance = candidate.y - assigned.y;
-        return horizontalDistance ** 2 + verticalDistance ** 2;
-      }));
-      if (nearestAssignedDistance > bestDistance) {
-        bestIndex = index;
-        bestDistance = nearestAssignedDistance;
-      }
-    });
-    spreadAnchors.push(remainingAnchors.splice(bestIndex, 1)[0]);
-  }
-
-  const footprintAwareAnchors = denseLayout
-    ? spreadAnchors.slice(0, placementPersonas.length)
-    : spreadAnchors;
 
   const footprintPriority = (persona) => {
     const type = persona.type;
@@ -320,10 +288,15 @@ const distributeCharacterRoaming = (svg) => {
     [...leftFamilies].some((family) => rightFamilies.has(family));
   const anchorAssignments = new Map();
   const assignedAnchors = [];
-  const availableAnchors = [...footprintAwareAnchors];
+  const availableAnchorsByZone = {
+    swim: [...swimAnchors],
+    land: [...landAnchors],
+  };
 
   prioritizedPersonas.forEach((persona) => {
     const families = placementFamilies(persona);
+    const zone = isSwimZonePersona(persona) ? "swim" : "land";
+    const availableAnchors = availableAnchorsByZone[zone];
     let bestIndex = 0;
     let bestScore = Number.NEGATIVE_INFINITY;
     availableAnchors.forEach((candidate, index) => {
@@ -333,9 +306,10 @@ const distributeCharacterRoaming = (svg) => {
         ? 0
         : Math.min(...sameFamilyAssignments.map((assigned) =>
           weightedAnchorDistance(candidate, assigned.anchor)));
-      const overallDistance = assignedAnchors.length === 0
+      const sameZoneAssignments = assignedAnchors.filter((assigned) => assigned.zone === zone);
+      const overallDistance = sameZoneAssignments.length === 0
         ? 0
-        : Math.min(...assignedAnchors.map((assigned) =>
+        : Math.min(...sameZoneAssignments.map((assigned) =>
           weightedAnchorDistance(candidate, assigned.anchor)));
       // Duplicate species get first choice of the farthest remaining home point. This keeps their
       // patrol centres apart before collision steering has to do any work.
@@ -348,7 +322,7 @@ const distributeCharacterRoaming = (svg) => {
     });
     const [anchor] = availableAnchors.splice(bestIndex, 1);
     anchorAssignments.set(String(persona.id), anchor);
-    assignedAnchors.push({ persona, families, anchor });
+    assignedAnchors.push({ persona, families, anchor, zone });
   });
   if (hasMountedPair) {
     anchorAssignments.set(String(rider.id), anchorAssignments.get(String(mount.id)));
@@ -356,7 +330,25 @@ const distributeCharacterRoaming = (svg) => {
 
   let result = svg.replace(
     "<svg ",
-    `<svg data-profile-layout="${layoutVersion}" `,
+    `<svg data-profile-layout="${layoutVersion}" data-profile-zone-split="${swimZoneSplitPercent}" `,
+  );
+
+  const swimZoneMarkup = '<g id="profile-swim-zone" pointer-events="none">'
+    + '<rect x="8" y="12" width="246" height="276" rx="20" fill="#58A6FF" opacity=".105"/>'
+    + '<path d="M20 73 C55 58 92 85 128 70 S198 58 242 76" fill="none" stroke="#58A6FF" '
+    + 'stroke-width="2.2" stroke-linecap="round" opacity=".28"/>'
+    + '<path d="M17 126 C51 111 88 138 124 123 S195 111 239 129" fill="none" stroke="#79C0FF" '
+    + 'stroke-width="1.8" stroke-linecap="round" opacity=".24"/>'
+    + '<path d="M21 184 C58 169 94 196 131 181 S199 169 241 187" fill="none" stroke="#58A6FF" '
+    + 'stroke-width="2" stroke-linecap="round" opacity=".23"/>'
+    + '<path d="M18 240 C53 225 91 252 127 237 S196 225 240 243" fill="none" stroke="#79C0FF" '
+    + 'stroke-width="1.7" stroke-linecap="round" opacity=".22"/>'
+    + '<path d="M258 18 C250 65 266 108 257 151 S267 237 258 282" fill="none" stroke="#58A6FF" '
+    + 'stroke-width="1.5" stroke-dasharray="5 7" opacity=".26"/>'
+    + '</g>';
+  result = result.replace(
+    /(<rect x="0\.5" y="0\.5" width="599" height="299" rx="4\.5" fill="(?:white|#[A-Fa-f0-9]+)"\/>)/,
+    `$1${swimZoneMarkup}`,
   );
 
   // Keep the rabbit's thinking bubble close to its head. The upstream offset places the bubble
@@ -626,14 +618,17 @@ const distributeCharacterRoaming = (svg) => {
       anchor: anchorAssignments.get(String(persona.id)),
       members,
       families,
+      zone: isSwimZonePersona(persona) ? "swim" : "land",
     };
   });
   const unitsShareFamily = (leftIndex, rightIndex) =>
     [...routeUnits[leftIndex].families].some((family) => routeUnits[rightIndex].families.has(family));
+  const unitsShareZone = (leftIndex, rightIndex) => routeUnits[leftIndex].zone === routeUnits[rightIndex].zone;
 
   // Keep the established fast movers, and explicitly make the rabbit/hamster family feel like the
-  // active runners of the farm. Rabbit, Rabbit Tube, Hamster, and Hamster Tube now use farm-wide
-  // runner loops; the duplicate-family partner starts half a loop away so speed does not create a pileup.
+  // active runners of their zone. Land Rabbit/Hamster stay fast on the right, while their TUBE
+  // variants stay fast inside the water zone on the left. Speed survives the zone split instead of
+  // silently collapsing back into short resident loops.
   const fastMovementTypes = new Set([
     "RABBIT",
     "HAMSTER",
@@ -693,49 +688,38 @@ const distributeCharacterRoaming = (svg) => {
     };
   };
 
-  const explorerWaypoints = [
-    { x: 15, y: 33 },
-    { x: 47, y: 29 },
-    { x: 82, y: 40 },
-    { x: 76, y: 67 },
-    { x: 43, y: 73 },
-    { x: 12, y: 61 },
+  const landRunnerWaypoints = [
+    { x: 52, y: 34 }, { x: 64, y: 29 }, { x: 83, y: 36 },
+    { x: 84, y: 61 }, { x: 69, y: 73 }, { x: 52, y: 66 },
   ];
-  const hamsterRunnerWaypoints = [
-    { x: 18, y: 42 },
-    { x: 43, y: 31 },
-    { x: 76, y: 35 },
-    { x: 82, y: 58 },
-    { x: 58, y: 72 },
-    { x: 26, y: 68 },
-    { x: 12, y: 54 },
+  const swimRunnerWaypoints = [
+    { x: 9, y: 35 }, { x: 22, y: 29 }, { x: 35, y: 39 },
+    { x: 35, y: 65 }, { x: 21, y: 73 }, { x: 8, y: 59 },
   ];
-  const catExplorerWaypoints = [
-    { x: 84, y: 31 },
-    { x: 55, y: 35 },
-    { x: 17, y: 43 },
-    { x: 22, y: 69 },
-    { x: 58, y: 72 },
-    { x: 86, y: 55 },
+  const landHamsterWaypoints = [
+    { x: 52, y: 42 }, { x: 64, y: 31 }, { x: 82, y: 38 }, { x: 84, y: 61 },
+    { x: 70, y: 72 }, { x: 55, y: 65 }, { x: 51, y: 53 },
   ];
-  const shibaExplorerWaypoints = [
-    { x: 12, y: 30 },
-    { x: 45, y: 34 },
-    { x: 83, y: 28 },
-    { x: 88, y: 52 },
-    { x: 72, y: 74 },
-    { x: 36, y: 68 },
-    { x: 10, y: 58 },
+  const swimHamsterWaypoints = [
+    { x: 9, y: 42 }, { x: 21, y: 31 }, { x: 34, y: 39 }, { x: 35, y: 61 },
+    { x: 26, y: 72 }, { x: 11, y: 65 }, { x: 8, y: 52 },
   ];
-  const gooseExplorerWaypoints = [
-    { x: 86, y: 66 },
-    { x: 54, y: 72 },
-    { x: 18, y: 65 },
-    { x: 11, y: 45 },
-    { x: 30, y: 29 },
-    { x: 66, y: 32 },
-    { x: 88, y: 46 },
-  ];
+  const remapToLandZone = (waypoints) => waypoints.map(({ x, y }) => ({
+    x: landZoneBounds.left + ((x - 10) / 78) * (landZoneBounds.right - landZoneBounds.left),
+    y,
+  }));
+  const catExplorerWaypoints = remapToLandZone([
+    { x: 84, y: 31 }, { x: 55, y: 35 }, { x: 17, y: 43 },
+    { x: 22, y: 69 }, { x: 58, y: 72 }, { x: 86, y: 55 },
+  ]);
+  const shibaExplorerWaypoints = remapToLandZone([
+    { x: 12, y: 30 }, { x: 45, y: 34 }, { x: 83, y: 28 }, { x: 88, y: 52 },
+    { x: 72, y: 74 }, { x: 36, y: 68 }, { x: 10, y: 58 },
+  ]);
+  const gooseExplorerWaypoints = remapToLandZone([
+    { x: 86, y: 66 }, { x: 54, y: 72 }, { x: 18, y: 65 }, { x: 11, y: 45 },
+    { x: 30, y: 29 }, { x: 66, y: 32 }, { x: 88, y: 46 },
+  ]);
   const catExplorerPhase = Number.parseFloat(process.env.GITANIMALS_CAT_PHASE ?? "0.24");
   const shibaExplorerPhase = Number.parseFloat(process.env.GITANIMALS_SHIBA_PHASE ?? "0.04");
   const interpolateClosedRoute = (waypoints, progress) => {
@@ -758,18 +742,16 @@ const distributeCharacterRoaming = (svg) => {
 
   const preferredPosition = (unit, progress) => {
     if (unit.persona.type === "RABBIT") {
-      return interpolateClosedRoute(explorerWaypoints, progress * (denseLayout ? 3 : 5));
+      return interpolateClosedRoute(landRunnerWaypoints, progress * (denseLayout ? 4 : 6));
     }
     if (unit.persona.type === "RABBIT_TUBE") {
-      // Share Rabbit's farm-wide loop at the opposite phase. They cover the same ground quickly
-      // without ever starting nose-to-nose as duplicate-family pets.
-      return interpolateClosedRoute(explorerWaypoints, 0.5 + progress * (denseLayout ? 3 : 5));
+      return interpolateClosedRoute(swimRunnerWaypoints, progress * (denseLayout ? 6 : 8));
     }
     if (unit.persona.type === "HAMSTER") {
-      return interpolateClosedRoute(hamsterRunnerWaypoints, progress * (denseLayout ? 3 : 5));
+      return interpolateClosedRoute(landHamsterWaypoints, progress * (denseLayout ? 5 : 7));
     }
     if (unit.persona.type === "HAMSTER_TUBE") {
-      return interpolateClosedRoute(hamsterRunnerWaypoints, 0.5 + progress * (denseLayout ? 3 : 5));
+      return interpolateClosedRoute(swimHamsterWaypoints, 0.5 + progress * (denseLayout ? 6 : 8));
     }
     if (unit.persona.type === "GALCHI_CAT") {
       return interpolateClosedRoute(catExplorerWaypoints, catExplorerPhase - progress * (denseLayout ? 2 : 4));
@@ -790,10 +772,14 @@ const distributeCharacterRoaming = (svg) => {
       + 0.32 * Math.sin(2 * Math.PI * ((profile.frequencyX + 1) * progress + secondaryPhase));
     const yWave = 0.7 * Math.sin(2 * Math.PI * (profile.frequencyY * progress + secondaryPhase))
       + 0.3 * Math.cos(2 * Math.PI * ((profile.frequencyY + 1) * progress + phase));
+    const zoneBounds = unit.zone === "swim" ? swimZoneBounds : landZoneBounds;
     const horizontalInset = Math.max(0, characterScale(unit.persona) - 1) * 5;
     return {
-      x: Math.max(10 + horizontalInset, Math.min(85 - horizontalInset, unit.anchor.x + profile.amplitudeX * xWave)),
-      y: Math.max(28, Math.min(76, unit.anchor.y + profile.amplitudeY * yWave)),
+      x: Math.max(
+        zoneBounds.left + horizontalInset,
+        Math.min(zoneBounds.right - horizontalInset, unit.anchor.x + profile.amplitudeX * xWave),
+      ),
+      y: Math.max(zoneBounds.top, Math.min(zoneBounds.bottom, unit.anchor.y + profile.amplitudeY * yWave)),
     };
   };
 
@@ -809,9 +795,13 @@ const distributeCharacterRoaming = (svg) => {
   };
 
   const clampPosition = (position, persona) => {
+    const zoneBounds = isSwimZonePersona(persona) ? swimZoneBounds : landZoneBounds;
     const horizontalInset = Math.max(0, characterScale(persona) - 1) * 5;
-    position.x = Math.max(10 + horizontalInset, Math.min(85 - horizontalInset, position.x));
-    position.y = Math.max(28, Math.min(76, position.y));
+    position.x = Math.max(
+      zoneBounds.left + horizontalInset,
+      Math.min(zoneBounds.right - horizontalInset, position.x),
+    );
+    position.y = Math.max(zoneBounds.top, Math.min(zoneBounds.bottom, position.y));
   };
 
   // Build one continuous periodic route instead of resolving every timestamp independently.
@@ -830,6 +820,7 @@ const distributeCharacterRoaming = (svg) => {
     periodicSamples.forEach((positions, sampleIndex) => {
       for (let leftIndex = 0; leftIndex < routeUnits.length; leftIndex += 1) {
         for (let rightIndex = leftIndex + 1; rightIndex < routeUnits.length; rightIndex += 1) {
+          if (!unitsShareZone(leftIndex, rightIndex)) continue;
           const left = positions[leftIndex];
           const right = positions[rightIndex];
           let weightedX = (left.x - right.x) * 2;
@@ -1176,6 +1167,7 @@ const distributeCharacterRoaming = (svg) => {
     let nearest;
     routeUnits.forEach((otherUnit, otherIndex) => {
       if (otherIndex === unitIndex) return;
+      if (!unitsShareZone(unitIndex, otherIndex)) return;
       if (unitsShareFamily(unitIndex, otherIndex)) return;
       const other = routeSamples[sampleIndex][otherIndex];
       const weightedX = (current.x - other.x) * 2;
@@ -1209,6 +1201,7 @@ const distributeCharacterRoaming = (svg) => {
     routeUnits.forEach((otherUnit, otherIndex) => {
       // One heart per pair: the lower-index unit owns the shared effect.
       if (otherIndex <= unitIndex) return;
+      if (!unitsShareZone(unitIndex, otherIndex)) return;
       if (unitsShareFamily(unitIndex, otherIndex)) return;
       const other = routeSamples[sampleIndex][otherIndex];
       const weightedX = (current.x - other.x) * 2;
