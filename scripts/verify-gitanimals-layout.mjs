@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v43";
+const layoutVersion = "character-behaviors-v44";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -64,6 +64,17 @@ const personaFamily = (type) => {
   if (type.startsWith("LITTLE_CHICK")) return "LITTLE_CHICK";
   return null;
 };
+
+const characterScale = (type) => ({
+  CAPYBARA_CARROT: 1.2,
+  CAPYBARA_SWIM: 1.2,
+  RABBIT: 0.9,
+  RABBIT_TUBE: 0.9,
+  GALCHI_CAT: 0.9,
+  HAMSTER: 0.6,
+  HAMSTER_TUBE: 0.6,
+  DESSERT_FOX: 0.6,
+})[type] ?? 1;
 
 const extractAnimation = (svg, persona) => {
   const id = String(persona.id);
@@ -193,6 +204,17 @@ lightAnimations.forEach((animation, index) => {
   assert(facingRule.includes(`transform-origin:${expectedFacingPivots[animation.persona.type]}px 0px`),
     `${animation.persona.type} measured pivot changed unexpectedly.`);
 
+  const requestedScale = characterScale(animation.persona.type);
+  const sizeId = `profile-size-${animation.id}`;
+  assert(light.includes(`<g id="${sizeId}">`),
+    `${animation.persona.type} is missing its independent size wrapper.`);
+  assert(dark.includes(`<g id="${sizeId}">`),
+    `Dark ${animation.persona.type} is missing its independent size wrapper.`);
+  assert(light.includes(`#${sizeId}{transform:scale(${requestedScale.toFixed(2)});`),
+    `${animation.persona.type} is missing its requested ${requestedScale.toFixed(2)}x scale.`);
+  assert(dark.includes(`#${sizeId}{transform:scale(${requestedScale.toFixed(2)});`),
+    `Dark ${animation.persona.type} is missing its requested ${requestedScale.toFixed(2)}x scale.`);
+
   const interactionId = `profile-interaction-${animation.id}`;
   assert(light.includes(`<g id="${interactionId}">`),
     `${animation.persona.type} is missing its proximity interaction wrapper.`);
@@ -286,9 +308,9 @@ assert(heartEventCount > 0, "At least one head-on character meeting must produce
 
 const carrotCapybara = visible.find((persona) => persona.type === "CAPYBARA_CARROT");
 if (carrotCapybara) {
-  assert(light.includes(`#level-wrap-${carrotCapybara.id}{translate:0 -10px;}`),
+  assert(light.includes(`#level-wrap-${carrotCapybara.id}{translate:0 -25px;}`),
     "Carrot capybara level label must clear the carrot.");
-  assert(dark.includes(`#level-wrap-${carrotCapybara.id}{translate:0 -10px;}`),
+  assert(dark.includes(`#level-wrap-${carrotCapybara.id}{translate:0 -25px;}`),
     "Dark carrot capybara level label must clear the carrot.");
 }
 
@@ -332,9 +354,9 @@ if (flamingo) {
 
 const swimmingCapybara = visible.find((persona) => persona.type === "CAPYBARA_SWIM");
 if (swimmingCapybara) {
-  assert(light.includes(`#level-wrap-${swimmingCapybara.id}{translate:-8px 0;}`),
+  assert(light.includes(`#level-wrap-${swimmingCapybara.id}{translate:-8px -11px;}`),
     "Swimming capybara level label must clear the mounted chick.");
-  assert(dark.includes(`#level-wrap-${swimmingCapybara.id}{translate:-8px 0;}`),
+  assert(dark.includes(`#level-wrap-${swimmingCapybara.id}{translate:-8px -11px;}`),
     "Dark swimming capybara level label must clear the mounted chick.");
   for (const [theme, svg] of [["Light", light], ["Dark", dark]]) {
     assert(svg.includes("class=\"profile-water-bed\"")

@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v43";
+const layoutVersion = "character-behaviors-v44";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -192,6 +192,17 @@ const personaFamily = (type) => {
   if (type.startsWith("LITTLE_CHICK")) return "LITTLE_CHICK";
   return null;
 };
+
+const characterScale = (persona) => ({
+  CAPYBARA_CARROT: 1.2,
+  CAPYBARA_SWIM: 1.2,
+  RABBIT: 0.9,
+  RABBIT_TUBE: 0.9,
+  GALCHI_CAT: 0.9,
+  HAMSTER: 0.6,
+  HAMSTER_TUBE: 0.6,
+  DESSERT_FOX: 0.6,
+})[persona.type] ?? 1;
 
 const distributeCharacterRoaming = (svg) => {
   if (visiblePersonas.length === 0) {
@@ -748,8 +759,9 @@ const distributeCharacterRoaming = (svg) => {
       + 0.32 * Math.sin(2 * Math.PI * ((profile.frequencyX + 1) * progress + secondaryPhase));
     const yWave = 0.7 * Math.sin(2 * Math.PI * (profile.frequencyY * progress + secondaryPhase))
       + 0.3 * Math.cos(2 * Math.PI * ((profile.frequencyY + 1) * progress + phase));
+    const horizontalInset = Math.max(0, characterScale(unit.persona) - 1) * 5;
     return {
-      x: Math.max(10, Math.min(85, unit.anchor.x + profile.amplitudeX * xWave)),
+      x: Math.max(10 + horizontalInset, Math.min(85 - horizontalInset, unit.anchor.x + profile.amplitudeX * xWave)),
       y: Math.max(28, Math.min(76, unit.anchor.y + profile.amplitudeY * yWave)),
     };
   };
@@ -765,8 +777,9 @@ const distributeCharacterRoaming = (svg) => {
     return 8;
   };
 
-  const clampPosition = (position) => {
-    position.x = Math.max(10, Math.min(85, position.x));
+  const clampPosition = (position, persona) => {
+    const horizontalInset = Math.max(0, characterScale(persona) - 1) * 5;
+    position.x = Math.max(10 + horizontalInset, Math.min(85 - horizontalInset, position.x));
     position.y = Math.max(28, Math.min(76, position.y));
   };
 
@@ -845,7 +858,7 @@ const distributeCharacterRoaming = (svg) => {
         x: position.x * 0.56 + previous.x * 0.2 + next.x * 0.2 + preferred.x * 0.04 + force.x,
         y: position.y * 0.56 + previous.y * 0.2 + next.y * 0.2 + preferred.y * 0.04 + force.y,
       };
-      clampPosition(smoothed);
+      clampPosition(smoothed, routeUnits[unitIndex].persona);
       return smoothed;
     }));
   }
@@ -1231,10 +1244,16 @@ const distributeCharacterRoaming = (svg) => {
 
       const facingWrapperId = `profile-facing-${id}`;
       const pivot = facingPivot(persona);
+      const geometry = groundGeometry(persona);
+      const scale = characterScale(persona);
       wrapArtworkContents(rootId, facingWrapperId, id);
+      const sizeWrapperId = `profile-size-${id}`;
+      wrapGroupContents(facingWrapperId, sizeWrapperId);
       coordinatedRouteStyles += `@keyframes profile-facing-route-${id}{${facing}}`
         + `#${facingWrapperId}{animation:profile-facing-route-${id} ${routeDuration}s steps(1,end) infinite both;`
-        + `transform-origin:${pivot.toFixed(2)}px 0px;}`;
+        + `transform-origin:${pivot.toFixed(2)}px 0px;}`
+        + `#${sizeWrapperId}{transform:scale(${scale.toFixed(2)});`
+        + `transform-origin:${(geometry.cx * 3).toFixed(2)}px ${(geometry.cy * 3).toFixed(2)}px;}`;
 
       coordinatedRouteStyles += `@keyframes profile-interaction-route-${id}{${interactionKeyframes(unitIndex)}}`
         + `#${interactionWrapperId}{animation:profile-interaction-route-${id} ${routeDuration}s linear infinite both;`
@@ -1242,7 +1261,8 @@ const distributeCharacterRoaming = (svg) => {
 
       if (!isRider) {
         const profile = actionProfile(persona, unitIndex);
-        const geometry = groundGeometry(persona);
+        const scaledShadowRx = geometry.rx * scale;
+        const scaledShadowRy = 1.15 * Math.sqrt(scale);
         const actionSelectors = persona.type === "CAPYBARA_SWIM" && riderNeutralizerId
           ? `#${actionWrapperId},#${riderNeutralizerId}`
           : `#${actionWrapperId}`;
@@ -1259,27 +1279,31 @@ const distributeCharacterRoaming = (svg) => {
         const shadowMarkup = `<svg id="profile-shadow-${id}" class="profile-ground-layer" width="600" height="300" `
           + `viewBox="0 0 200 100" fill="none" overflow="visible" aria-hidden="true">`
           + `<g id="profile-shadow-shape-${id}"><ellipse class="profile-ground-shadow" cx="${geometry.cx}" `
-          + `cy="${geometry.cy}" rx="${geometry.rx}" ry="1.15" fill="#57606A" opacity=".18"/></g>`
+          + `cy="${geometry.cy}" rx="${scaledShadowRx.toFixed(2)}" ry="${scaledShadowRy.toFixed(2)}" `
+          + `fill="#57606A" opacity=".18"/></g>`
           + (persona.type === "CAPYBARA_SWIM"
             ? `<ellipse class="profile-water-bed" cx="${geometry.cx}" cy="${geometry.cy - 0.15}" `
-              + `rx="${geometry.rx + 0.5}" ry="2.6" fill="#58A6FF" opacity=".12"/>`
+              + `rx="${(scaledShadowRx + 0.5 * scale).toFixed(2)}" ry="${(2.6 * Math.sqrt(scale)).toFixed(2)}" `
+              + `fill="#58A6FF" opacity=".12"/>`
               + `<ellipse class="profile-water-ripple-inner" cx="${geometry.cx}" cy="${geometry.cy - 0.1}" `
-              + `rx="${geometry.rx + 1.5}" ry="2.05" stroke="#79C0FF" stroke-width=".55" opacity=".42"/>`
+              + `rx="${(scaledShadowRx + 1.5 * scale).toFixed(2)}" ry="${(2.05 * Math.sqrt(scale)).toFixed(2)}" `
+              + `stroke="#79C0FF" stroke-width=".55" opacity=".42"/>`
               + `<ellipse class="profile-water-ripple-outer" cx="${geometry.cx}" cy="${geometry.cy}" `
-              + `rx="${geometry.rx + 4}" ry="2.8" stroke="#58A6FF" stroke-width=".4" opacity=".24"/>`
+              + `rx="${(scaledShadowRx + 4 * scale).toFixed(2)}" ry="${(2.8 * Math.sqrt(scale)).toFixed(2)}" `
+              + `stroke="#58A6FF" stroke-width=".4" opacity=".24"/>`
               + `<g class="profile-water-glints" fill="none" stroke="#B6E3FF" stroke-width=".65" `
               + `stroke-linecap="round" opacity=".58">`
-              + `<path d="M${geometry.cx - 14} ${geometry.cy - 0.7} Q${geometry.cx - 10} ${geometry.cy - 2.15} `
-              + `${geometry.cx - 6} ${geometry.cy - 0.85}"/>`
-              + `<path d="M${geometry.cx + 6} ${geometry.cy - 0.85} Q${geometry.cx + 10} ${geometry.cy - 2.15} `
-              + `${geometry.cx + 14} ${geometry.cy - 0.7}"/></g>`
+              + `<path d="M${geometry.cx - 14 * scale} ${geometry.cy - 0.7} `
+              + `Q${geometry.cx - 10 * scale} ${geometry.cy - 2.15} ${geometry.cx - 6 * scale} ${geometry.cy - 0.85}"/>`
+              + `<path d="M${geometry.cx + 6 * scale} ${geometry.cy - 0.85} `
+              + `Q${geometry.cx + 10 * scale} ${geometry.cy - 2.15} ${geometry.cx + 14 * scale} ${geometry.cy - 0.7}"/></g>`
             : "")
           + "</svg>";
         insertAtRootStart(rootId, shadowMarkup);
 
         coordinatedRouteStyles += `@keyframes profile-proximity-route-${id}{${interactionKeyframes(unitIndex, true)}}`
           + `#profile-proximity-${id}{animation:profile-proximity-route-${id} ${routeDuration}s steps(1,end) infinite both;}`;
-        const sparkX = geometry.cx + geometry.rx * 0.65;
+        const sparkX = geometry.cx + scaledShadowRx * 0.65;
         const sparkY = Math.max(1, geometry.cy - 10);
         const proximityMarkup = `<svg id="profile-proximity-${id}" class="profile-proximity-layer" width="600" height="300" `
           + `viewBox="0 0 200 100" fill="none" overflow="visible" aria-hidden="true">`
@@ -1291,7 +1315,7 @@ const distributeCharacterRoaming = (svg) => {
         const heartId = `profile-heart-${id}`;
         // CSS translate uses rendered pixels while geometry is expressed in the 200x100 viewBox.
         // Convert by the farm's 3x scale so the heart clears even a wide capybara body.
-        coordinatedRouteStyles += `@keyframes profile-heart-route-${id}{${heartKeyframes(unitIndex, (geometry.rx + 5) * 3)}}`
+        coordinatedRouteStyles += `@keyframes profile-heart-route-${id}{${heartKeyframes(unitIndex, (scaledShadowRx + 5) * 3)}}`
           + `#${heartId}{animation:profile-heart-route-${id} ${routeDuration}s steps(1,end) infinite both;}`;
         const heartX = geometry.cx - 2.45;
         const heartY = Math.max(1, geometry.cy - 15);
@@ -1319,9 +1343,16 @@ const distributeCharacterRoaming = (svg) => {
           + "animation-timing-function:steps(1,end);animation-iteration-count:infinite;"
           + "animation-direction:normal;animation-fill-mode:both;}";
       } else if (persona.type === "CAPYBARA_SWIM") {
-        coordinatedRouteStyles += `#level-wrap-${id}{translate:-8px 0;}`;
+        // The 1.2x body grows upward from its waterline, so lift the label enough to preserve the
+        // original head clearance while retaining the horizontal offset for the mounted chick.
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:-8px -11px;}`;
       } else if (persona.type === "CAPYBARA_CARROT") {
-        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 -10px;}`;
+        // The carrot is part of the scaled artwork. Move the level with the new 1.2x silhouette.
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 -25px;}`;
+      } else if (persona.type === "HAMSTER" || persona.type === "HAMSTER_TUBE") {
+        // At 0.6x the body top moves down around twenty pixels when scaling from its feet. Keep the
+        // level visually attached instead of leaving it at the former full-size height.
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 20px;}`;
       }
     });
   });
