@@ -107,6 +107,19 @@ try {
             const zone = document.querySelector("#profile-swim-zone");
             return zone ? rectFor(zone) : null;
           })(),
+          swimWater: (() => {
+            const water = document.querySelector("#profile-swim-water");
+            return water ? rectFor(water) : null;
+          })(),
+          headerText: (() => {
+            const username = [...document.querySelectorAll("#username")].find((element) =>
+              element.getAttribute("transform")?.startsWith("translate(15, 15)"));
+            return username ? rectFor(username) : null;
+          })(),
+          footerText: (() => {
+            const commit = document.querySelector("#commit");
+            return commit ? rectFor(commit) : null;
+          })(),
           characters: [...document.querySelectorAll("[id^='profile-facing-']")].map((element) => ({
             id: element.id.replace("profile-facing-", ""),
             ...rectFor(element),
@@ -152,16 +165,30 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v48", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v49", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.swimZone?.width > 150 && geometry.swimZone?.width < 210,
         `${theme} ${seconds}s lost the dedicated left-side swim zone.`);
+      assert(geometry.swimWater,
+        `${theme} ${seconds}s lost the bounded water rectangle.`);
+      assert(geometry.headerText && geometry.swimWater.y >= geometry.headerText.y + geometry.headerText.height + 4,
+        `${theme} ${seconds}s lets the swim water cover the header text lane.`);
+      assert(geometry.footerText
+        && geometry.swimWater.y + geometry.swimWater.height <= geometry.footerText.y - 4,
+      `${theme} ${seconds}s lets the swim water cover the footer text lane.`);
       geometry.characters.forEach((character) => {
         const right = character.x + character.width;
         if (swimZoneIds.has(character.id)) {
-          assert(right <= 225,
-            `${theme} ${seconds}s lets swim-zone character ${character.id} cross into the land area (${right.toFixed(2)}px).`);
+          const waterRight = geometry.swimWater.x + geometry.swimWater.width;
+          const waterBottom = geometry.swimWater.y + geometry.swimWater.height;
+          const characterBottom = character.y + character.height;
+          assert(character.x >= geometry.swimWater.x - 1 && right <= waterRight + 1
+            && character.y >= geometry.swimWater.y - 1 && characterBottom <= waterBottom + 1,
+            `${theme} ${seconds}s lets swim-zone character ${character.id} leave the visible water `
+              + `(character ${character.x.toFixed(2)},${character.y.toFixed(2)}-${right.toFixed(2)},${characterBottom.toFixed(2)}px; `
+              + `water ${geometry.swimWater.x.toFixed(2)},${geometry.swimWater.y.toFixed(2)}-`
+              + `${waterRight.toFixed(2)},${waterBottom.toFixed(2)}px).`);
         } else if (landZoneIds.has(character.id)) {
           assert(character.x >= 245,
             `${theme} ${seconds}s lets land character ${character.id} cross into the swim area (${character.x.toFixed(2)}px).`);

@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v48";
+const layoutVersion = "character-behaviors-v49";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -212,7 +212,9 @@ const isSwimZonePersona = (persona) => (
 );
 
 const swimZoneSplitPercent = 32;
-const swimZoneBounds = { left: 8, right: 29, top: 28, bottom: 76 };
+// Route coordinates describe the movement anchor, not the full rendered sprite. Keep the anchor
+// farther inside the water rectangle so wide TUBE artwork remains visibly inside the shoreline.
+const swimZoneBounds = { left: 8, right: 24.5, top: 28, bottom: 76 };
 const landZoneBounds = { left: 44, right: 85, top: 28, bottom: 76 };
 
 const distributeCharacterRoaming = (svg) => {
@@ -240,8 +242,8 @@ const distributeCharacterRoaming = (svg) => {
   const horizontalFreedom = denseLayout ? 0.24 : 0.36;
   const verticalFreedom = denseLayout ? 0.30 : 0.46;
   const swimAnchors = [
-    { x: 10, y: 32 }, { x: 25, y: 36 }, { x: 14, y: 50 }, { x: 28, y: 56 },
-    { x: 10, y: 70 }, { x: 24, y: 72 }, { x: 20, y: 61 },
+    { x: 10, y: 32 }, { x: 22, y: 36 }, { x: 14, y: 50 }, { x: 24, y: 56 },
+    { x: 10, y: 70 }, { x: 22, y: 72 }, { x: 18, y: 61 },
   ];
   const landAnchors = [
     { x: 45, y: 31 }, { x: 57, y: 35 }, { x: 71, y: 30 }, { x: 85, y: 37 },
@@ -334,16 +336,16 @@ const distributeCharacterRoaming = (svg) => {
   );
 
   const swimZoneMarkup = '<g id="profile-swim-zone" pointer-events="none">'
-    + '<rect x="8" y="12" width="184" height="276" rx="18" fill="#58A6FF" opacity=".105"/>'
-    + '<path d="M15 73 C41 58 69 85 96 70 S149 58 182 76" fill="none" stroke="#58A6FF" '
+    + '<rect id="profile-swim-water" x="8" y="44" width="184" height="218" rx="18" fill="#58A6FF" opacity=".105"/>'
+    + '<path d="M15 78 C41 63 69 90 96 75 S149 63 182 81" fill="none" stroke="#58A6FF" '
     + 'stroke-width="2.2" stroke-linecap="round" opacity=".28"/>'
-    + '<path d="M13 126 C38 111 66 138 93 123 S146 111 179 129" fill="none" stroke="#79C0FF" '
+    + '<path d="M13 128 C38 113 66 140 93 125 S146 113 179 131" fill="none" stroke="#79C0FF" '
     + 'stroke-width="1.8" stroke-linecap="round" opacity=".24"/>'
-    + '<path d="M16 184 C44 169 71 196 98 181 S149 169 181 187" fill="none" stroke="#58A6FF" '
+    + '<path d="M16 181 C44 166 71 193 98 178 S149 166 181 184" fill="none" stroke="#58A6FF" '
     + 'stroke-width="2" stroke-linecap="round" opacity=".23"/>'
-    + '<path d="M14 240 C40 225 68 252 95 237 S147 225 180 243" fill="none" stroke="#79C0FF" '
+    + '<path d="M14 232 C40 217 68 244 95 229 S147 217 180 235" fill="none" stroke="#79C0FF" '
     + 'stroke-width="1.7" stroke-linecap="round" opacity=".22"/>'
-    + '<path d="M196 18 C190 65 202 108 195 151 S203 237 196 282" fill="none" stroke="#58A6FF" '
+    + '<path d="M190 49 C184 86 196 118 189 151 S197 220 190 257" fill="none" stroke="#58A6FF" '
     + 'stroke-width="1.5" stroke-dasharray="5 7" opacity=".26"/>'
     + '</g>';
   result = result.replace(
@@ -693,16 +695,16 @@ const distributeCharacterRoaming = (svg) => {
     { x: 84, y: 61 }, { x: 66, y: 73 }, { x: 45, y: 66 },
   ];
   const swimRunnerWaypoints = [
-    { x: 9, y: 35 }, { x: 18, y: 29 }, { x: 28, y: 39 },
-    { x: 28, y: 65 }, { x: 18, y: 73 }, { x: 8, y: 59 },
+    { x: 9, y: 35 }, { x: 17, y: 29 }, { x: 24, y: 39 },
+    { x: 24, y: 65 }, { x: 16, y: 73 }, { x: 8, y: 59 },
   ];
   const landHamsterWaypoints = [
     { x: 45, y: 42 }, { x: 58, y: 31 }, { x: 82, y: 38 }, { x: 84, y: 61 },
     { x: 67, y: 72 }, { x: 48, y: 65 }, { x: 44, y: 53 },
   ];
   const swimHamsterWaypoints = [
-    { x: 9, y: 42 }, { x: 18, y: 31 }, { x: 27, y: 39 }, { x: 28, y: 61 },
-    { x: 21, y: 72 }, { x: 10, y: 65 }, { x: 8, y: 52 },
+    { x: 9, y: 42 }, { x: 17, y: 31 }, { x: 24, y: 39 }, { x: 24, y: 61 },
+    { x: 19, y: 72 }, { x: 10, y: 65 }, { x: 8, y: 52 },
   ];
   const remapToLandZone = (waypoints) => waypoints.map(({ x, y }) => ({
     x: landZoneBounds.left + ((x - 10) / 78) * (landZoneBounds.right - landZoneBounds.left),

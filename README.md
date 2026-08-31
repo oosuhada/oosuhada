@@ -4,9 +4,9 @@
 
 <a href="https://www.gitanimals.org/en-US?utm_medium=image&utm_source=oosuhada&utm_content=farm">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/gitanimals/farm-dark.svg?v=1788161210137">
-    <source media="(prefers-color-scheme: light)" srcset="assets/gitanimals/farm-light.svg?v=1788161210137">
-    <img src="assets/gitanimals/farm-dark.svg?v=1788161210137" width="100%" alt="GitAnimals farm for oosuhada">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/gitanimals/farm-dark.svg?v=1788162621130">
+    <source media="(prefers-color-scheme: light)" srcset="assets/gitanimals/farm-light.svg?v=1788162621130">
+    <img src="assets/gitanimals/farm-dark.svg?v=1788162621130" width="100%" alt="GitAnimals farm for oosuhada">
   </picture>
 </a>
 
