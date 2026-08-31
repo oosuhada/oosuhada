@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v51";
+const layoutVersion = "character-behaviors-v52";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -1379,8 +1379,9 @@ const distributeCharacterRoaming = (svg) => {
       // artwork instead of letting the rabbit's ! / ... state or the capybara's carrot cover it.
       if (persona.type === "RABBIT") {
         // The rabbit artwork's visual centre moves substantially inside its wide emotion-state
-        // canvas when mirrored. A 25px optical correction aligns the label with the visible body.
-        coordinatedRouteStyles += `@keyframes profile-level-route-${id}{${directionalLevelKeyframes(unitIndex, 25, -9)}}`
+        // canvas when mirrored. Keep the horizontal optical correction, but bring the label down
+        // close to the visible ears instead of leaving the large source-art gap above the rabbit.
+        coordinatedRouteStyles += `@keyframes profile-level-route-${id}{${directionalLevelKeyframes(unitIndex, 25, 3)}}`
           + `#level-wrap-${id}{animation-name:profile-level-route-${id} !important;animation-duration:${routeDuration}s;`
           + "animation-timing-function:steps(1,end);animation-iteration-count:infinite;"
           + "animation-direction:normal;animation-fill-mode:both;}";
@@ -1397,12 +1398,20 @@ const distributeCharacterRoaming = (svg) => {
       } else if (persona.type === "CAPYBARA_CARROT") {
         // The carrot is part of the scaled artwork. Move the level with the new 1.1x silhouette.
         coordinatedRouteStyles += `#level-wrap-${id}{translate:0 -18px;}`;
+      } else if (persona.type === "RABBIT_TUBE") {
+        // The tube rabbit's source metadata sits unusually high above the visible float. Bring it
+        // down to the same close-label treatment as the land rabbit without touching the artwork.
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 18px;}`;
+      } else if (persona.type === "DESSERT_FOX") {
+        // The 0.6x fox only needs a small correction: closer than upstream, but still visibly more
+        // breathing room than the rabbit labels.
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 2px;}`;
       } else if (persona.type === "HAMSTER") {
-        // At 0.6x the body top moves down around twenty pixels when scaling from its feet.
-        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 20px;}`;
+        // Give the small 0.6x hamster a little more air above its head than before.
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 17px;}`;
       } else if (persona.type === "HAMSTER_TUBE") {
-        // The tube hamster is slightly larger at 0.7x, so its label needs less downward correction.
-        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 15px;}`;
+        // The tube hamster is slightly larger at 0.7x; leave a similarly visible head gap.
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 11px;}`;
       }
     });
   });

@@ -40,6 +40,20 @@ const closeShadowTypes = new Set(["RABBIT_TUBE", "HAMSTER_TUBE", "LITTLE_CHICK_T
 const closeShadowIds = new Set(
   visiblePersonas.filter((persona) => closeShadowTypes.has(persona.type)).map((persona) => String(persona.id)),
 );
+const levelGapContractById = new Map(
+  visiblePersonas
+    .map((persona) => {
+      const contract = ({
+        RABBIT: { min: 0, max: 7 },
+        RABBIT_TUBE: { min: 0, max: 8 },
+        DESSERT_FOX: { min: 2, max: 8 },
+        HAMSTER: { min: 2, max: 7 },
+        HAMSTER_TUBE: { min: 2, max: 7 },
+      })[persona.type];
+      return contract ? [String(persona.id), { type: persona.type, ...contract }] : null;
+    })
+    .filter(Boolean),
+);
 
 const contentType = (filePath) => filePath.endsWith(".svg")
   ? "image/svg+xml"
@@ -103,6 +117,27 @@ try {
             height: Number(rect.height.toFixed(2)),
           };
         };
+        const visibleArtworkFor = (element) => {
+          const primitiveRects = [...element.querySelectorAll("path,rect,ellipse,circle,polygon,polyline,line")]
+            .filter((primitive) => {
+              const style = getComputedStyle(primitive);
+              if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0) return false;
+              const rect = primitive.getBoundingClientRect();
+              return rect.width > 0 && rect.height > 0;
+            })
+            .map((primitive) => primitive.getBoundingClientRect());
+          if (primitiveRects.length === 0) return null;
+          const left = Math.min(...primitiveRects.map((rect) => rect.left));
+          const top = Math.min(...primitiveRects.map((rect) => rect.top));
+          const right = Math.max(...primitiveRects.map((rect) => rect.right));
+          const bottom = Math.max(...primitiveRects.map((rect) => rect.bottom));
+          return {
+            x: Number((left - rootRect.left).toFixed(2)),
+            y: Number((top - rootRect.top).toFixed(2)),
+            width: Number((right - left).toFixed(2)),
+            height: Number((bottom - top).toFixed(2)),
+          };
+        };
         return {
           layout: rootSvg.dataset.profileLayout,
           root: rectFor(rootSvg),
@@ -126,6 +161,7 @@ try {
           characters: [...document.querySelectorAll("[id^='profile-facing-']")].map((element) => ({
             id: element.id.replace("profile-facing-", ""),
             ...rectFor(element),
+            visibleArtwork: visibleArtworkFor(element),
           })),
           levels: [...document.querySelectorAll("[id^='level-wrap-']")].map((element) => ({
             id: element.id,
@@ -168,7 +204,7 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v51", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v52", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.swimZone?.width > 150 && geometry.swimZone?.width < 210,
@@ -199,6 +235,16 @@ try {
           assert(shorelineGap >= 0.5,
             `${theme} ${seconds}s lets land character ${character.id} enter the water by `
               + `${Math.abs(shorelineGap).toFixed(2)}px.`);
+        }
+
+        const levelContract = levelGapContractById.get(character.id);
+        if (levelContract && character.visibleArtwork) {
+          const level = geometry.levels.find((entry) => entry.id === `level-wrap-${character.id}`);
+          assert(level, `${theme} ${seconds}s lost the ${levelContract.type} level label.`);
+          const levelGap = character.visibleArtwork.y - (level.y + level.height);
+          assert(levelGap >= levelContract.min && levelGap <= levelContract.max,
+            `${theme} ${seconds}s places ${levelContract.type} level ${levelGap.toFixed(2)}px above its visible artwork; `
+              + `expected ${levelContract.min}-${levelContract.max}px.`);
         }
       });
       assert(geometry.actions === expectedActionCount, `${theme} ${seconds}s lost character action wrappers.`);

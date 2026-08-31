@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v51";
+const layoutVersion = "character-behaviors-v52";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -395,7 +395,7 @@ if (rabbit) {
     assert(keyframesStart !== -1 && ruleStart !== -1,
       `${theme} rabbit level label must follow its facing direction.`);
     const body = svg.slice(keyframesStart, ruleStart);
-    assert(body.includes("translate:0px -9px") && body.includes("translate:25px -9px"),
+    assert(body.includes("translate:0px 3px") && body.includes("translate:25px 3px"),
       `${theme} rabbit level must shift right only while facing left.`);
     const rule = svg.slice(ruleStart, svg.indexOf("}", ruleStart));
     assert(rule.includes(`animation-name:${animationName} !important`),
@@ -444,16 +444,30 @@ if (swimmingCapybara) {
 
 const hamster = visible.find((persona) => persona.type === "HAMSTER");
 if (hamster) {
-  assert(light.includes(`#level-wrap-${hamster.id}{translate:0 20px;}`)
-    && dark.includes(`#level-wrap-${hamster.id}{translate:0 20px;}`),
-  "Hamster level label must stay attached to its 0.6x artwork.");
+  assert(light.includes(`#level-wrap-${hamster.id}{translate:0 17px;}`)
+    && dark.includes(`#level-wrap-${hamster.id}{translate:0 17px;}`),
+  "Hamster level label must keep a small gap above its 0.6x artwork.");
 }
 
 const hamsterTube = visible.find((persona) => persona.type === "HAMSTER_TUBE");
 if (hamsterTube) {
-  assert(light.includes(`#level-wrap-${hamsterTube.id}{translate:0 15px;}`)
-    && dark.includes(`#level-wrap-${hamsterTube.id}{translate:0 15px;}`),
-  "Hamster Tube level label must stay attached to its 0.7x artwork.");
+  assert(light.includes(`#level-wrap-${hamsterTube.id}{translate:0 11px;}`)
+    && dark.includes(`#level-wrap-${hamsterTube.id}{translate:0 11px;}`),
+  "Hamster Tube level label must keep a small gap above its 0.7x artwork.");
+}
+
+const rabbitTube = visible.find((persona) => persona.type === "RABBIT_TUBE");
+if (rabbitTube) {
+  assert(light.includes(`#level-wrap-${rabbitTube.id}{translate:0 18px;}`)
+    && dark.includes(`#level-wrap-${rabbitTube.id}{translate:0 18px;}`),
+  "Rabbit Tube level label must sit close to its visible float.");
+}
+
+const dessertFox = visible.find((persona) => persona.type === "DESSERT_FOX");
+if (dessertFox) {
+  assert(light.includes(`#level-wrap-${dessertFox.id}{translate:0 2px;}`)
+    && dark.includes(`#level-wrap-${dessertFox.id}{translate:0 2px;}`),
+  "Dessert Fox level label must move slightly closer to its artwork.");
 }
 
 if (rider && mount) {
