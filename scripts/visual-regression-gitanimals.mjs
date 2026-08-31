@@ -26,7 +26,8 @@ const expectedInteractionCount = visiblePersonas.length;
 const expectedActionCount = visiblePersonas.length - (hasMountedPair ? 1 : 0);
 const swimZoneIds = new Set(
   visiblePersonas
-    .filter((persona) => persona.type.includes("_SWIM") || persona.type.includes("_TUBE"))
+    .filter((persona) => persona.type.includes("_SWIM") || persona.type.includes("_TUBE")
+      || persona.type === "GOOSE" || persona.type === "FLAMINGO")
     .map((persona) => String(persona.id)),
 );
 if (hasMountedPair) {
@@ -43,6 +44,11 @@ const closeShadowIds = new Set(
 const simpleTubeWaterIds = new Set(
   visiblePersonas
     .filter((persona) => ["LITTLE_CHICK_TUBE", "RABBIT_TUBE", "HAMSTER_TUBE"].includes(persona.type))
+    .map((persona) => String(persona.id)),
+);
+const birdWaterIds = new Set(
+  visiblePersonas
+    .filter((persona) => ["GOOSE", "FLAMINGO"].includes(persona.type))
     .map((persona) => String(persona.id)),
 );
 const levelGapContractById = new Map(
@@ -181,6 +187,9 @@ try {
           simpleTubeWater: [...document.querySelectorAll("svg[id^='profile-shadow-']")]
             .filter((element) => element.querySelector(".profile-tube-ripple") && element.querySelector(".profile-tube-wake"))
             .map((element) => element.id.replace("profile-shadow-", "")),
+          birdWater: [...document.querySelectorAll("svg[id^='profile-shadow-']")]
+            .filter((element) => element.querySelector(".profile-bird-ripple") && element.querySelector(".profile-bird-wake"))
+            .map((element) => element.id.replace("profile-shadow-", "")),
           grounding: [...document.querySelectorAll("svg[id^='profile-shadow-']")].map((element) => {
             const id = element.id.replace("profile-shadow-", "");
             const artwork = document.querySelector(`#profile-facing-${id}`);
@@ -214,10 +223,10 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v54", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v55", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
-      assert(geometry.swimZone?.width > 150 && geometry.swimZone?.width < 210,
+      assert(geometry.swimZone?.width > 230 && geometry.swimZone?.width < 265,
         `${theme} ${seconds}s lost the dedicated left-side swim zone.`);
       assert(geometry.swimWater,
         `${theme} ${seconds}s lost the bounded water rectangle.`);
@@ -264,6 +273,9 @@ try {
       assert(simpleTubeWaterIds.size === geometry.simpleTubeWater.length
         && [...simpleTubeWaterIds].every((id) => geometry.simpleTubeWater.includes(id)),
       `${theme} ${seconds}s lost a simplified TUBE water ripple.`);
+      assert(birdWaterIds.size === geometry.birdWater.length
+        && [...birdWaterIds].every((id) => geometry.birdWater.includes(id)),
+      `${theme} ${seconds}s lost a swimming-bird ripple.`);
       geometry.grounding
         .filter((entry) => closeShadowIds.has(entry.id))
         .forEach((entry) => {
@@ -309,6 +321,12 @@ try {
         const borderSkimmingLandIds = new Set();
         const rightVisitingLandIds = new Set();
         let minimumRightSideLandPetsPerFrame = Number.POSITIVE_INFINITY;
+        const swimCenterRanges = Object.fromEntries(swimIds.map((id) => [id, {
+          minX: Number.POSITIVE_INFINITY,
+          maxX: Number.NEGATIVE_INFINITY,
+          minY: Number.POSITIVE_INFINITY,
+          maxY: Number.NEGATIVE_INFINITY,
+        }]));
         let sampledFrames = 0;
         for (let seconds = 0; seconds < 120; seconds += 0.5) {
           animations.forEach((animation) => {
@@ -345,6 +363,13 @@ try {
             const right = rect.right - rootRect.left;
             const top = rect.top - rootRect.top;
             const bottom = rect.bottom - rootRect.top;
+            const centerX = (left + right) / 2;
+            const centerY = (top + bottom) / 2;
+            const range = swimCenterRanges[id];
+            range.minX = Math.min(range.minX, centerX);
+            range.maxX = Math.max(range.maxX, centerX);
+            range.minY = Math.min(range.minY, centerY);
+            range.maxY = Math.max(range.maxY, centerY);
             maximumSwimOverflow = Math.max(
               maximumSwimOverflow,
               waterLeft - left,
@@ -360,6 +385,7 @@ try {
           borderSkimmingLandIds: [...borderSkimmingLandIds],
           rightVisitingLandIds: [...rightVisitingLandIds],
           minimumRightSideLandPetsPerFrame,
+          swimCenterRanges,
           sampledFrames,
         };
       }, {
@@ -382,6 +408,11 @@ try {
       assert(fullCycleZones.maximumSwimOverflow <= 0.5,
         `A swim-zone pet leaves the visible water during the full route by `
           + `${fullCycleZones.maximumSwimOverflow.toFixed(2)}px.`);
+      const freeSwimmers = Object.values(fullCycleZones.swimCenterRanges).filter((range) =>
+        range.maxX - range.minX >= 120 && range.maxY - range.minY >= 100);
+      assert(freeSwimmers.length >= 2,
+        `Only ${freeSwimmers.length} swim pets traverse the expanded pond freely; `
+          + "the water layout is collapsing back into fixed slots.");
     }
     await page.close();
   }

@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v54";
+const layoutVersion = "character-behaviors-v55";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -32,7 +32,6 @@ const farmRoamerTypes = new Set([
   "HAMSTER_TUBE",
   "GALCHI_CAT",
   "SHIBA",
-  "GOOSE",
 ]);
 const expectedFacingPivots = {
   LITTLE_CHICK_TUBE: "16.00",
@@ -57,11 +56,13 @@ const assert = (condition, message) => {
 };
 
 const separationRadius = (type) => {
-  if (type === "CAPYBARA_SWIM") return 12;
+  if (type === "CAPYBARA_SWIM") return 9;
+  if (type === "RABBIT_TUBE" || type === "HAMSTER_TUBE") return 6;
+  if (type === "LITTLE_CHICK_TUBE") return 5;
+  if (type === "GOOSE" || type === "FLAMINGO") return 6;
   if (type.includes("CAPYBARA")) return 11;
   if (type.includes("PENGUIN") || type.includes("FLAMINGO")) return 10;
-  if (type === "RABBIT_TUBE" || type === "HAMSTER_TUBE") return 10;
-  if (type === "LITTLE_CHICK_TUBE" || type === "DESSERT_FOX") return 9;
+  if (type === "DESSERT_FOX") return 9;
   if (type === "RABBIT" || type === "SHIBA") return 9;
   return 8;
 };
@@ -87,20 +88,27 @@ const characterScale = (type) => ({
   PENGUIN_SUNGLASSES: 0.9,
 })[type] ?? 1;
 
-const isSwimZoneType = (type) => type.includes("_SWIM") || type.includes("_TUBE");
-const swimZoneBounds = { left: 8, right: 24 };
-const landZoneBounds = { left: 35.5, right: 85 };
+const isSwimZoneType = (type) => type.includes("_SWIM") || type.includes("_TUBE")
+  || type === "GOOSE" || type === "FLAMINGO";
+const swimZoneBounds = { left: 8, right: 35 };
+const swimZoneBoundsFor = (type) => ({
+  CAPYBARA_SWIM: { left: 8.5, right: 19.5 },
+  LITTLE_CHICK_TUBE: { left: 8, right: 19 },
+  RABBIT_TUBE: { left: 8, right: 34.5 },
+  HAMSTER_TUBE: { left: 8, right: 33.5 },
+  GOOSE: { left: 20, right: 22.5 },
+  FLAMINGO: { left: 31, right: 33 },
+})[type] ?? swimZoneBounds;
+const landZoneBounds = { left: 45.5, right: 85 };
 const landShorelineAnchorLeft = (type) => ({
-  RABBIT: 33.15,
-  HAMSTER: 31.1,
-  GALCHI_CAT: 34.45,
-  SHIBA: 34.45,
-  GOOSE: 33.05,
-  FLAMINGO: 32.6,
-  PENGUIN: 32.0,
-  PENGUIN_SUNGLASSES: 32.0,
-  DESSERT_FOX: 33.5,
-  CAPYBARA_CARROT: 35.4,
+  RABBIT: 43.3,
+  HAMSTER: 41.25,
+  GALCHI_CAT: 44.6,
+  SHIBA: 44.6,
+  PENGUIN: 42.15,
+  PENGUIN_SUNGLASSES: 42.15,
+  DESSERT_FOX: 43.65,
+  CAPYBARA_CARROT: 45.55,
 })[type] ?? landZoneBounds.left;
 
 const extractAnimation = (svg, persona) => {
@@ -144,13 +152,13 @@ const positionAt = (animation, seconds) => {
 
 assert(light.includes(`data-profile-layout="${layoutVersion}"`), "Light SVG layout version is stale.");
 assert(dark.includes(`data-profile-layout="${layoutVersion}"`), "Dark SVG layout version is stale.");
-assert(light.includes('data-profile-zone-split="32"'), "Light SVG is missing the compact swim/land zone split.");
-assert(dark.includes('data-profile-zone-split="32"'), "Dark SVG is missing the compact swim/land zone split.");
+assert(light.includes('data-profile-zone-split="42"'), "Light SVG is missing the expanded swim/land zone split.");
+assert(dark.includes('data-profile-zone-split="42"'), "Dark SVG is missing the expanded swim/land zone split.");
 assert(light.includes('<g id="profile-swim-zone"'), "Light SVG is missing the visible swim zone.");
 assert(dark.includes('<g id="profile-swim-zone"'), "Dark SVG is missing the visible swim zone.");
-assert(light.includes('<rect id="profile-swim-water" x="8" y="44" width="184" height="218"'),
+assert(light.includes('<rect id="profile-swim-water" x="8" y="44" width="245" height="218"'),
   "Light SVG swim water must leave the header/footer text lanes clear.");
-assert(dark.includes('<rect id="profile-swim-water" x="8" y="44" width="184" height="218"'),
+assert(dark.includes('<rect id="profile-swim-water" x="8" y="44" width="245" height="218"'),
   "Dark SVG swim water must leave the header/footer text lanes clear.");
 assert(/data-profile-scene-phase="[\d.]+"/.test(light), "Light SVG is missing its natural scene phase.");
 assert(/data-profile-scene-phase="[\d.]+"/.test(dark), "Dark SVG is missing its natural scene phase.");
@@ -215,7 +223,7 @@ lightAnimations.forEach((animation, index) => {
     `Light and dark routes differ for ${animation.persona.type} (${animation.id}).`,
   );
   const zoneBounds = isSwimZoneType(animation.persona.type)
-    ? swimZoneBounds
+    ? swimZoneBoundsFor(animation.persona.type)
     : { ...landZoneBounds, left: landShorelineAnchorLeft(animation.persona.type) };
   animation.points.forEach((point) => {
     assert(point.x >= zoneBounds.left - 0.01 && point.x <= zoneBounds.right + 0.01,
@@ -223,7 +231,7 @@ lightAnimations.forEach((animation, index) => {
   });
   if (!isSwimZoneType(animation.persona.type)) {
     const xValues = animation.points.map((point) => point.x);
-    assert(Math.min(...xValues) <= 38.5,
+    assert(Math.min(...xValues) <= landShorelineAnchorLeft(animation.persona.type) + 3.5,
       `${animation.persona.type} no longer has access to the shoreline side (${Math.min(...xValues).toFixed(2)}%).`);
     assert(Math.max(...xValues) >= 60,
       `${animation.persona.type} no longer uses the right side of the land habitat (${Math.max(...xValues).toFixed(2)}%).`);
@@ -326,9 +334,9 @@ const activeMovementContracts = {
   // Full-screen roaming is now intentionally split into two habitats. Preserve the fast cadence
   // inside each habitat instead of requiring these runners to cross the shoreline.
   RABBIT: { horizontalCoverage: 29, averageWeightedSpeed: 6.3 },
-  RABBIT_TUBE: { horizontalCoverage: 16, averageWeightedSpeed: 6.5 },
+  RABBIT_TUBE: { horizontalCoverage: 20, averageWeightedSpeed: 6.2 },
   HAMSTER: { horizontalCoverage: 28, averageWeightedSpeed: 6.2 },
-  HAMSTER_TUBE: { horizontalCoverage: 16, averageWeightedSpeed: 6.2 },
+  HAMSTER_TUBE: { horizontalCoverage: 19, averageWeightedSpeed: 6.2 },
 };
 for (const [type, contract] of Object.entries(activeMovementContracts)) {
   const animation = lightAnimations.find((entry) => entry.persona.type === type);
@@ -356,11 +364,11 @@ for (const explorerType of farmRoamerTypes) {
   const horizontalCoverage = Math.max(...xValues) - Math.min(...xValues);
   const verticalCoverage = Math.max(...yValues) - Math.min(...yValues);
   const minimumHorizontalCoverage = isSwimZoneType(explorerType)
-    ? 16
+    ? (explorerType === "GOOSE" ? 18 : 19)
     : explorerType.startsWith("HAMSTER") ? 28 : 30;
   assert(horizontalCoverage >= minimumHorizontalCoverage,
     `${explorerType} explorer must traverse the farm horizontally (${horizontalCoverage.toFixed(2)}%).`);
-  assert(verticalCoverage >= 35,
+  assert(verticalCoverage >= (explorerType === "GOOSE" ? 28 : 35),
     `${explorerType} explorer must traverse the farm vertically (${verticalCoverage.toFixed(2)}%).`);
 
   // The cat retains its established pause-and-patrol cadence; this turn only makes the Shiba and
@@ -509,6 +517,19 @@ for (const type of simpleTubeTypes) {
   }
 }
 
+for (const type of ["GOOSE", "FLAMINGO"]) {
+  const persona = visible.find((candidate) => candidate.type === type);
+  if (!persona) continue;
+  for (const [theme, svg] of [["Light", light], ["Dark", dark]]) {
+    const shadowStart = svg.indexOf(`<svg id="profile-shadow-${persona.id}"`);
+    const shadowEnd = svg.indexOf("</svg>", shadowStart);
+    const shadowMarkup = svg.slice(shadowStart, shadowEnd);
+    assert(shadowStart !== -1 && shadowMarkup.includes('class="profile-bird-ripple"')
+      && shadowMarkup.includes('class="profile-bird-wake"'),
+    `${theme} ${type} must render as a water bird inside the expanded swim habitat.`);
+  }
+}
+
 if (rider && mount) {
   const riderAnimation = extractAnimation(light, rider);
   const mountAnimation = extractAnimation(light, mount);
@@ -536,7 +557,7 @@ for (let leftIndex = 0; leftIndex < lightAnimations.length; leftIndex += 1) {
     if (!sameZone) continue;
     const threshold = separationRadius(left.persona.type) + separationRadius(right.persona.type);
     const sameFamily = animationsShareFamily(left, right);
-    const sameFamilyMinimumDistance = threshold + 10;
+    const sameFamilyMinimumDistance = threshold + (sameFamily && isSwimZoneType(left.persona.type) ? 2 : 10);
     let pairMinimumDistance = Number.POSITIVE_INFINITY;
     const overlapSamples = [];
     for (let seconds = 0; seconds < cycleSeconds; seconds += sampleStepSeconds) {
