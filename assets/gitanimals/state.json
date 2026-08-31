@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10146",
+  "totalContributions": "10147",
   "personas": [
     {
       "id": "764406126012079806",
@@ -136,7 +136,7 @@
     {
       "id": "786420217224971504",
       "type": "LITTLE_CHICK_SUNGLASSES",
-      "level": "5",
+      "level": "6",
       "visible": false,
       "appVisible": false,
       "dropRate": "3%",
@@ -296,7 +296,7 @@
     {
       "id": "835719307358968503",
       "type": "LITTLE_CHICK",
-      "level": "240",
+      "level": "241",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
@@ -436,7 +436,7 @@
     {
       "id": "839316523975851376",
       "type": "LITTLE_CHICK",
-      "level": "196",
+      "level": "197",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
@@ -516,7 +516,7 @@
     {
       "id": "844179528216093754",
       "type": "LITTLE_CHICK_JAVA",
-      "level": "3",
+      "level": "4",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -746,7 +746,7 @@
     {
       "id": "869614905974699316",
       "type": "HAMSTER",
-      "level": "157",
+      "level": "158",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -966,7 +966,7 @@
     {
       "id": "878480684983893329",
       "type": "FLAMINGO",
-      "level": "166",
+      "level": "167",
       "visible": true,
       "appVisible": false,
       "dropRate": "0.48%",
@@ -986,7 +986,7 @@
     {
       "id": "878617699649946106",
       "type": "SLOTH",
-      "level": "180",
+      "level": "181",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -1066,7 +1066,7 @@
     {
       "id": "880005761743294266",
       "type": "LITTLE_CHICK",
-      "level": "143",
+      "level": "144",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
