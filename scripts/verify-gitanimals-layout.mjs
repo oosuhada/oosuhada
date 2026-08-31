@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v52";
+const layoutVersion = "character-behaviors-v53";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -14,7 +14,9 @@ const maximumOverlapSeconds = 3.25;
 const sampleStepSeconds = 0.05;
 // Farm-wide explorers intentionally cross more ground than residents; this still limits every pet
 // to a smooth multi-second traverse rather than a sub-second collision-correction jump.
-const maximumWeightedSpeed = 16;
+// Calm residents now make one long shoreline excursion per 120s loop. Allow the slightly higher
+// continuous traverse speed that this wider range requires while keeping the fast-runner cap separate.
+const maximumWeightedSpeed = 20;
 const fastMovementTypes = new Set([
   "RABBIT",
   "HAMSTER",
@@ -91,12 +93,16 @@ const isSwimZoneType = (type) => type.includes("_SWIM") || type.includes("_TUBE"
 const swimZoneBounds = { left: 8, right: 24 };
 const landZoneBounds = { left: 35.5, right: 85 };
 const landShorelineAnchorLeft = (type) => ({
-  RABBIT: 33.8,
-  HAMSTER: 31.25,
-  GALCHI_CAT: 34.15,
-  SHIBA: 35.5,
-  GOOSE: 33.55,
-  FLAMINGO: 33.4,
+  RABBIT: 33.85,
+  HAMSTER: 31.6,
+  GALCHI_CAT: 35.55,
+  SHIBA: 35.2,
+  GOOSE: 33.7,
+  FLAMINGO: 33.6,
+  PENGUIN: 32.9,
+  PENGUIN_SUNGLASSES: 33.2,
+  DESSERT_FOX: 33.9,
+  CAPYBARA_CARROT: 36.35,
 })[type] ?? landZoneBounds.left;
 
 const extractAnimation = (svg, persona) => {
@@ -217,6 +223,11 @@ lightAnimations.forEach((animation, index) => {
     assert(point.x >= zoneBounds.left - 0.01 && point.x <= zoneBounds.right + 0.01,
       `${animation.persona.type} leaves its ${isSwimZoneType(animation.persona.type) ? "swim" : "land"} zone at x=${point.x.toFixed(2)}.`);
   });
+  if (!isSwimZoneType(animation.persona.type)) {
+    const minimumLandX = Math.min(...animation.points.map((point) => point.x));
+    assert(minimumLandX <= 38.5,
+      `${animation.persona.type} no longer reaches the shoreline side of the land zone (${minimumLandX.toFixed(2)}%).`);
+  }
   const movementStart = light.indexOf(`@keyframes ${animation.name}`);
   const movementRuleStart = light.indexOf(`animation-name:${animation.name}`, movementStart) >= 0
     ? light.indexOf(`animation-name:${animation.name}`, movementStart)
@@ -451,23 +462,51 @@ if (hamster) {
 
 const hamsterTube = visible.find((persona) => persona.type === "HAMSTER_TUBE");
 if (hamsterTube) {
-  assert(light.includes(`#level-wrap-${hamsterTube.id}{translate:0 11px;}`)
-    && dark.includes(`#level-wrap-${hamsterTube.id}{translate:0 11px;}`),
-  "Hamster Tube level label must keep a small gap above its 0.7x artwork.");
+  assert(light.includes(`#level-wrap-${hamsterTube.id}{translate:0 4px;}`)
+    && dark.includes(`#level-wrap-${hamsterTube.id}{translate:0 4px;}`),
+  "Hamster Tube level label must float above its 0.7x artwork.");
 }
 
 const rabbitTube = visible.find((persona) => persona.type === "RABBIT_TUBE");
 if (rabbitTube) {
-  assert(light.includes(`#level-wrap-${rabbitTube.id}{translate:0 18px;}`)
-    && dark.includes(`#level-wrap-${rabbitTube.id}{translate:0 18px;}`),
-  "Rabbit Tube level label must sit close to its visible float.");
+  assert(light.includes(`#level-wrap-${rabbitTube.id}{translate:0 9px;}`)
+    && dark.includes(`#level-wrap-${rabbitTube.id}{translate:0 9px;}`),
+  "Rabbit Tube level label must float above its visible float.");
+}
+
+const chickTube = visible.find((persona) => persona.type === "LITTLE_CHICK_TUBE");
+if (chickTube) {
+  assert(light.includes(`#level-wrap-${chickTube.id}{translate:0 -7px;}`)
+    && dark.includes(`#level-wrap-${chickTube.id}{translate:0 -7px;}`),
+  "Little Chick Tube level label must float above its artwork.");
 }
 
 const dessertFox = visible.find((persona) => persona.type === "DESSERT_FOX");
 if (dessertFox) {
-  assert(light.includes(`#level-wrap-${dessertFox.id}{translate:0 2px;}`)
-    && dark.includes(`#level-wrap-${dessertFox.id}{translate:0 2px;}`),
+  assert(light.includes(`#level-wrap-${dessertFox.id}{translate:0 1px;}`)
+    && dark.includes(`#level-wrap-${dessertFox.id}{translate:0 1px;}`),
   "Dessert Fox level label must move slightly closer to its artwork.");
+}
+
+const galchiCat = visible.find((persona) => persona.type === "GALCHI_CAT");
+if (galchiCat) {
+  assert(light.includes(`#level-wrap-${galchiCat.id}{translate:0 8px;}`)
+    && dark.includes(`#level-wrap-${galchiCat.id}{translate:0 8px;}`),
+  "Galchi Cat level label must sit closer to its ears.");
+}
+
+const simpleTubeTypes = ["LITTLE_CHICK_TUBE", "RABBIT_TUBE", "HAMSTER_TUBE"];
+for (const type of simpleTubeTypes) {
+  const persona = visible.find((candidate) => candidate.type === type);
+  if (!persona) continue;
+  for (const [theme, svg] of [["Light", light], ["Dark", dark]]) {
+    const shadowStart = svg.indexOf(`<svg id="profile-shadow-${persona.id}"`);
+    const shadowEnd = svg.indexOf("</svg>", shadowStart);
+    const shadowMarkup = svg.slice(shadowStart, shadowEnd);
+    assert(shadowStart !== -1 && shadowMarkup.includes('class="profile-tube-ripple"')
+      && shadowMarkup.includes('class="profile-tube-wake"'),
+    `${theme} ${type} must keep its simplified water ripple.`);
+  }
 }
 
 if (rider && mount) {

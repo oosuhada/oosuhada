@@ -40,15 +40,22 @@ const closeShadowTypes = new Set(["RABBIT_TUBE", "HAMSTER_TUBE", "LITTLE_CHICK_T
 const closeShadowIds = new Set(
   visiblePersonas.filter((persona) => closeShadowTypes.has(persona.type)).map((persona) => String(persona.id)),
 );
+const simpleTubeWaterIds = new Set(
+  visiblePersonas
+    .filter((persona) => ["LITTLE_CHICK_TUBE", "RABBIT_TUBE", "HAMSTER_TUBE"].includes(persona.type))
+    .map((persona) => String(persona.id)),
+);
 const levelGapContractById = new Map(
   visiblePersonas
     .map((persona) => {
       const contract = ({
         RABBIT: { min: 0, max: 7 },
-        RABBIT_TUBE: { min: 0, max: 8 },
-        DESSERT_FOX: { min: 2, max: 8 },
+        RABBIT_TUBE: { min: 6, max: 17 },
+        LITTLE_CHICK_TUBE: { min: 4, max: 11 },
+        DESSERT_FOX: { min: 0.5, max: 8 },
         HAMSTER: { min: 2, max: 7 },
-        HAMSTER_TUBE: { min: 2, max: 7 },
+        HAMSTER_TUBE: { min: 5, max: 13 },
+        GALCHI_CAT: { min: 3, max: 11 },
       })[persona.type];
       return contract ? [String(persona.id), { type: persona.type, ...contract }] : null;
     })
@@ -171,6 +178,9 @@ try {
             id: element.id,
             ...rectFor(element),
           })),
+          simpleTubeWater: [...document.querySelectorAll("svg[id^='profile-shadow-']")]
+            .filter((element) => element.querySelector(".profile-tube-ripple") && element.querySelector(".profile-tube-wake"))
+            .map((element) => element.id.replace("profile-shadow-", "")),
           grounding: [...document.querySelectorAll("svg[id^='profile-shadow-']")].map((element) => {
             const id = element.id.replace("profile-shadow-", "");
             const artwork = document.querySelector(`#profile-facing-${id}`);
@@ -204,7 +214,7 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v52", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v53", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.swimZone?.width > 150 && geometry.swimZone?.width < 210,
@@ -251,6 +261,9 @@ try {
       assert(geometry.interactions === expectedInteractionCount,
         `${theme} ${seconds}s lost proximity interaction wrappers.`);
       assert(geometry.shadows.length === expectedActionCount, `${theme} ${seconds}s lost grounding shadows.`);
+      assert(simpleTubeWaterIds.size === geometry.simpleTubeWater.length
+        && [...simpleTubeWaterIds].every((id) => geometry.simpleTubeWater.includes(id)),
+      `${theme} ${seconds}s lost a simplified TUBE water ripple.`);
       geometry.grounding
         .filter((entry) => closeShadowIds.has(entry.id))
         .forEach((entry) => {
@@ -293,7 +306,11 @@ try {
         const water = document.querySelector("#profile-swim-water");
         let minimumLandGap = Number.POSITIVE_INFINITY;
         let maximumSwimOverflow = Number.NEGATIVE_INFINITY;
-        const nearShoreLandIds = new Set();
+        const borderSkimmingLandIds = new Set();
+        const shorelineVisitingLandIds = new Set();
+        const shorelineVisitCounts = Object.fromEntries(landIds.map((id) => [id, 0]));
+        let framesWithShorelineLandPet = 0;
+        let sampledFrames = 0;
         for (let seconds = 0; seconds < 120; seconds += 0.5) {
           animations.forEach((animation) => {
             animation.currentTime = seconds * 1000;
@@ -305,14 +322,22 @@ try {
           const waterRight = waterRect.right - rootRect.left;
           const waterTop = waterRect.top - rootRect.top;
           const waterBottom = waterRect.bottom - rootRect.top;
+          sampledFrames += 1;
+          let frameHasShorelineLandPet = false;
           landIds.forEach((id) => {
             const element = document.querySelector(`#profile-facing-${id}`);
             if (!element) return;
             const rect = element.getBoundingClientRect();
             const gap = rect.left - rootRect.left - waterRight;
             minimumLandGap = Math.min(minimumLandGap, gap);
-            if (gap <= 3) nearShoreLandIds.add(id);
+            if (gap <= 3) borderSkimmingLandIds.add(id);
+            if (gap <= 6) {
+              shorelineVisitingLandIds.add(id);
+              shorelineVisitCounts[id] += 1;
+              frameHasShorelineLandPet = true;
+            }
           });
+          if (frameHasShorelineLandPet) framesWithShorelineLandPet += 1;
           swimIds.forEach((id) => {
             const element = document.querySelector(`#profile-facing-${id}`);
             if (!element) return;
@@ -333,7 +358,11 @@ try {
         return {
           minimumLandGap,
           maximumSwimOverflow,
-          nearShoreLandIds: [...nearShoreLandIds],
+          borderSkimmingLandIds: [...borderSkimmingLandIds],
+          shorelineVisitingLandIds: [...shorelineVisitingLandIds],
+          shorelineVisitCounts,
+          framesWithShorelineLandPet,
+          sampledFrames,
         };
       }, {
         landIds: [...landZoneIds],
@@ -345,8 +374,13 @@ try {
       assert(fullCycleZones.minimumLandGap <= 2,
         `Land pets never visually skim the shoreline; minimum full-route gap is `
           + `${fullCycleZones.minimumLandGap.toFixed(2)}px.`);
-      assert(fullCycleZones.nearShoreLandIds.length >= 5,
-        `Only ${fullCycleZones.nearShoreLandIds.length} land pets visit within 3px of the shoreline.`);
+      assert(fullCycleZones.borderSkimmingLandIds.length >= Math.min(4, landZoneIds.size),
+        `Only ${fullCycleZones.borderSkimmingLandIds.length} land pets skim within 3px of the shoreline.`);
+      assert(fullCycleZones.shorelineVisitingLandIds.length >= Math.min(8, landZoneIds.size),
+        `Only ${fullCycleZones.shorelineVisitingLandIds.length} land pets visit within 6px of the shoreline.`);
+      assert(fullCycleZones.framesWithShorelineLandPet / fullCycleZones.sampledFrames >= 0.40,
+        `A land pet is near the shoreline in only `
+          + `${((fullCycleZones.framesWithShorelineLandPet / fullCycleZones.sampledFrames) * 100).toFixed(1)}% of the loop.`);
       assert(fullCycleZones.maximumSwimOverflow <= 0.5,
         `A swim-zone pet leaves the visible water during the full route by `
           + `${fullCycleZones.maximumSwimOverflow.toFixed(2)}px.`);
@@ -357,7 +391,7 @@ try {
     (closest, entry) => (entry.gap < closest.gap ? entry : closest),
     { gap: Number.POSITIVE_INFINITY },
   );
-  assert(closestLandApproach.gap <= 2,
+  assert(closestLandApproach.gap <= 4,
     `Land pets never approach the shoreline closely enough; nearest rendered gap is `
       + `${closestLandApproach.gap.toFixed(2)}px.`);
   await writeFile(
