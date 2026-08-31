@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v55";
+const layoutVersion = "character-behaviors-v56";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -90,25 +90,25 @@ const characterScale = (type) => ({
 
 const isSwimZoneType = (type) => type.includes("_SWIM") || type.includes("_TUBE")
   || type === "GOOSE" || type === "FLAMINGO";
-const swimZoneBounds = { left: 8, right: 35 };
+const swimZoneBounds = { left: 8, right: 43 };
 const swimZoneBoundsFor = (type) => ({
-  CAPYBARA_SWIM: { left: 8.5, right: 19.5 },
-  LITTLE_CHICK_TUBE: { left: 8, right: 19 },
-  RABBIT_TUBE: { left: 8, right: 34.5 },
-  HAMSTER_TUBE: { left: 8, right: 33.5 },
-  GOOSE: { left: 20, right: 22.5 },
-  FLAMINGO: { left: 31, right: 33 },
+  CAPYBARA_SWIM: { left: 8.5, right: 28 },
+  LITTLE_CHICK_TUBE: { left: 8, right: 27 },
+  RABBIT_TUBE: { left: 8, right: 42.5 },
+  HAMSTER_TUBE: { left: 8, right: 41.5 },
+  GOOSE: { left: 23, right: 30.5 },
+  FLAMINGO: { left: 37, right: 40.5 },
 })[type] ?? swimZoneBounds;
-const landZoneBounds = { left: 45.5, right: 85 };
+const landZoneBounds = { left: 53.3, right: 85 };
 const landShorelineAnchorLeft = (type) => ({
-  RABBIT: 43.3,
-  HAMSTER: 41.25,
-  GALCHI_CAT: 44.6,
-  SHIBA: 44.6,
-  PENGUIN: 42.15,
-  PENGUIN_SUNGLASSES: 42.15,
-  DESSERT_FOX: 43.65,
-  CAPYBARA_CARROT: 45.55,
+  RABBIT: 51.1,
+  HAMSTER: 49.05,
+  GALCHI_CAT: 52.4,
+  SHIBA: 52.4,
+  PENGUIN: 49.95,
+  PENGUIN_SUNGLASSES: 49.95,
+  DESSERT_FOX: 51.45,
+  CAPYBARA_CARROT: 53.35,
 })[type] ?? landZoneBounds.left;
 
 const extractAnimation = (svg, persona) => {
@@ -152,13 +152,13 @@ const positionAt = (animation, seconds) => {
 
 assert(light.includes(`data-profile-layout="${layoutVersion}"`), "Light SVG layout version is stale.");
 assert(dark.includes(`data-profile-layout="${layoutVersion}"`), "Dark SVG layout version is stale.");
-assert(light.includes('data-profile-zone-split="42"'), "Light SVG is missing the expanded swim/land zone split.");
-assert(dark.includes('data-profile-zone-split="42"'), "Dark SVG is missing the expanded swim/land zone split.");
+assert(light.includes('data-profile-zone-split="50"'), "Light SVG is missing the half-width swim/land zone split.");
+assert(dark.includes('data-profile-zone-split="50"'), "Dark SVG is missing the half-width swim/land zone split.");
 assert(light.includes('<g id="profile-swim-zone"'), "Light SVG is missing the visible swim zone.");
 assert(dark.includes('<g id="profile-swim-zone"'), "Dark SVG is missing the visible swim zone.");
-assert(light.includes('<rect id="profile-swim-water" x="8" y="44" width="245" height="218"'),
+assert(light.includes('<rect id="profile-swim-water" x="8" y="44" width="292" height="218"'),
   "Light SVG swim water must leave the header/footer text lanes clear.");
-assert(dark.includes('<rect id="profile-swim-water" x="8" y="44" width="245" height="218"'),
+assert(dark.includes('<rect id="profile-swim-water" x="8" y="44" width="292" height="218"'),
   "Dark SVG swim water must leave the header/footer text lanes clear.");
 assert(/data-profile-scene-phase="[\d.]+"/.test(light), "Light SVG is missing its natural scene phase.");
 assert(/data-profile-scene-phase="[\d.]+"/.test(dark), "Dark SVG is missing its natural scene phase.");
@@ -504,6 +504,10 @@ if (galchiCat) {
 }
 
 const simpleTubeTypes = ["LITTLE_CHICK_TUBE", "RABBIT_TUBE", "HAMSTER_TUBE"];
+const tubeRippleMaximumRx = {
+  LITTLE_CHICK_TUBE: 6.1,
+  RABBIT_TUBE: 6.1,
+};
 for (const type of simpleTubeTypes) {
   const persona = visible.find((candidate) => candidate.type === type);
   if (!persona) continue;
@@ -514,9 +518,15 @@ for (const type of simpleTubeTypes) {
     assert(shadowStart !== -1 && shadowMarkup.includes('class="profile-tube-ripple"')
       && shadowMarkup.includes('class="profile-tube-wake"'),
     `${theme} ${type} must keep its simplified water ripple.`);
+    const rippleRx = Number(shadowMarkup.match(/class="profile-tube-ripple"[^>]*\brx="([\d.]+)"/)?.[1]);
+    if (tubeRippleMaximumRx[type] !== undefined) {
+      assert(Number.isFinite(rippleRx) && rippleRx <= tubeRippleMaximumRx[type],
+        `${theme} ${type} water ripple grew too large (${rippleRx}).`);
+    }
   }
 }
 
+const birdRippleCy = { GOOSE: 14, FLAMINGO: 34.5 };
 for (const type of ["GOOSE", "FLAMINGO"]) {
   const persona = visible.find((candidate) => candidate.type === type);
   if (!persona) continue;
@@ -527,6 +537,9 @@ for (const type of ["GOOSE", "FLAMINGO"]) {
     assert(shadowStart !== -1 && shadowMarkup.includes('class="profile-bird-ripple"')
       && shadowMarkup.includes('class="profile-bird-wake"'),
     `${theme} ${type} must render as a water bird inside the expanded swim habitat.`);
+    const rippleCy = Number(shadowMarkup.match(/class="profile-bird-ripple"[^>]*\bcy="([\d.]+)"/)?.[1]);
+    assert(Math.abs(rippleCy - birdRippleCy[type]) < 0.01,
+      `${theme} ${type} waterline moved to ${rippleCy}; expected ${birdRippleCy[type]}.`);
   }
 }
 

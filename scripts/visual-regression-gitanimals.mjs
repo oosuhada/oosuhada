@@ -58,7 +58,7 @@ const levelGapContractById = new Map(
         RABBIT: { min: 0, max: 7 },
         RABBIT_TUBE: { min: 6, max: 17 },
         LITTLE_CHICK_TUBE: { min: 4, max: 11 },
-        DESSERT_FOX: { min: 0.5, max: 8 },
+        DESSERT_FOX: { min: 0, max: 8 },
         HAMSTER: { min: 2, max: 7 },
         HAMSTER_TUBE: { min: 5, max: 13 },
         GALCHI_CAT: { min: 3, max: 11 },
@@ -223,10 +223,10 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v55", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v56", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
-      assert(geometry.swimZone?.width > 230 && geometry.swimZone?.width < 265,
+      assert(geometry.swimZone?.width > 285 && geometry.swimZone?.width < 305,
         `${theme} ${seconds}s lost the dedicated left-side swim zone.`);
       assert(geometry.swimWater,
         `${theme} ${seconds}s lost the bounded water rectangle.`);
