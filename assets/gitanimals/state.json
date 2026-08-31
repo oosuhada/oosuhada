@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10143",
+  "totalContributions": "10144",
   "personas": [
     {
       "id": "764406126012079806",
@@ -106,7 +106,7 @@
     {
       "id": "781406767468684789",
       "type": "PENGUIN_JS",
-      "level": "2",
+      "level": "3",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -216,7 +216,7 @@
     {
       "id": "829259874410923325",
       "type": "HAMSTER",
-      "level": "457",
+      "level": "458",
       "visible": true,
       "appVisible": false,
       "dropRate": "7%",
@@ -296,7 +296,7 @@
     {
       "id": "835719307358968503",
       "type": "LITTLE_CHICK",
-      "level": "238",
+      "level": "239",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
@@ -386,7 +386,7 @@
     {
       "id": "839316522163902329",
       "type": "PENGUIN",
-      "level": "209",
+      "level": "210",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
@@ -596,7 +596,7 @@
     {
       "id": "856219257967577654",
       "type": "GALCHI_CAT",
-      "level": "179",
+      "level": "180",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
