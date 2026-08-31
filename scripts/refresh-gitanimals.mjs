@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v44";
+const layoutVersion = "character-behaviors-v45";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -194,14 +194,16 @@ const personaFamily = (type) => {
 };
 
 const characterScale = (persona) => ({
-  CAPYBARA_CARROT: 1.2,
-  CAPYBARA_SWIM: 1.2,
-  RABBIT: 0.9,
+  CAPYBARA_CARROT: 1.1,
+  CAPYBARA_SWIM: 1.1,
+  RABBIT: 0.8,
   RABBIT_TUBE: 0.9,
-  GALCHI_CAT: 0.9,
+  GALCHI_CAT: 0.8,
   HAMSTER: 0.6,
   HAMSTER_TUBE: 0.6,
   DESSERT_FOX: 0.6,
+  PENGUIN: 0.9,
+  PENGUIN_SUNGLASSES: 0.9,
 })[persona.type] ?? 1;
 
 const distributeCharacterRoaming = (svg) => {
@@ -1343,12 +1345,12 @@ const distributeCharacterRoaming = (svg) => {
           + "animation-timing-function:steps(1,end);animation-iteration-count:infinite;"
           + "animation-direction:normal;animation-fill-mode:both;}";
       } else if (persona.type === "CAPYBARA_SWIM") {
-        // The 1.2x body grows upward from its waterline, so lift the label enough to preserve the
+        // The 1.1x body grows upward from its waterline, so lift the label enough to preserve the
         // original head clearance while retaining the horizontal offset for the mounted chick.
-        coordinatedRouteStyles += `#level-wrap-${id}{translate:-8px -11px;}`;
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:-8px -6px;}`;
       } else if (persona.type === "CAPYBARA_CARROT") {
-        // The carrot is part of the scaled artwork. Move the level with the new 1.2x silhouette.
-        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 -25px;}`;
+        // The carrot is part of the scaled artwork. Move the level with the new 1.1x silhouette.
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:0 -18px;}`;
       } else if (persona.type === "HAMSTER" || persona.type === "HAMSTER_TUBE") {
         // At 0.6x the body top moves down around twenty pixels when scaling from its feet. Keep the
         // level visually attached instead of leaving it at the former full-size height.
