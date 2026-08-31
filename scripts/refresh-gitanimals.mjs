@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v53";
+const layoutVersion = "character-behaviors-v54";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -215,35 +215,29 @@ const swimZoneSplitPercent = 32;
 // Route coordinates describe the movement anchor, not the full rendered sprite. Keep the anchor
 // farther inside the water rectangle so wide TUBE artwork remains visibly inside the shoreline.
 const swimZoneBounds = { left: 8, right: 24, top: 28, bottom: 76 };
-// Land pets may approach the shoreline, but their rendered bodies must remain outside the water.
-// The visual water ends at 32% (192px). A 35.5% movement-anchor floor lets the narrowest/closest
-// land silhouettes visually skim the shoreline while still keeping their artwork on dry ground.
+// The visual water ends at 32% (192px). Land routes keep the whole right-hand habitat, but their
+// left edge is allowed to extend far enough that the visible sprite can overlap the shoreline by a
+// few pixels. This is a movement range, not an attraction target: pets should still spend plenty of
+// time across the middle and far-right side of the farm.
 const landZoneBounds = { left: 35.5, right: 85, top: 28, bottom: 76 };
 // Different sprites have very different local pivots/widths. Give the main land roamers their own
 // movement-anchor floor so the rendered body, rather than the abstract anchor, can approach within
 // a couple of pixels of the shoreline without crossing into the water.
 const landShorelineAnchorLeft = (type) => ({
-  RABBIT: 33.85,
-  HAMSTER: 31.6,
-  GALCHI_CAT: 35.55,
-  SHIBA: 35.2,
-  GOOSE: 33.7,
-  FLAMINGO: 33.6,
-  PENGUIN: 32.9,
-  PENGUIN_SUNGLASSES: 33.2,
-  DESSERT_FOX: 33.9,
-  CAPYBARA_CARROT: 36.35,
+  RABBIT: 33.15,
+  HAMSTER: 31.1,
+  GALCHI_CAT: 34.45,
+  SHIBA: 34.45,
+  GOOSE: 33.05,
+  FLAMINGO: 32.6,
+  PENGUIN: 32.0,
+  PENGUIN_SUNGLASSES: 32.0,
+  DESSERT_FOX: 33.5,
+  CAPYBARA_CARROT: 35.4,
 })[type] ?? landZoneBounds.left;
 const movementZoneBounds = (persona) => isSwimZonePersona(persona)
   ? swimZoneBounds
   : { ...landZoneBounds, left: landShorelineAnchorLeft(persona.type) };
-const shorelineExcursionPhaseOffset = (type) => ({
-  CAPYBARA_CARROT: 0.05,
-  PENGUIN: 0.28,
-  PENGUIN_SUNGLASSES: 0.28,
-  DESSERT_FOX: 0.52,
-  FLAMINGO: 0.75,
-})[type] ?? 0;
 
 const distributeCharacterRoaming = (svg) => {
   if (visiblePersonas.length === 0) {
@@ -719,18 +713,16 @@ const distributeCharacterRoaming = (svg) => {
   };
 
   const landRunnerWaypoints = [
-    { x: landShorelineAnchorLeft("RABBIT"), y: 34 }, { x: landShorelineAnchorLeft("RABBIT") + 1.5, y: 48 },
-    { x: 53, y: 29 }, { x: 83, y: 36 }, { x: 84, y: 61 }, { x: 64, y: 73 },
-    { x: landShorelineAnchorLeft("RABBIT") + 1.5, y: 69 }, { x: landShorelineAnchorLeft("RABBIT"), y: 56 },
+    { x: landShorelineAnchorLeft("RABBIT"), y: 34 }, { x: 49, y: 29 }, { x: 83, y: 36 },
+    { x: 84, y: 61 }, { x: 64, y: 73 }, { x: 44, y: 66 },
   ];
   const swimRunnerWaypoints = [
     { x: 9, y: 35 }, { x: 17, y: 29 }, { x: 24, y: 39 },
     { x: 24, y: 65 }, { x: 16, y: 73 }, { x: 8, y: 59 },
   ];
   const landHamsterWaypoints = [
-    { x: landShorelineAnchorLeft("HAMSTER"), y: 42 }, { x: landShorelineAnchorLeft("HAMSTER") + 1.5, y: 57 },
-    { x: 52, y: 31 }, { x: 82, y: 38 }, { x: 84, y: 61 }, { x: 65, y: 72 },
-    { x: 40, y: 65 }, { x: landShorelineAnchorLeft("HAMSTER"), y: 53 },
+    { x: landShorelineAnchorLeft("HAMSTER"), y: 42 }, { x: 52, y: 31 }, { x: 82, y: 38 },
+    { x: 84, y: 61 }, { x: 65, y: 72 }, { x: 40, y: 65 }, { x: 36, y: 53 },
   ];
   const swimHamsterWaypoints = [
     { x: 9, y: 42 }, { x: 17, y: 31 }, { x: 24, y: 39 }, { x: 24, y: 61 },
@@ -743,32 +735,27 @@ const distributeCharacterRoaming = (svg) => {
       y,
     }));
   };
-  const catExplorerWaypoints = [
-    { x: landShorelineAnchorLeft("GALCHI_CAT"), y: 43 },
-    { x: landShorelineAnchorLeft("GALCHI_CAT") + 1.5, y: 60 },
-    ...remapToLandZone([
-      { x: 55, y: 35 }, { x: 84, y: 31 }, { x: 86, y: 55 }, { x: 58, y: 72 },
-    ], "GALCHI_CAT"),
-    { x: landShorelineAnchorLeft("GALCHI_CAT"), y: 69 },
-  ];
-  const shibaExplorerWaypoints = [
-    { x: landShorelineAnchorLeft("SHIBA"), y: 30 },
-    { x: landShorelineAnchorLeft("SHIBA") + 1.5, y: 48 },
-    ...remapToLandZone([
-      { x: 45, y: 34 }, { x: 83, y: 28 }, { x: 88, y: 52 }, { x: 72, y: 74 }, { x: 36, y: 68 },
-    ], "SHIBA"),
-    { x: landShorelineAnchorLeft("SHIBA"), y: 58 },
-  ];
-  const gooseExplorerWaypoints = [
-    { x: landShorelineAnchorLeft("GOOSE"), y: 45 },
-    { x: landShorelineAnchorLeft("GOOSE") + 1.5, y: 62 },
-    ...remapToLandZone([
-      { x: 54, y: 72 }, { x: 30, y: 29 }, { x: 66, y: 32 }, { x: 88, y: 46 }, { x: 86, y: 66 },
-    ], "GOOSE"),
-    { x: landShorelineAnchorLeft("GOOSE"), y: 55 },
-  ];
+  const catExplorerWaypoints = remapToLandZone([
+    { x: 84, y: 31 }, { x: 55, y: 35 }, { x: 10, y: 43 },
+    { x: 28, y: 69 }, { x: 58, y: 72 }, { x: 86, y: 55 },
+  ], "GALCHI_CAT");
+  const shibaExplorerWaypoints = remapToLandZone([
+    { x: 10, y: 30 }, { x: 45, y: 34 }, { x: 83, y: 28 }, { x: 88, y: 52 },
+    { x: 72, y: 74 }, { x: 36, y: 68 }, { x: 24, y: 58 },
+  ], "SHIBA");
+  const gooseExplorerWaypoints = remapToLandZone([
+    { x: 86, y: 66 }, { x: 54, y: 72 }, { x: 24, y: 65 }, { x: 10, y: 45 },
+    { x: 30, y: 29 }, { x: 66, y: 32 }, { x: 88, y: 46 },
+  ], "GOOSE");
   const catExplorerPhase = Number.parseFloat(process.env.GITANIMALS_CAT_PHASE ?? "0.24");
   const shibaExplorerPhase = Number.parseFloat(process.env.GITANIMALS_SHIBA_PHASE ?? "0.04");
+  const residentWideRoutePhase = (type) => ({
+    CAPYBARA_CARROT: 0.08,
+    PENGUIN: 0.32,
+    PENGUIN_SUNGLASSES: 0.32,
+    DESSERT_FOX: 0.58,
+    FLAMINGO: 0.82,
+  })[type];
   const interpolateClosedRoute = (waypoints, progress) => {
     const scaled = (((progress % 1) + 1) % 1) * waypoints.length;
     const index = Math.floor(scaled) % waypoints.length;
@@ -812,6 +799,24 @@ const distributeCharacterRoaming = (svg) => {
     if (unit.persona.type === "GOOSE") {
       return interpolateClosedRoute(gooseExplorerWaypoints, 0.18 - progress * (denseLayout ? 4 : 6));
     }
+    const residentPhase = residentWideRoutePhase(unit.persona.type);
+    if (unit.zone === "land" && residentPhase !== undefined) {
+      const left = landShorelineAnchorLeft(unit.persona.type);
+      const homeX = unit.anchor.x;
+      const homeY = unit.anchor.y;
+      const y = (offset) => Math.max(29, Math.min(74, homeY + offset));
+      const middleX = Math.max(53, Math.min(70, homeX));
+      const farRightX = Math.max(74, Math.min(84, homeX + 12));
+      const residentWaypoints = [
+        { x: left, y: y(-3) },
+        { x: 46, y: y(7) },
+        { x: middleX, y: y(3) },
+        { x: farRightX, y: y(-6) },
+        { x: Math.max(68, homeX), y: y(8) },
+        { x: 55, y: y(10) },
+      ];
+      return interpolateClosedRoute(residentWaypoints, residentPhase + progress);
+    }
     const profile = movementProfile(unit.persona, unit.index);
     const phase = unit.index / routeUnits.length;
     const secondaryPhase = ((unit.index * 3) % routeUnits.length) / routeUnits.length;
@@ -821,20 +826,11 @@ const distributeCharacterRoaming = (svg) => {
       + 0.3 * Math.cos(2 * Math.PI * ((profile.frequencyY + 1) * progress + phase));
     const zoneBounds = movementZoneBounds(unit.persona);
     const horizontalInset = Math.max(0, characterScale(unit.persona) - 1) * 5;
-    const localX = Math.max(
-      zoneBounds.left + horizontalInset,
-      Math.min(zoneBounds.right - horizontalInset, unit.anchor.x + profile.amplitudeX * xWave),
-    );
-    // Calm land residents also visit the shoreline instead of being permanently trapped around a
-    // far-right home anchor. Each resident gets a staggered smooth excursion once per loop so the
-    // water edge feels like part of the usable farm without creating a synchronized pile-up.
-    const shorePhase = ((progress + shorelineExcursionPhaseOffset(unit.persona.type)) % 1 + 1) % 1;
-    const shorePulse = unit.zone === "land"
-      ? (1 + Math.cos(2 * Math.PI * shorePhase)) / 2
-      : 0;
-    const shorelineX = zoneBounds.left + horizontalInset;
     return {
-      x: localX * (1 - shorePulse) + shorelineX * shorePulse,
+      x: Math.max(
+        zoneBounds.left + horizontalInset,
+        Math.min(zoneBounds.right - horizontalInset, unit.anchor.x + profile.amplitudeX * xWave),
+      ),
       y: Math.max(zoneBounds.top, Math.min(zoneBounds.bottom, unit.anchor.y + profile.amplitudeY * yWave)),
     };
   };
@@ -964,23 +960,13 @@ const distributeCharacterRoaming = (svg) => {
       if (position.y < 29 || position.y > 75) score += 0.6;
       if (position.x < 11 || position.x > 84) score += 0.3;
     });
-    // The README should open with the shoreline visibly in use. Reward a natural frame where at
-    // least one dry-land pet is already skimming its personal shoreline limit, instead of making
-    // the user wait for a rare point later in the 120-second loop.
-    const closestLandShoreApproach = Math.min(...sample.map((position, unitIndex) => {
-      const unit = routeUnits[unitIndex];
-      if (unit.zone !== "land") return Number.POSITIVE_INFINITY;
-      const bounds = movementZoneBounds(unit.persona);
-      const inset = Math.max(0, characterScale(unit.persona) - 1) * 5;
-      return Math.max(0, position.x - (bounds.left + inset));
-    }));
-    score += Math.min(closestLandShoreApproach, 8) * 25;
-    const hamsterIndex = routeUnits.findIndex((unit) => unit.persona.type === "HAMSTER");
-    if (hamsterIndex !== -1) {
-      const hamsterBounds = movementZoneBounds(routeUnits[hamsterIndex].persona);
-      score += Math.max(0, sample[hamsterIndex].x - hamsterBounds.left) * 55;
-      score += Math.abs(sample[hamsterIndex].y - 53) * 1.5;
-    }
+    // Keep the opening composition distributed across the whole land habitat. Shoreline access is
+    // provided by route range, not by selecting a frame where everybody happens to be near water.
+    const landPositions = sample.filter((_, unitIndex) => routeUnits[unitIndex].zone === "land");
+    const shorelineSideCount = landPositions.filter((position) => position.x < 43).length;
+    const farRightCount = landPositions.filter((position) => position.x > 62).length;
+    if (shorelineSideCount > 3) score += (shorelineSideCount - 3) * 7;
+    if (farRightCount < 3) score += (3 - farRightCount) * 8;
     return score;
   };
 

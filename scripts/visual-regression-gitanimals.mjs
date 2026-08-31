@@ -214,7 +214,7 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v53", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v54", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.swimZone?.width > 150 && geometry.swimZone?.width < 210,
@@ -242,8 +242,8 @@ try {
           const waterRight = geometry.swimWater.x + geometry.swimWater.width;
           const shorelineGap = character.x - waterRight;
           landShoreGaps.push({ theme, seconds, id: character.id, gap: shorelineGap });
-          assert(shorelineGap >= 0.5,
-            `${theme} ${seconds}s lets land character ${character.id} enter the water by `
+          assert(shorelineGap >= -6,
+            `${theme} ${seconds}s lets land character ${character.id} travel too deeply into the water by `
               + `${Math.abs(shorelineGap).toFixed(2)}px.`);
         }
 
@@ -307,9 +307,8 @@ try {
         let minimumLandGap = Number.POSITIVE_INFINITY;
         let maximumSwimOverflow = Number.NEGATIVE_INFINITY;
         const borderSkimmingLandIds = new Set();
-        const shorelineVisitingLandIds = new Set();
-        const shorelineVisitCounts = Object.fromEntries(landIds.map((id) => [id, 0]));
-        let framesWithShorelineLandPet = 0;
+        const rightVisitingLandIds = new Set();
+        let minimumRightSideLandPetsPerFrame = Number.POSITIVE_INFINITY;
         let sampledFrames = 0;
         for (let seconds = 0; seconds < 120; seconds += 0.5) {
           animations.forEach((animation) => {
@@ -323,7 +322,7 @@ try {
           const waterTop = waterRect.top - rootRect.top;
           const waterBottom = waterRect.bottom - rootRect.top;
           sampledFrames += 1;
-          let frameHasShorelineLandPet = false;
+          let rightSideLandPets = 0;
           landIds.forEach((id) => {
             const element = document.querySelector(`#profile-facing-${id}`);
             if (!element) return;
@@ -331,13 +330,13 @@ try {
             const gap = rect.left - rootRect.left - waterRight;
             minimumLandGap = Math.min(minimumLandGap, gap);
             if (gap <= 3) borderSkimmingLandIds.add(id);
-            if (gap <= 6) {
-              shorelineVisitingLandIds.add(id);
-              shorelineVisitCounts[id] += 1;
-              frameHasShorelineLandPet = true;
+            const centerX = rect.left - rootRect.left + rect.width / 2;
+            if (centerX >= 360) {
+              rightVisitingLandIds.add(id);
+              rightSideLandPets += 1;
             }
           });
-          if (frameHasShorelineLandPet) framesWithShorelineLandPet += 1;
+          minimumRightSideLandPetsPerFrame = Math.min(minimumRightSideLandPetsPerFrame, rightSideLandPets);
           swimIds.forEach((id) => {
             const element = document.querySelector(`#profile-facing-${id}`);
             if (!element) return;
@@ -359,28 +358,27 @@ try {
           minimumLandGap,
           maximumSwimOverflow,
           borderSkimmingLandIds: [...borderSkimmingLandIds],
-          shorelineVisitingLandIds: [...shorelineVisitingLandIds],
-          shorelineVisitCounts,
-          framesWithShorelineLandPet,
+          rightVisitingLandIds: [...rightVisitingLandIds],
+          minimumRightSideLandPetsPerFrame,
           sampledFrames,
         };
       }, {
         landIds: [...landZoneIds],
         swimIds: [...swimZoneIds],
       });
-      assert(fullCycleZones.minimumLandGap >= 0.5,
-        `A land pet enters the water during the full route; minimum shoreline gap is `
+      assert(fullCycleZones.minimumLandGap >= -6,
+        `A land pet travels too deeply into the water during the full route; minimum shoreline gap is `
           + `${fullCycleZones.minimumLandGap.toFixed(2)}px.`);
-      assert(fullCycleZones.minimumLandGap <= 2,
-        `Land pets never visually skim the shoreline; minimum full-route gap is `
+      assert(fullCycleZones.minimumLandGap <= 0.5,
+        `Land movement range never reaches/overlaps the shoreline; minimum full-route gap is `
           + `${fullCycleZones.minimumLandGap.toFixed(2)}px.`);
-      assert(fullCycleZones.borderSkimmingLandIds.length >= Math.min(4, landZoneIds.size),
-        `Only ${fullCycleZones.borderSkimmingLandIds.length} land pets skim within 3px of the shoreline.`);
-      assert(fullCycleZones.shorelineVisitingLandIds.length >= Math.min(8, landZoneIds.size),
-        `Only ${fullCycleZones.shorelineVisitingLandIds.length} land pets visit within 6px of the shoreline.`);
-      assert(fullCycleZones.framesWithShorelineLandPet / fullCycleZones.sampledFrames >= 0.40,
-        `A land pet is near the shoreline in only `
-          + `${((fullCycleZones.framesWithShorelineLandPet / fullCycleZones.sampledFrames) * 100).toFixed(1)}% of the loop.`);
+      assert(fullCycleZones.borderSkimmingLandIds.length === landZoneIds.size,
+        `Only ${fullCycleZones.borderSkimmingLandIds.length}/${landZoneIds.size} land pets can reach within 3px of the shoreline.`);
+      assert(fullCycleZones.rightVisitingLandIds.length === landZoneIds.size,
+        `Only ${fullCycleZones.rightVisitingLandIds.length}/${landZoneIds.size} land pets still use the right side of the habitat.`);
+      assert(fullCycleZones.minimumRightSideLandPetsPerFrame >= 3,
+        `Land pets bunch toward the shoreline; only ${fullCycleZones.minimumRightSideLandPetsPerFrame} `
+          + `remain on the right side in at least one sampled frame.`);
       assert(fullCycleZones.maximumSwimOverflow <= 0.5,
         `A swim-zone pet leaves the visible water during the full route by `
           + `${fullCycleZones.maximumSwimOverflow.toFixed(2)}px.`);

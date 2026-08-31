@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v53";
+const layoutVersion = "character-behaviors-v54";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -14,9 +14,7 @@ const maximumOverlapSeconds = 3.25;
 const sampleStepSeconds = 0.05;
 // Farm-wide explorers intentionally cross more ground than residents; this still limits every pet
 // to a smooth multi-second traverse rather than a sub-second collision-correction jump.
-// Calm residents now make one long shoreline excursion per 120s loop. Allow the slightly higher
-// continuous traverse speed that this wider range requires while keeping the fast-runner cap separate.
-const maximumWeightedSpeed = 20;
+const maximumWeightedSpeed = 16;
 const fastMovementTypes = new Set([
   "RABBIT",
   "HAMSTER",
@@ -93,16 +91,16 @@ const isSwimZoneType = (type) => type.includes("_SWIM") || type.includes("_TUBE"
 const swimZoneBounds = { left: 8, right: 24 };
 const landZoneBounds = { left: 35.5, right: 85 };
 const landShorelineAnchorLeft = (type) => ({
-  RABBIT: 33.85,
-  HAMSTER: 31.6,
-  GALCHI_CAT: 35.55,
-  SHIBA: 35.2,
-  GOOSE: 33.7,
-  FLAMINGO: 33.6,
-  PENGUIN: 32.9,
-  PENGUIN_SUNGLASSES: 33.2,
-  DESSERT_FOX: 33.9,
-  CAPYBARA_CARROT: 36.35,
+  RABBIT: 33.15,
+  HAMSTER: 31.1,
+  GALCHI_CAT: 34.45,
+  SHIBA: 34.45,
+  GOOSE: 33.05,
+  FLAMINGO: 32.6,
+  PENGUIN: 32.0,
+  PENGUIN_SUNGLASSES: 32.0,
+  DESSERT_FOX: 33.5,
+  CAPYBARA_CARROT: 35.4,
 })[type] ?? landZoneBounds.left;
 
 const extractAnimation = (svg, persona) => {
@@ -224,9 +222,11 @@ lightAnimations.forEach((animation, index) => {
       `${animation.persona.type} leaves its ${isSwimZoneType(animation.persona.type) ? "swim" : "land"} zone at x=${point.x.toFixed(2)}.`);
   });
   if (!isSwimZoneType(animation.persona.type)) {
-    const minimumLandX = Math.min(...animation.points.map((point) => point.x));
-    assert(minimumLandX <= 38.5,
-      `${animation.persona.type} no longer reaches the shoreline side of the land zone (${minimumLandX.toFixed(2)}%).`);
+    const xValues = animation.points.map((point) => point.x);
+    assert(Math.min(...xValues) <= 38.5,
+      `${animation.persona.type} no longer has access to the shoreline side (${Math.min(...xValues).toFixed(2)}%).`);
+    assert(Math.max(...xValues) >= 60,
+      `${animation.persona.type} no longer uses the right side of the land habitat (${Math.max(...xValues).toFixed(2)}%).`);
   }
   const movementStart = light.indexOf(`@keyframes ${animation.name}`);
   const movementRuleStart = light.indexOf(`animation-name:${animation.name}`, movementStart) >= 0
