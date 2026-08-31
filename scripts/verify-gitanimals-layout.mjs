@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v50";
+const layoutVersion = "character-behaviors-v51";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -89,7 +89,15 @@ const characterScale = (type) => ({
 
 const isSwimZoneType = (type) => type.includes("_SWIM") || type.includes("_TUBE");
 const swimZoneBounds = { left: 8, right: 24 };
-const landZoneBounds = { left: 36, right: 85 };
+const landZoneBounds = { left: 35.5, right: 85 };
+const landShorelineAnchorLeft = (type) => ({
+  RABBIT: 33.8,
+  HAMSTER: 31.25,
+  GALCHI_CAT: 34.15,
+  SHIBA: 35.5,
+  GOOSE: 33.55,
+  FLAMINGO: 33.4,
+})[type] ?? landZoneBounds.left;
 
 const extractAnimation = (svg, persona) => {
   const id = String(persona.id);
@@ -202,7 +210,9 @@ lightAnimations.forEach((animation, index) => {
     JSON.stringify(animation.points) === JSON.stringify(darkAnimation.points),
     `Light and dark routes differ for ${animation.persona.type} (${animation.id}).`,
   );
-  const zoneBounds = isSwimZoneType(animation.persona.type) ? swimZoneBounds : landZoneBounds;
+  const zoneBounds = isSwimZoneType(animation.persona.type)
+    ? swimZoneBounds
+    : { ...landZoneBounds, left: landShorelineAnchorLeft(animation.persona.type) };
   animation.points.forEach((point) => {
     assert(point.x >= zoneBounds.left - 0.01 && point.x <= zoneBounds.right + 0.01,
       `${animation.persona.type} leaves its ${isSwimZoneType(animation.persona.type) ? "swim" : "land"} zone at x=${point.x.toFixed(2)}.`);

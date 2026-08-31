@@ -16,9 +16,9 @@ const firstVisibleHeart = firstHeartRoute === -1
 const heartSnapshotSecond = firstVisibleHeart
   ? Number(((Number(firstVisibleHeart[1]) / 100) * 120 + 0.1).toFixed(2))
   : 2;
-// 34s is the deterministic shoreline-approach frame: at least one land pet should visibly visit
-// the water edge without entering it.
-const snapshots = [...new Set([0, heartSnapshotSecond, 22, 30, 34, 60, 90])].sort((left, right) => left - right);
+// 32s is the deterministic shoreline-approach frame: at least one land pet should visually skim
+// the water edge without actually entering it.
+const snapshots = [...new Set([0, heartSnapshotSecond, 22, 30, 32, 60, 90])].sort((left, right) => left - right);
 const visiblePersonas = state.personas.filter((persona) => persona.visible);
 const hasMountedPair = visiblePersonas.some((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES")
   && visiblePersonas.some((persona) => persona.type === "CAPYBARA_SWIM");
@@ -168,7 +168,7 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v50", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v51", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.swimZone?.width > 150 && geometry.swimZone?.width < 210,
@@ -196,7 +196,7 @@ try {
           const waterRight = geometry.swimWater.x + geometry.swimWater.width;
           const shorelineGap = character.x - waterRight;
           landShoreGaps.push({ theme, seconds, id: character.id, gap: shorelineGap });
-          assert(shorelineGap >= 3,
+          assert(shorelineGap >= 0.5,
             `${theme} ${seconds}s lets land character ${character.id} enter the water by `
               + `${Math.abs(shorelineGap).toFixed(2)}px.`);
         }
@@ -240,13 +240,78 @@ try {
       });
       manifest.push({ theme, seconds, fileName, ...geometry });
     }
+    if (theme === "light") {
+      const fullCycleZones = await page.evaluate(({ landIds, swimIds }) => {
+        const animations = document.getAnimations({ subtree: true });
+        const rootSvg = document.querySelector("svg[data-profile-layout]");
+        const water = document.querySelector("#profile-swim-water");
+        let minimumLandGap = Number.POSITIVE_INFINITY;
+        let maximumSwimOverflow = Number.NEGATIVE_INFINITY;
+        const nearShoreLandIds = new Set();
+        for (let seconds = 0; seconds < 120; seconds += 0.5) {
+          animations.forEach((animation) => {
+            animation.currentTime = seconds * 1000;
+            animation.pause();
+          });
+          const rootRect = rootSvg.getBoundingClientRect();
+          const waterRect = water.getBoundingClientRect();
+          const waterLeft = waterRect.left - rootRect.left;
+          const waterRight = waterRect.right - rootRect.left;
+          const waterTop = waterRect.top - rootRect.top;
+          const waterBottom = waterRect.bottom - rootRect.top;
+          landIds.forEach((id) => {
+            const element = document.querySelector(`#profile-facing-${id}`);
+            if (!element) return;
+            const rect = element.getBoundingClientRect();
+            const gap = rect.left - rootRect.left - waterRight;
+            minimumLandGap = Math.min(minimumLandGap, gap);
+            if (gap <= 3) nearShoreLandIds.add(id);
+          });
+          swimIds.forEach((id) => {
+            const element = document.querySelector(`#profile-facing-${id}`);
+            if (!element) return;
+            const rect = element.getBoundingClientRect();
+            const left = rect.left - rootRect.left;
+            const right = rect.right - rootRect.left;
+            const top = rect.top - rootRect.top;
+            const bottom = rect.bottom - rootRect.top;
+            maximumSwimOverflow = Math.max(
+              maximumSwimOverflow,
+              waterLeft - left,
+              right - waterRight,
+              waterTop - top,
+              bottom - waterBottom,
+            );
+          });
+        }
+        return {
+          minimumLandGap,
+          maximumSwimOverflow,
+          nearShoreLandIds: [...nearShoreLandIds],
+        };
+      }, {
+        landIds: [...landZoneIds],
+        swimIds: [...swimZoneIds],
+      });
+      assert(fullCycleZones.minimumLandGap >= 0.5,
+        `A land pet enters the water during the full route; minimum shoreline gap is `
+          + `${fullCycleZones.minimumLandGap.toFixed(2)}px.`);
+      assert(fullCycleZones.minimumLandGap <= 2,
+        `Land pets never visually skim the shoreline; minimum full-route gap is `
+          + `${fullCycleZones.minimumLandGap.toFixed(2)}px.`);
+      assert(fullCycleZones.nearShoreLandIds.length >= 5,
+        `Only ${fullCycleZones.nearShoreLandIds.length} land pets visit within 3px of the shoreline.`);
+      assert(fullCycleZones.maximumSwimOverflow <= 0.5,
+        `A swim-zone pet leaves the visible water during the full route by `
+          + `${fullCycleZones.maximumSwimOverflow.toFixed(2)}px.`);
+    }
     await page.close();
   }
   const closestLandApproach = landShoreGaps.reduce(
     (closest, entry) => (entry.gap < closest.gap ? entry : closest),
     { gap: Number.POSITIVE_INFINITY },
   );
-  assert(closestLandApproach.gap <= 10,
+  assert(closestLandApproach.gap <= 2,
     `Land pets never approach the shoreline closely enough; nearest rendered gap is `
       + `${closestLandApproach.gap.toFixed(2)}px.`);
   await writeFile(

@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v50";
+const layoutVersion = "character-behaviors-v51";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -216,9 +216,23 @@ const swimZoneSplitPercent = 32;
 // farther inside the water rectangle so wide TUBE artwork remains visibly inside the shoreline.
 const swimZoneBounds = { left: 8, right: 24, top: 28, bottom: 76 };
 // Land pets may approach the shoreline, but their rendered bodies must remain outside the water.
-// The visual water ends at 32% (192px); a 36% movement-anchor floor leaves a small dry margin while
-// removing the oversized no-pet corridor that previously started land motion at 44%.
-const landZoneBounds = { left: 36, right: 85, top: 28, bottom: 76 };
+// The visual water ends at 32% (192px). A 35.5% movement-anchor floor lets the narrowest/closest
+// land silhouettes visually skim the shoreline while still keeping their artwork on dry ground.
+const landZoneBounds = { left: 35.5, right: 85, top: 28, bottom: 76 };
+// Different sprites have very different local pivots/widths. Give the main land roamers their own
+// movement-anchor floor so the rendered body, rather than the abstract anchor, can approach within
+// a couple of pixels of the shoreline without crossing into the water.
+const landShorelineAnchorLeft = (type) => ({
+  RABBIT: 33.8,
+  HAMSTER: 31.25,
+  GALCHI_CAT: 34.15,
+  SHIBA: 35.5,
+  GOOSE: 33.55,
+  FLAMINGO: 33.4,
+})[type] ?? landZoneBounds.left;
+const movementZoneBounds = (persona) => isSwimZonePersona(persona)
+  ? swimZoneBounds
+  : { ...landZoneBounds, left: landShorelineAnchorLeft(persona.type) };
 
 const distributeCharacterRoaming = (svg) => {
   if (visiblePersonas.length === 0) {
@@ -249,9 +263,9 @@ const distributeCharacterRoaming = (svg) => {
     { x: 10, y: 70 }, { x: 22, y: 72 }, { x: 18, y: 61 },
   ];
   const landAnchors = [
-    { x: 35, y: 31 }, { x: 50, y: 35 }, { x: 68, y: 30 }, { x: 85, y: 37 },
+    { x: 35.5, y: 31 }, { x: 50, y: 35 }, { x: 68, y: 30 }, { x: 85, y: 37 },
     { x: 38, y: 46 }, { x: 57, y: 49 }, { x: 76, y: 47 },
-    { x: 35, y: 61 }, { x: 51, y: 65 }, { x: 70, y: 60 }, { x: 85, y: 64 },
+    { x: 35.5, y: 61 }, { x: 51, y: 65 }, { x: 70, y: 60 }, { x: 85, y: 64 },
     { x: 38, y: 73 }, { x: 60, y: 71 }, { x: 82, y: 74 },
   ];
   const swimCount = placementPersonas.filter(isSwimZonePersona).length;
@@ -694,37 +708,40 @@ const distributeCharacterRoaming = (svg) => {
   };
 
   const landRunnerWaypoints = [
-    { x: 35, y: 34 }, { x: 53, y: 29 }, { x: 83, y: 36 },
-    { x: 84, y: 61 }, { x: 64, y: 73 }, { x: 35, y: 66 },
+    { x: landShorelineAnchorLeft("RABBIT"), y: 34 }, { x: 53, y: 29 }, { x: 83, y: 36 },
+    { x: 84, y: 61 }, { x: 64, y: 73 }, { x: landShorelineAnchorLeft("RABBIT"), y: 66 },
   ];
   const swimRunnerWaypoints = [
     { x: 9, y: 35 }, { x: 17, y: 29 }, { x: 24, y: 39 },
     { x: 24, y: 65 }, { x: 16, y: 73 }, { x: 8, y: 59 },
   ];
   const landHamsterWaypoints = [
-    { x: 35, y: 42 }, { x: 52, y: 31 }, { x: 82, y: 38 }, { x: 84, y: 61 },
-    { x: 65, y: 72 }, { x: 40, y: 65 }, { x: 34, y: 53 },
+    { x: landShorelineAnchorLeft("HAMSTER"), y: 42 }, { x: 52, y: 31 }, { x: 82, y: 38 }, { x: 84, y: 61 },
+    { x: 65, y: 72 }, { x: 40, y: 65 }, { x: landShorelineAnchorLeft("HAMSTER"), y: 53 },
   ];
   const swimHamsterWaypoints = [
     { x: 9, y: 42 }, { x: 17, y: 31 }, { x: 24, y: 39 }, { x: 24, y: 61 },
     { x: 19, y: 72 }, { x: 10, y: 65 }, { x: 8, y: 52 },
   ];
-  const remapToLandZone = (waypoints) => waypoints.map(({ x, y }) => ({
-    x: landZoneBounds.left + ((x - 10) / 78) * (landZoneBounds.right - landZoneBounds.left),
-    y,
-  }));
+  const remapToLandZone = (waypoints, type) => {
+    const left = landShorelineAnchorLeft(type);
+    return waypoints.map(({ x, y }) => ({
+      x: left + ((x - 10) / 78) * (landZoneBounds.right - left),
+      y,
+    }));
+  };
   const catExplorerWaypoints = remapToLandZone([
     { x: 84, y: 31 }, { x: 55, y: 35 }, { x: 17, y: 43 },
     { x: 22, y: 69 }, { x: 58, y: 72 }, { x: 86, y: 55 },
-  ]);
+  ], "GALCHI_CAT");
   const shibaExplorerWaypoints = remapToLandZone([
     { x: 12, y: 30 }, { x: 45, y: 34 }, { x: 83, y: 28 }, { x: 88, y: 52 },
     { x: 72, y: 74 }, { x: 36, y: 68 }, { x: 10, y: 58 },
-  ]);
+  ], "SHIBA");
   const gooseExplorerWaypoints = remapToLandZone([
     { x: 86, y: 66 }, { x: 54, y: 72 }, { x: 18, y: 65 }, { x: 11, y: 45 },
     { x: 30, y: 29 }, { x: 66, y: 32 }, { x: 88, y: 46 },
-  ]);
+  ], "GOOSE");
   const catExplorerPhase = Number.parseFloat(process.env.GITANIMALS_CAT_PHASE ?? "0.24");
   const shibaExplorerPhase = Number.parseFloat(process.env.GITANIMALS_SHIBA_PHASE ?? "0.04");
   const interpolateClosedRoute = (waypoints, progress) => {
@@ -777,7 +794,7 @@ const distributeCharacterRoaming = (svg) => {
       + 0.32 * Math.sin(2 * Math.PI * ((profile.frequencyX + 1) * progress + secondaryPhase));
     const yWave = 0.7 * Math.sin(2 * Math.PI * (profile.frequencyY * progress + secondaryPhase))
       + 0.3 * Math.cos(2 * Math.PI * ((profile.frequencyY + 1) * progress + phase));
-    const zoneBounds = unit.zone === "swim" ? swimZoneBounds : landZoneBounds;
+    const zoneBounds = movementZoneBounds(unit.persona);
     const horizontalInset = Math.max(0, characterScale(unit.persona) - 1) * 5;
     return {
       x: Math.max(
@@ -800,7 +817,7 @@ const distributeCharacterRoaming = (svg) => {
   };
 
   const clampPosition = (position, persona) => {
-    const zoneBounds = isSwimZonePersona(persona) ? swimZoneBounds : landZoneBounds;
+    const zoneBounds = movementZoneBounds(persona);
     const horizontalInset = Math.max(0, characterScale(persona) - 1) * 5;
     position.x = Math.max(
       zoneBounds.left + horizontalInset,
