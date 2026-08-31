@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10150",
+  "totalContributions": "10139",
   "personas": [
     {
       "id": "764406126012079806",
@@ -176,7 +176,7 @@
     {
       "id": "791997594403950310",
       "type": "HAMSTER_SNOW",
-      "level": "4",
+      "level": "5",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -856,7 +856,7 @@
     {
       "id": "877432753874904722",
       "type": "SLIME_BLUE",
-      "level": "2",
+      "level": "3",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",

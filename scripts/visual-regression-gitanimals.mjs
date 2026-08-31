@@ -16,7 +16,9 @@ const firstVisibleHeart = firstHeartRoute === -1
 const heartSnapshotSecond = firstVisibleHeart
   ? Number(((Number(firstVisibleHeart[1]) / 100) * 120 + 0.1).toFixed(2))
   : 2;
-const snapshots = [...new Set([0, heartSnapshotSecond, 22, 30, 60, 90])].sort((left, right) => left - right);
+// 34s is the deterministic shoreline-approach frame: at least one land pet should visibly visit
+// the water edge without entering it.
+const snapshots = [...new Set([0, heartSnapshotSecond, 22, 30, 34, 60, 90])].sort((left, right) => left - right);
 const visiblePersonas = state.personas.filter((persona) => persona.visible);
 const hasMountedPair = visiblePersonas.some((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES")
   && visiblePersonas.some((persona) => persona.type === "CAPYBARA_SWIM");
@@ -64,6 +66,7 @@ await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const address = server.address();
 const browser = await chromium.launch({ headless: true });
 const manifest = [];
+const landShoreGaps = [];
 
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
@@ -165,7 +168,7 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v49", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v50", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.swimZone?.width > 150 && geometry.swimZone?.width < 210,
@@ -190,8 +193,12 @@ try {
               + `water ${geometry.swimWater.x.toFixed(2)},${geometry.swimWater.y.toFixed(2)}-`
               + `${waterRight.toFixed(2)},${waterBottom.toFixed(2)}px).`);
         } else if (landZoneIds.has(character.id)) {
-          assert(character.x >= 245,
-            `${theme} ${seconds}s lets land character ${character.id} cross into the swim area (${character.x.toFixed(2)}px).`);
+          const waterRight = geometry.swimWater.x + geometry.swimWater.width;
+          const shorelineGap = character.x - waterRight;
+          landShoreGaps.push({ theme, seconds, id: character.id, gap: shorelineGap });
+          assert(shorelineGap >= 3,
+            `${theme} ${seconds}s lets land character ${character.id} enter the water by `
+              + `${Math.abs(shorelineGap).toFixed(2)}px.`);
         }
       });
       assert(geometry.actions === expectedActionCount, `${theme} ${seconds}s lost character action wrappers.`);
@@ -235,6 +242,13 @@ try {
     }
     await page.close();
   }
+  const closestLandApproach = landShoreGaps.reduce(
+    (closest, entry) => (entry.gap < closest.gap ? entry : closest),
+    { gap: Number.POSITIVE_INFINITY },
+  );
+  assert(closestLandApproach.gap <= 10,
+    `Land pets never approach the shoreline closely enough; nearest rendered gap is `
+      + `${closestLandApproach.gap.toFixed(2)}px.`);
   await writeFile(
     path.join(outputDirectory, "manifest.json"),
     `${JSON.stringify(manifest, null, 2)}\n`,

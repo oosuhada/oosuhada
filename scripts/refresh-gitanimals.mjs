@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v49";
+const layoutVersion = "character-behaviors-v50";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -214,8 +214,11 @@ const isSwimZonePersona = (persona) => (
 const swimZoneSplitPercent = 32;
 // Route coordinates describe the movement anchor, not the full rendered sprite. Keep the anchor
 // farther inside the water rectangle so wide TUBE artwork remains visibly inside the shoreline.
-const swimZoneBounds = { left: 8, right: 24.5, top: 28, bottom: 76 };
-const landZoneBounds = { left: 44, right: 85, top: 28, bottom: 76 };
+const swimZoneBounds = { left: 8, right: 24, top: 28, bottom: 76 };
+// Land pets may approach the shoreline, but their rendered bodies must remain outside the water.
+// The visual water ends at 32% (192px); a 36% movement-anchor floor leaves a small dry margin while
+// removing the oversized no-pet corridor that previously started land motion at 44%.
+const landZoneBounds = { left: 36, right: 85, top: 28, bottom: 76 };
 
 const distributeCharacterRoaming = (svg) => {
   if (visiblePersonas.length === 0) {
@@ -246,10 +249,10 @@ const distributeCharacterRoaming = (svg) => {
     { x: 10, y: 70 }, { x: 22, y: 72 }, { x: 18, y: 61 },
   ];
   const landAnchors = [
-    { x: 45, y: 31 }, { x: 57, y: 35 }, { x: 71, y: 30 }, { x: 85, y: 37 },
-    { x: 48, y: 46 }, { x: 62, y: 49 }, { x: 77, y: 47 },
-    { x: 45, y: 61 }, { x: 58, y: 65 }, { x: 72, y: 60 }, { x: 85, y: 64 },
-    { x: 47, y: 73 }, { x: 64, y: 71 }, { x: 82, y: 74 },
+    { x: 35, y: 31 }, { x: 50, y: 35 }, { x: 68, y: 30 }, { x: 85, y: 37 },
+    { x: 38, y: 46 }, { x: 57, y: 49 }, { x: 76, y: 47 },
+    { x: 35, y: 61 }, { x: 51, y: 65 }, { x: 70, y: 60 }, { x: 85, y: 64 },
+    { x: 38, y: 73 }, { x: 60, y: 71 }, { x: 82, y: 74 },
   ];
   const swimCount = placementPersonas.filter(isSwimZonePersona).length;
   const landCount = placementPersonas.length - swimCount;
@@ -691,16 +694,16 @@ const distributeCharacterRoaming = (svg) => {
   };
 
   const landRunnerWaypoints = [
-    { x: 45, y: 34 }, { x: 58, y: 29 }, { x: 83, y: 36 },
-    { x: 84, y: 61 }, { x: 66, y: 73 }, { x: 45, y: 66 },
+    { x: 35, y: 34 }, { x: 53, y: 29 }, { x: 83, y: 36 },
+    { x: 84, y: 61 }, { x: 64, y: 73 }, { x: 35, y: 66 },
   ];
   const swimRunnerWaypoints = [
     { x: 9, y: 35 }, { x: 17, y: 29 }, { x: 24, y: 39 },
     { x: 24, y: 65 }, { x: 16, y: 73 }, { x: 8, y: 59 },
   ];
   const landHamsterWaypoints = [
-    { x: 45, y: 42 }, { x: 58, y: 31 }, { x: 82, y: 38 }, { x: 84, y: 61 },
-    { x: 67, y: 72 }, { x: 48, y: 65 }, { x: 44, y: 53 },
+    { x: 35, y: 42 }, { x: 52, y: 31 }, { x: 82, y: 38 }, { x: 84, y: 61 },
+    { x: 65, y: 72 }, { x: 40, y: 65 }, { x: 34, y: 53 },
   ];
   const swimHamsterWaypoints = [
     { x: 9, y: 42 }, { x: 17, y: 31 }, { x: 24, y: 39 }, { x: 24, y: 61 },

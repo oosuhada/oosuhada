@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v49";
+const layoutVersion = "character-behaviors-v50";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -88,8 +88,8 @@ const characterScale = (type) => ({
 })[type] ?? 1;
 
 const isSwimZoneType = (type) => type.includes("_SWIM") || type.includes("_TUBE");
-const swimZoneBounds = { left: 8, right: 24.5 };
-const landZoneBounds = { left: 44, right: 85 };
+const swimZoneBounds = { left: 8, right: 24 };
+const landZoneBounds = { left: 36, right: 85 };
 
 const extractAnimation = (svg, persona) => {
   const id = String(persona.id);
@@ -466,6 +466,11 @@ for (let leftIndex = 0; leftIndex < lightAnimations.length; leftIndex += 1) {
   for (let rightIndex = leftIndex + 1; rightIndex < lightAnimations.length; rightIndex += 1) {
     const left = lightAnimations[leftIndex];
     const right = lightAnimations[rightIndex];
+    const sameZone = isSwimZoneType(left.persona.type) === isSwimZoneType(right.persona.type);
+    // Cross-shore pairs cannot collide: the rendered-water containment regression below is the
+    // source of truth for that boundary. Treating their movement anchors as one shared floor was
+    // what recreated an unnecessary empty strip beside the shoreline.
+    if (!sameZone) continue;
     const threshold = separationRadius(left.persona.type) + separationRadius(right.persona.type);
     const sameFamily = animationsShareFamily(left, right);
     const sameFamilyMinimumDistance = threshold + 10;
