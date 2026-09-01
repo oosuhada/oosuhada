@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v58";
+const layoutVersion = "character-behaviors-v59";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -1395,13 +1395,15 @@ const distributeCharacterRoaming = (svg) => {
         // Keep each water effect optically attached to the part of the sprite that touches the water.
         // The flamingo ripple sits under its long legs, while the rabbit float is visually weighted
         // left of the source SVG's root pivot.
-        const tubeRippleCx = geometry.cx + (persona.type === "RABBIT_TUBE" ? -2 : 0);
-        const tubeWakeCx = geometry.cx + (persona.type === "RABBIT_TUBE" ? -2 : 0);
-        const birdRippleCy = geometry.cy + (persona.type === "FLAMINGO" ? 3.5 : -3.0);
-        const birdRippleScale = persona.type === "FLAMINGO" ? 0.72 : 1;
+        const tubeRippleCx = geometry.cx + (persona.type === "RABBIT_TUBE" ? -3.5 : 0);
+        const tubeWakeCx = geometry.cx + (persona.type === "RABBIT_TUBE" ? -3.5 : 0);
+        // One SVG viewBox unit renders as 3px in the 600x300 README farm. Move the flamingo
+        // waterline four units upward (= 12 rendered px) and tighten it further around the legs.
+        const birdRippleCy = geometry.cy + (persona.type === "FLAMINGO" ? -0.5 : -3.0);
+        const birdRippleScale = persona.type === "FLAMINGO" ? 0.58 : 1;
         const birdRippleRx = (scaledShadowRx + 1.8 * scale) * birdRippleScale;
         const birdRippleRy = (1.8 * Math.sqrt(scale)) * birdRippleScale;
-        const birdWakeScale = persona.type === "FLAMINGO" ? 0.72 : 1;
+        const birdWakeScale = persona.type === "FLAMINGO" ? 0.58 : 1;
         const actionSelectors = persona.type === "CAPYBARA_SWIM" && riderNeutralizerId
           ? `#${actionWrapperId},#${riderNeutralizerId}`
           : `#${actionWrapperId}`;

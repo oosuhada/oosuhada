@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v58";
+const layoutVersion = "character-behaviors-v59";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -527,13 +527,13 @@ for (const type of simpleTubeTypes) {
         `${theme} ${type} water ripple grew too large (${rippleRx}).`);
     }
     if (type === "RABBIT_TUBE") {
-      assert(Math.abs(rippleCx - 8) < 0.01,
+      assert(Math.abs(rippleCx - 6.5) < 0.01,
         `${theme} Rabbit Tube ripple must stay left-shifted under the float (cx=${rippleCx}).`);
     }
   }
 }
 
-const birdRippleCy = { GOOSE: 14, FLAMINGO: 27.5 };
+const birdRippleCy = { GOOSE: 14, FLAMINGO: 23.5 };
 for (const type of ["GOOSE", "FLAMINGO"]) {
   const persona = visible.find((candidate) => candidate.type === type);
   if (!persona) continue;
@@ -549,7 +549,7 @@ for (const type of ["GOOSE", "FLAMINGO"]) {
     assert(Math.abs(rippleCy - birdRippleCy[type]) < 0.01,
       `${theme} ${type} waterline moved to ${rippleCy}; expected ${birdRippleCy[type]}.`);
     if (type === "FLAMINGO") {
-      assert(Number.isFinite(rippleRx) && rippleRx <= 5.7,
+      assert(Number.isFinite(rippleRx) && rippleRx <= 4.6,
         `${theme} Flamingo water ripple should stay compact under its legs (rx=${rippleRx}).`);
     }
   }
