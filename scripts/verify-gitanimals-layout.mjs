@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v59";
+const layoutVersion = "character-behaviors-v60";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -533,7 +533,7 @@ for (const type of simpleTubeTypes) {
   }
 }
 
-const birdRippleCy = { GOOSE: 14, FLAMINGO: 23.5 };
+const birdRippleCy = { GOOSE: 14, FLAMINGO: 25.5 };
 for (const type of ["GOOSE", "FLAMINGO"]) {
   const persona = visible.find((candidate) => candidate.type === type);
   if (!persona) continue;
