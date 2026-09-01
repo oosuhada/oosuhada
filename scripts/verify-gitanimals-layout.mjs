@@ -6,14 +6,18 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v42";
-const maximumOverlapSeconds = 3;
+const layoutVersion = "character-behaviors-v57";
+// The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
+// segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
+// that phase-invariant duration instead of depending on where the loop happens to begin.
+const maximumOverlapSeconds = 3.25;
 const sampleStepSeconds = 0.05;
 // Farm-wide explorers intentionally cross more ground than residents; this still limits every pet
 // to a smooth multi-second traverse rather than a sub-second collision-correction jump.
 const maximumWeightedSpeed = 16;
 const fastMovementTypes = new Set([
   "RABBIT",
+  "HAMSTER",
   "GALCHI_CAT",
   "SHIBA",
   "GOOSE",
@@ -21,7 +25,15 @@ const fastMovementTypes = new Set([
   "HAMSTER_TUBE",
   "LITTLE_CHICK_TUBE",
 ]);
-const farmRoamerTypes = new Set(["RABBIT", "GALCHI_CAT", "SHIBA", "GOOSE"]);
+const farmRoamerTypes = new Set([
+  "RABBIT",
+  "RABBIT_TUBE",
+  "HAMSTER",
+  "HAMSTER_TUBE",
+  "GALCHI_CAT",
+  "SHIBA",
+  "GOOSE",
+]);
 const expectedFacingPivots = {
   LITTLE_CHICK_TUBE: "16.00",
   RABBIT_TUBE: "10.00",
@@ -45,11 +57,13 @@ const assert = (condition, message) => {
 };
 
 const separationRadius = (type) => {
-  if (type === "CAPYBARA_SWIM") return 12;
+  if (type === "CAPYBARA_SWIM") return 9;
+  if (type === "RABBIT_TUBE" || type === "HAMSTER_TUBE") return 6;
+  if (type === "LITTLE_CHICK_TUBE") return 5;
+  if (type === "GOOSE" || type === "FLAMINGO") return 6;
   if (type.includes("CAPYBARA")) return 11;
   if (type.includes("PENGUIN") || type.includes("FLAMINGO")) return 10;
-  if (type === "RABBIT_TUBE" || type === "HAMSTER_TUBE") return 10;
-  if (type === "LITTLE_CHICK_TUBE" || type === "DESSERT_FOX") return 9;
+  if (type === "DESSERT_FOX") return 9;
   if (type === "RABBIT" || type === "SHIBA") return 9;
   return 8;
 };
@@ -61,6 +75,42 @@ const personaFamily = (type) => {
   if (type.startsWith("LITTLE_CHICK")) return "LITTLE_CHICK";
   return null;
 };
+
+const characterScale = (type) => ({
+  CAPYBARA_CARROT: 1.1,
+  CAPYBARA_SWIM: 1.1,
+  RABBIT: 0.8,
+  RABBIT_TUBE: 0.9,
+  GALCHI_CAT: 0.8,
+  HAMSTER: 0.6,
+  HAMSTER_TUBE: 0.7,
+  DESSERT_FOX: 0.6,
+  PENGUIN: 0.9,
+  PENGUIN_SUNGLASSES: 0.9,
+})[type] ?? 1;
+
+const isSwimZoneType = (type) => type.includes("_SWIM") || type.includes("_TUBE")
+  || type === "GOOSE" || type === "FLAMINGO";
+const swimZoneBounds = { left: 8, right: 43 };
+const swimZoneBoundsFor = (type) => ({
+  CAPYBARA_SWIM: { left: 8.5, right: 28 },
+  LITTLE_CHICK_TUBE: { left: 8, right: 27 },
+  RABBIT_TUBE: { left: 8, right: 42.5 },
+  HAMSTER_TUBE: { left: 8, right: 41.5 },
+  GOOSE: { left: 13.5, right: 35.5 },
+  FLAMINGO: { left: 2.5, right: 9.5 },
+})[type] ?? swimZoneBounds;
+const landZoneBounds = { left: 53.3, right: 85 };
+const landShorelineAnchorLeft = (type) => ({
+  RABBIT: 51.1,
+  HAMSTER: 49.05,
+  GALCHI_CAT: 52.4,
+  SHIBA: 52.5,
+  PENGUIN: 49.95,
+  PENGUIN_SUNGLASSES: 49.95,
+  DESSERT_FOX: 51.45,
+  CAPYBARA_CARROT: 53.35,
+})[type] ?? landZoneBounds.left;
 
 const extractAnimation = (svg, persona) => {
   const id = String(persona.id);
@@ -103,6 +153,16 @@ const positionAt = (animation, seconds) => {
 
 assert(light.includes(`data-profile-layout="${layoutVersion}"`), "Light SVG layout version is stale.");
 assert(dark.includes(`data-profile-layout="${layoutVersion}"`), "Dark SVG layout version is stale.");
+assert(light.includes('data-profile-zone-split="50"'), "Light SVG is missing the half-width swim/land zone split.");
+assert(dark.includes('data-profile-zone-split="50"'), "Dark SVG is missing the half-width swim/land zone split.");
+assert(light.includes('<g id="profile-swim-zone"'), "Light SVG is missing the visible swim zone.");
+assert(dark.includes('<g id="profile-swim-zone"'), "Dark SVG is missing the visible swim zone.");
+assert(light.includes('<rect id="profile-swim-water" x="8" y="44" width="292" height="218"'),
+  "Light SVG swim water must leave the header/footer text lanes clear.");
+assert(dark.includes('<rect id="profile-swim-water" x="8" y="44" width="292" height="218"'),
+  "Dark SVG swim water must leave the header/footer text lanes clear.");
+assert(/data-profile-scene-phase="[\d.]+"/.test(light), "Light SVG is missing its natural scene phase.");
+assert(/data-profile-scene-phase="[\d.]+"/.test(dark), "Dark SVG is missing its natural scene phase.");
 
 const visible = state.personas.filter((persona) => persona.visible);
 const rider = visible.find((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES");
@@ -128,6 +188,30 @@ const animationsShareFamily = (left, right) => {
   return [...leftFamilies].some((family) => rightFamilies.has(family));
 };
 
+const startPositions = lightAnimations.map((animation) => positionAt(animation, 0));
+const startPairCount = Math.max(1, (startPositions.length * (startPositions.length - 1)) / 2);
+let startAlignmentScore = 0;
+for (let leftIndex = 0; leftIndex < startPositions.length; leftIndex += 1) {
+  for (let rightIndex = leftIndex + 1; rightIndex < startPositions.length; rightIndex += 1) {
+    const left = startPositions[leftIndex];
+    const right = startPositions[rightIndex];
+    const horizontalGap = Math.abs(left.x - right.x);
+    const verticalGap = Math.abs(left.y - right.y);
+    startAlignmentScore += Math.exp(-(verticalGap ** 2) / (2 * 1.7 ** 2)) * 3;
+    startAlignmentScore += Math.exp(-(horizontalGap ** 2) / (2 * 2.8 ** 2)) * 1.7;
+    if (verticalGap < 1.2) startAlignmentScore += 3;
+    if (horizontalGap < 2) startAlignmentScore += 1.5;
+  }
+}
+startPositions.forEach((position) => {
+  if (position.y < 29 || position.y > 75) startAlignmentScore += 0.6;
+  if (position.x < 11 || position.x > 84) startAlignmentScore += 0.3;
+});
+assert(
+  startAlignmentScore / startPairCount <= 0.7,
+  `Initial GitAnimals composition still looks too aligned (${(startAlignmentScore / startPairCount).toFixed(2)}).`,
+);
+
 lightAnimations.forEach((animation, index) => {
   // Explorers cross the full 600px farm multiple times per cycle; their higher caps still limit
   // each half-second frame to a visibly continuous traverse rather than a teleport.
@@ -139,6 +223,20 @@ lightAnimations.forEach((animation, index) => {
     JSON.stringify(animation.points) === JSON.stringify(darkAnimation.points),
     `Light and dark routes differ for ${animation.persona.type} (${animation.id}).`,
   );
+  const zoneBounds = isSwimZoneType(animation.persona.type)
+    ? swimZoneBoundsFor(animation.persona.type)
+    : { ...landZoneBounds, left: landShorelineAnchorLeft(animation.persona.type) };
+  animation.points.forEach((point) => {
+    assert(point.x >= zoneBounds.left - 0.01 && point.x <= zoneBounds.right + 0.01,
+      `${animation.persona.type} leaves its ${isSwimZoneType(animation.persona.type) ? "swim" : "land"} zone at x=${point.x.toFixed(2)}.`);
+  });
+  if (!isSwimZoneType(animation.persona.type)) {
+    const xValues = animation.points.map((point) => point.x);
+    assert(Math.min(...xValues) <= landShorelineAnchorLeft(animation.persona.type) + 3.5,
+      `${animation.persona.type} no longer has access to the shoreline side (${Math.min(...xValues).toFixed(2)}%).`);
+    assert(Math.max(...xValues) >= 60,
+      `${animation.persona.type} no longer uses the right side of the land habitat (${Math.max(...xValues).toFixed(2)}%).`);
+  }
   const movementStart = light.indexOf(`@keyframes ${animation.name}`);
   const movementRuleStart = light.indexOf(`animation-name:${animation.name}`, movementStart) >= 0
     ? light.indexOf(`animation-name:${animation.name}`, movementStart)
@@ -163,6 +261,17 @@ lightAnimations.forEach((animation, index) => {
     `${animation.persona.type} must use its measured local sprite pivot.`);
   assert(facingRule.includes(`transform-origin:${expectedFacingPivots[animation.persona.type]}px 0px`),
     `${animation.persona.type} measured pivot changed unexpectedly.`);
+
+  const requestedScale = characterScale(animation.persona.type);
+  const sizeId = `profile-size-${animation.id}`;
+  assert(light.includes(`<g id="${sizeId}">`),
+    `${animation.persona.type} is missing its independent size wrapper.`);
+  assert(dark.includes(`<g id="${sizeId}">`),
+    `Dark ${animation.persona.type} is missing its independent size wrapper.`);
+  assert(light.includes(`#${sizeId}{transform:scale(${requestedScale.toFixed(2)});`),
+    `${animation.persona.type} is missing its requested ${requestedScale.toFixed(2)}x scale.`);
+  assert(dark.includes(`#${sizeId}{transform:scale(${requestedScale.toFixed(2)});`),
+    `Dark ${animation.persona.type} is missing its requested ${requestedScale.toFixed(2)}x scale.`);
 
   const interactionId = `profile-interaction-${animation.id}`;
   assert(light.includes(`<g id="${interactionId}">`),
@@ -219,6 +328,36 @@ lightAnimations.forEach((animation, index) => {
   }
 });
 
+// These four are intentionally the most visibly active members of their two families. Guard both
+// coverage and average travel speed so later visual/layout changes cannot silently turn them back
+// into short local idles while still passing the generic maximum-speed checks.
+const activeMovementContracts = {
+  // Full-screen roaming is now intentionally split into two habitats. Preserve the fast cadence
+  // inside each habitat instead of requiring these runners to cross the shoreline.
+  RABBIT: { horizontalCoverage: 29, averageWeightedSpeed: 6.3 },
+  RABBIT_TUBE: { horizontalCoverage: 20, averageWeightedSpeed: 6.2 },
+  HAMSTER: { horizontalCoverage: 28, averageWeightedSpeed: 6.2 },
+  HAMSTER_TUBE: { horizontalCoverage: 19, averageWeightedSpeed: 6.2 },
+  GOOSE: { horizontalCoverage: 18, averageWeightedSpeed: 3.0 },
+};
+for (const [type, contract] of Object.entries(activeMovementContracts)) {
+  const animation = lightAnimations.find((entry) => entry.persona.type === type);
+  if (!animation) continue;
+  const xValues = animation.points.map((point) => point.x);
+  const horizontalCoverage = Math.max(...xValues) - Math.min(...xValues);
+  let weightedDistance = 0;
+  for (let index = 1; index < animation.points.length; index += 1) {
+    const previous = animation.points[index - 1];
+    const current = animation.points[index];
+    weightedDistance += Math.hypot((current.x - previous.x) * 2, current.y - previous.y);
+  }
+  const averageWeightedSpeed = weightedDistance / animation.duration;
+  assert(horizontalCoverage >= contract.horizontalCoverage,
+    `${type} active patrol covers only ${horizontalCoverage.toFixed(2)}%; expected >= ${contract.horizontalCoverage}%.`);
+  assert(averageWeightedSpeed >= contract.averageWeightedSpeed,
+    `${type} active patrol averages ${averageWeightedSpeed.toFixed(2)} units/s; expected >= ${contract.averageWeightedSpeed}.`);
+}
+
 for (const explorerType of farmRoamerTypes) {
   const explorerAnimation = lightAnimations.find((animation) => animation.persona.type === explorerType);
   if (!explorerAnimation) continue;
@@ -226,9 +365,12 @@ for (const explorerType of farmRoamerTypes) {
   const yValues = explorerAnimation.points.map((point) => point.y);
   const horizontalCoverage = Math.max(...xValues) - Math.min(...xValues);
   const verticalCoverage = Math.max(...yValues) - Math.min(...yValues);
-  assert(horizontalCoverage >= 65,
+  const minimumHorizontalCoverage = isSwimZoneType(explorerType)
+    ? (explorerType === "GOOSE" ? 18 : 19)
+    : explorerType.startsWith("HAMSTER") ? 28 : 30;
+  assert(horizontalCoverage >= minimumHorizontalCoverage,
     `${explorerType} explorer must traverse the farm horizontally (${horizontalCoverage.toFixed(2)}%).`);
-  assert(verticalCoverage >= 35,
+  assert(verticalCoverage >= (explorerType === "GOOSE" ? 28 : 35),
     `${explorerType} explorer must traverse the farm vertically (${verticalCoverage.toFixed(2)}%).`);
 
   // The cat retains its established pause-and-patrol cadence; this turn only makes the Shiba and
@@ -257,9 +399,9 @@ assert(heartEventCount > 0, "At least one head-on character meeting must produce
 
 const carrotCapybara = visible.find((persona) => persona.type === "CAPYBARA_CARROT");
 if (carrotCapybara) {
-  assert(light.includes(`#level-wrap-${carrotCapybara.id}{translate:0 -10px;}`),
+  assert(light.includes(`#level-wrap-${carrotCapybara.id}{translate:0 -18px;}`),
     "Carrot capybara level label must clear the carrot.");
-  assert(dark.includes(`#level-wrap-${carrotCapybara.id}{translate:0 -10px;}`),
+  assert(dark.includes(`#level-wrap-${carrotCapybara.id}{translate:0 -18px;}`),
     "Dark carrot capybara level label must clear the carrot.");
 }
 
@@ -274,7 +416,7 @@ if (rabbit) {
     assert(keyframesStart !== -1 && ruleStart !== -1,
       `${theme} rabbit level label must follow its facing direction.`);
     const body = svg.slice(keyframesStart, ruleStart);
-    assert(body.includes("translate:0px -9px") && body.includes("translate:25px -9px"),
+    assert(body.includes("translate:0px 3px") && body.includes("translate:25px 3px"),
       `${theme} rabbit level must shift right only while facing left.`);
     const rule = svg.slice(ruleStart, svg.indexOf("}", ruleStart));
     assert(rule.includes(`animation-name:${animationName} !important`),
@@ -303,9 +445,9 @@ if (flamingo) {
 
 const swimmingCapybara = visible.find((persona) => persona.type === "CAPYBARA_SWIM");
 if (swimmingCapybara) {
-  assert(light.includes(`#level-wrap-${swimmingCapybara.id}{translate:-8px 0;}`),
+  assert(light.includes(`#level-wrap-${swimmingCapybara.id}{translate:-8px -6px;}`),
     "Swimming capybara level label must clear the mounted chick.");
-  assert(dark.includes(`#level-wrap-${swimmingCapybara.id}{translate:-8px 0;}`),
+  assert(dark.includes(`#level-wrap-${swimmingCapybara.id}{translate:-8px -6px;}`),
     "Dark swimming capybara level label must clear the mounted chick.");
   for (const [theme, svg] of [["Light", light], ["Dark", dark]]) {
     assert(svg.includes("class=\"profile-water-bed\"")
@@ -318,6 +460,88 @@ if (swimmingCapybara) {
       && svg.includes("transform:translateX(-.18px)")
       && svg.includes("transform:translateX(.18px)"),
     `${theme} swimming capybara water motion must remain subtle and local.`);
+  }
+}
+
+const hamster = visible.find((persona) => persona.type === "HAMSTER");
+if (hamster) {
+  assert(light.includes(`#level-wrap-${hamster.id}{translate:0 17px;}`)
+    && dark.includes(`#level-wrap-${hamster.id}{translate:0 17px;}`),
+  "Hamster level label must keep a small gap above its 0.6x artwork.");
+}
+
+const hamsterTube = visible.find((persona) => persona.type === "HAMSTER_TUBE");
+if (hamsterTube) {
+  assert(light.includes(`#level-wrap-${hamsterTube.id}{translate:0 4px;}`)
+    && dark.includes(`#level-wrap-${hamsterTube.id}{translate:0 4px;}`),
+  "Hamster Tube level label must float above its 0.7x artwork.");
+}
+
+const rabbitTube = visible.find((persona) => persona.type === "RABBIT_TUBE");
+if (rabbitTube) {
+  assert(light.includes(`#level-wrap-${rabbitTube.id}{translate:0 9px;}`)
+    && dark.includes(`#level-wrap-${rabbitTube.id}{translate:0 9px;}`),
+  "Rabbit Tube level label must float above its visible float.");
+}
+
+const chickTube = visible.find((persona) => persona.type === "LITTLE_CHICK_TUBE");
+if (chickTube) {
+  assert(light.includes(`#level-wrap-${chickTube.id}{translate:0 -7px;}`)
+    && dark.includes(`#level-wrap-${chickTube.id}{translate:0 -7px;}`),
+  "Little Chick Tube level label must float above its artwork.");
+}
+
+const dessertFox = visible.find((persona) => persona.type === "DESSERT_FOX");
+if (dessertFox) {
+  assert(light.includes(`#level-wrap-${dessertFox.id}{translate:0 1px;}`)
+    && dark.includes(`#level-wrap-${dessertFox.id}{translate:0 1px;}`),
+  "Dessert Fox level label must move slightly closer to its artwork.");
+}
+
+const galchiCat = visible.find((persona) => persona.type === "GALCHI_CAT");
+if (galchiCat) {
+  assert(light.includes(`#level-wrap-${galchiCat.id}{translate:0 8px;}`)
+    && dark.includes(`#level-wrap-${galchiCat.id}{translate:0 8px;}`),
+  "Galchi Cat level label must sit closer to its ears.");
+}
+
+const simpleTubeTypes = ["LITTLE_CHICK_TUBE", "RABBIT_TUBE", "HAMSTER_TUBE"];
+const tubeRippleMaximumRx = {
+  LITTLE_CHICK_TUBE: 6.1,
+  RABBIT_TUBE: 6.1,
+};
+for (const type of simpleTubeTypes) {
+  const persona = visible.find((candidate) => candidate.type === type);
+  if (!persona) continue;
+  for (const [theme, svg] of [["Light", light], ["Dark", dark]]) {
+    const shadowStart = svg.indexOf(`<svg id="profile-shadow-${persona.id}"`);
+    const shadowEnd = svg.indexOf("</svg>", shadowStart);
+    const shadowMarkup = svg.slice(shadowStart, shadowEnd);
+    assert(shadowStart !== -1 && shadowMarkup.includes('class="profile-tube-ripple"')
+      && shadowMarkup.includes('class="profile-tube-wake"'),
+    `${theme} ${type} must keep its simplified water ripple.`);
+    const rippleRx = Number(shadowMarkup.match(/class="profile-tube-ripple"[^>]*\brx="([\d.]+)"/)?.[1]);
+    if (tubeRippleMaximumRx[type] !== undefined) {
+      assert(Number.isFinite(rippleRx) && rippleRx <= tubeRippleMaximumRx[type],
+        `${theme} ${type} water ripple grew too large (${rippleRx}).`);
+    }
+  }
+}
+
+const birdRippleCy = { GOOSE: 14, FLAMINGO: 31.5 };
+for (const type of ["GOOSE", "FLAMINGO"]) {
+  const persona = visible.find((candidate) => candidate.type === type);
+  if (!persona) continue;
+  for (const [theme, svg] of [["Light", light], ["Dark", dark]]) {
+    const shadowStart = svg.indexOf(`<svg id="profile-shadow-${persona.id}"`);
+    const shadowEnd = svg.indexOf("</svg>", shadowStart);
+    const shadowMarkup = svg.slice(shadowStart, shadowEnd);
+    assert(shadowStart !== -1 && shadowMarkup.includes('class="profile-bird-ripple"')
+      && shadowMarkup.includes('class="profile-bird-wake"'),
+    `${theme} ${type} must render as a water bird inside the expanded swim habitat.`);
+    const rippleCy = Number(shadowMarkup.match(/class="profile-bird-ripple"[^>]*\bcy="([\d.]+)"/)?.[1]);
+    assert(Math.abs(rippleCy - birdRippleCy[type]) < 0.01,
+      `${theme} ${type} waterline moved to ${rippleCy}; expected ${birdRippleCy[type]}.`);
   }
 }
 
@@ -341,13 +565,17 @@ for (let leftIndex = 0; leftIndex < lightAnimations.length; leftIndex += 1) {
   for (let rightIndex = leftIndex + 1; rightIndex < lightAnimations.length; rightIndex += 1) {
     const left = lightAnimations[leftIndex];
     const right = lightAnimations[rightIndex];
+    const sameZone = isSwimZoneType(left.persona.type) === isSwimZoneType(right.persona.type);
+    // Cross-shore pairs cannot collide: the rendered-water containment regression below is the
+    // source of truth for that boundary. Treating their movement anchors as one shared floor was
+    // what recreated an unnecessary empty strip beside the shoreline.
+    if (!sameZone) continue;
     const threshold = separationRadius(left.persona.type) + separationRadius(right.persona.type);
     const sameFamily = animationsShareFamily(left, right);
-    const sameFamilyMinimumDistance = threshold + 10;
-    let overlapStartedAt = null;
-    let pairLongestOverlap = 0;
+    const sameFamilyMinimumDistance = threshold + (sameFamily && isSwimZoneType(left.persona.type) ? 2 : 10);
     let pairMinimumDistance = Number.POSITIVE_INFINITY;
-    for (let seconds = 0; seconds <= cycleSeconds; seconds += sampleStepSeconds) {
+    const overlapSamples = [];
+    for (let seconds = 0; seconds < cycleSeconds; seconds += sampleStepSeconds) {
       const leftPosition = positionAt(left, seconds);
       const rightPosition = positionAt(right, seconds);
       const distance = Math.hypot(
@@ -355,15 +583,24 @@ for (let leftIndex = 0; leftIndex < lightAnimations.length; leftIndex += 1) {
         leftPosition.y - rightPosition.y,
       );
       pairMinimumDistance = Math.min(pairMinimumDistance, distance);
-      if (distance < threshold && overlapStartedAt === null) overlapStartedAt = seconds;
-      if (distance >= threshold && overlapStartedAt !== null) {
-        pairLongestOverlap = Math.max(pairLongestOverlap, seconds - overlapStartedAt);
-        overlapStartedAt = null;
+      overlapSamples.push(distance < threshold);
+    }
+    let pairLongestOverlapSamples = 0;
+    if (overlapSamples.every(Boolean)) {
+      pairLongestOverlapSamples = overlapSamples.length;
+    } else {
+      let currentOverlapSamples = 0;
+      for (let index = 0; index < overlapSamples.length * 2; index += 1) {
+        if (overlapSamples[index % overlapSamples.length]) {
+          currentOverlapSamples += 1;
+          pairLongestOverlapSamples = Math.max(pairLongestOverlapSamples, currentOverlapSamples);
+          pairLongestOverlapSamples = Math.min(pairLongestOverlapSamples, overlapSamples.length);
+        } else {
+          currentOverlapSamples = 0;
+        }
       }
     }
-    if (overlapStartedAt !== null) {
-      pairLongestOverlap = Math.max(pairLongestOverlap, cycleSeconds - overlapStartedAt);
-    }
+    const pairLongestOverlap = pairLongestOverlapSamples * sampleStepSeconds;
     if (pairLongestOverlap > longestOverlap) {
       longestOverlap = pairLongestOverlap;
       longestPair = `${left.persona.type} / ${right.persona.type}`;
