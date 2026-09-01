@@ -1,12 +1,12 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10192",
+  "totalContributions": "10207",
   "personas": [
     {
       "id": "764406126012079806",
       "type": "TURTLE",
-      "level": "2",
+      "level": "3",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.29%",
@@ -26,7 +26,7 @@
     {
       "id": "764406894337267759",
       "type": "LITTLE_CHICK_TUBE",
-      "level": "100",
+      "level": "101",
       "visible": true,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -176,7 +176,7 @@
     {
       "id": "791997594403950310",
       "type": "HAMSTER_SNOW",
-      "level": "8",
+      "level": "9",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -236,7 +236,7 @@
     {
       "id": "829877265864042973",
       "type": "PIG_JS",
-      "level": "5",
+      "level": "6",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -426,7 +426,7 @@
     {
       "id": "839316524592413461",
       "type": "PENGUIN",
-      "level": "184",
+      "level": "186",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
@@ -766,7 +766,7 @@
     {
       "id": "875503095130466455",
       "type": "DESSERT_FOX",
-      "level": "102",
+      "level": "103",
       "visible": true,
       "appVisible": false,
       "dropRate": "0.48%",
@@ -966,7 +966,7 @@
     {
       "id": "878927032094925896",
       "type": "LITTLE_CHICK",
-      "level": "166",
+      "level": "167",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
@@ -976,7 +976,7 @@
     {
       "id": "879140463284686520",
       "type": "HAMSTER",
-      "level": "158",
+      "level": "159",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -1056,7 +1056,7 @@
     {
       "id": "880323518863082477",
       "type": "PENGUIN",
-      "level": "125",
+      "level": "126",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
@@ -1076,7 +1076,7 @@
     {
       "id": "880370822945029549",
       "type": "SLIME_BLUE",
-      "level": "143",
+      "level": "144",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -1086,7 +1086,7 @@
     {
       "id": "880420628627300853",
       "type": "GOBLIN",
-      "level": "133",
+      "level": "134",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.58%",
@@ -1156,7 +1156,7 @@
     {
       "id": "880471396495506557",
       "type": "GALCHI_CAT",
-      "level": "105",
+      "level": "106",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -1286,7 +1286,7 @@
     {
       "id": "881010059901591861",
       "type": "SLOTH",
-      "level": "2",
+      "level": "3",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -1306,7 +1306,7 @@
     {
       "id": "881010060656573271",
       "type": "SLOTH",
-      "level": "6",
+      "level": "7",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
