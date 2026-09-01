@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v57";
+const layoutVersion = "character-behaviors-v58";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -1392,7 +1392,16 @@ const distributeCharacterRoaming = (svg) => {
         const tubeRippleRx = (scaledShadowRx + 1.2 * scale) * tubeRippleScale;
         const tubeRippleRy = (1.75 * Math.sqrt(scale)) * (tubeRippleScale === 1 ? 1 : 0.78);
         const tubeWakeScale = ["LITTLE_CHICK_TUBE", "RABBIT_TUBE"].includes(persona.type) ? 0.72 : 1;
-        const birdRippleCy = geometry.cy + (persona.type === "FLAMINGO" ? 7.5 : -3.0);
+        // Keep each water effect optically attached to the part of the sprite that touches the water.
+        // The flamingo ripple sits under its long legs, while the rabbit float is visually weighted
+        // left of the source SVG's root pivot.
+        const tubeRippleCx = geometry.cx + (persona.type === "RABBIT_TUBE" ? -2 : 0);
+        const tubeWakeCx = geometry.cx + (persona.type === "RABBIT_TUBE" ? -2 : 0);
+        const birdRippleCy = geometry.cy + (persona.type === "FLAMINGO" ? 3.5 : -3.0);
+        const birdRippleScale = persona.type === "FLAMINGO" ? 0.72 : 1;
+        const birdRippleRx = (scaledShadowRx + 1.8 * scale) * birdRippleScale;
+        const birdRippleRy = (1.8 * Math.sqrt(scale)) * birdRippleScale;
+        const birdWakeScale = persona.type === "FLAMINGO" ? 0.72 : 1;
         const actionSelectors = persona.type === "CAPYBARA_SWIM" && riderNeutralizerId
           ? `#${actionWrapperId},#${riderNeutralizerId}`
           : `#${actionWrapperId}`;
@@ -1428,20 +1437,20 @@ const distributeCharacterRoaming = (svg) => {
               + `<path d="M${geometry.cx + 6 * scale} ${geometry.cy - 0.85} `
               + `Q${geometry.cx + 10 * scale} ${geometry.cy - 2.15} ${geometry.cx + 14 * scale} ${geometry.cy - 0.7}"/></g>`
             : hasSimpleTubeWater
-              ? `<ellipse class="profile-tube-ripple" cx="${geometry.cx}" cy="${geometry.cy - 0.1}" `
+              ? `<ellipse class="profile-tube-ripple" cx="${tubeRippleCx.toFixed(2)}" cy="${geometry.cy - 0.1}" `
                 + `rx="${tubeRippleRx.toFixed(2)}" ry="${tubeRippleRy.toFixed(2)}" `
                 + `fill="none" stroke="#79C0FF" stroke-width=".45" opacity=".28"/>`
-                + `<path class="profile-tube-wake" d="M${(geometry.cx - (scaledShadowRx + 1.4) * tubeWakeScale).toFixed(2)} ${(geometry.cy - 0.65).toFixed(2)} `
-                + `Q${(geometry.cx - (scaledShadowRx + 0.2) * tubeWakeScale).toFixed(2)} ${(geometry.cy - 1.35).toFixed(2)} `
-                + `${(geometry.cx - Math.max(0.8, (scaledShadowRx - 1.2) * tubeWakeScale)).toFixed(2)} ${(geometry.cy - 0.7).toFixed(2)}" `
+                + `<path class="profile-tube-wake" d="M${(tubeWakeCx - (scaledShadowRx + 1.4) * tubeWakeScale).toFixed(2)} ${(geometry.cy - 0.65).toFixed(2)} `
+                + `Q${(tubeWakeCx - (scaledShadowRx + 0.2) * tubeWakeScale).toFixed(2)} ${(geometry.cy - 1.35).toFixed(2)} `
+                + `${(tubeWakeCx - Math.max(0.8, (scaledShadowRx - 1.2) * tubeWakeScale)).toFixed(2)} ${(geometry.cy - 0.7).toFixed(2)}" `
                 + `fill="none" stroke="#B6E3FF" stroke-width=".5" stroke-linecap="round" opacity=".38"/>`
             : hasBirdWater
               ? `<ellipse class="profile-bird-ripple" cx="${geometry.cx}" cy="${birdRippleCy.toFixed(2)}" `
-                + `rx="${(scaledShadowRx + 1.8 * scale).toFixed(2)}" ry="${(1.8 * Math.sqrt(scale)).toFixed(2)}" `
+                + `rx="${birdRippleRx.toFixed(2)}" ry="${birdRippleRy.toFixed(2)}" `
                 + `fill="none" stroke="#79C0FF" stroke-width=".45" opacity=".3"/>`
-                + `<path class="profile-bird-wake" d="M${(geometry.cx - scaledShadowRx - 1.8).toFixed(2)} ${(birdRippleCy - 0.45).toFixed(2)} `
-                + `Q${(geometry.cx - scaledShadowRx - 0.4).toFixed(2)} ${(birdRippleCy - 1.25).toFixed(2)} `
-                + `${(geometry.cx - scaledShadowRx + 1.3).toFixed(2)} ${(birdRippleCy - 0.5).toFixed(2)}" `
+                + `<path class="profile-bird-wake" d="M${(geometry.cx - (scaledShadowRx + 1.8) * birdWakeScale).toFixed(2)} ${(birdRippleCy - 0.45).toFixed(2)} `
+                + `Q${(geometry.cx - (scaledShadowRx + 0.4) * birdWakeScale).toFixed(2)} ${(birdRippleCy - 1.25).toFixed(2)} `
+                + `${(geometry.cx - Math.max(0.8, (scaledShadowRx - 1.3) * birdWakeScale)).toFixed(2)} ${(birdRippleCy - 0.5).toFixed(2)}" `
                 + `fill="none" stroke="#B6E3FF" stroke-width=".5" stroke-linecap="round" opacity=".4"/>`
             : "")
           + "</svg>";

@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v57";
+const layoutVersion = "character-behaviors-v58";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -521,14 +521,19 @@ for (const type of simpleTubeTypes) {
       && shadowMarkup.includes('class="profile-tube-wake"'),
     `${theme} ${type} must keep its simplified water ripple.`);
     const rippleRx = Number(shadowMarkup.match(/class="profile-tube-ripple"[^>]*\brx="([\d.]+)"/)?.[1]);
+    const rippleCx = Number(shadowMarkup.match(/class="profile-tube-ripple"[^>]*\bcx="([\d.]+)"/)?.[1]);
     if (tubeRippleMaximumRx[type] !== undefined) {
       assert(Number.isFinite(rippleRx) && rippleRx <= tubeRippleMaximumRx[type],
         `${theme} ${type} water ripple grew too large (${rippleRx}).`);
     }
+    if (type === "RABBIT_TUBE") {
+      assert(Math.abs(rippleCx - 8) < 0.01,
+        `${theme} Rabbit Tube ripple must stay left-shifted under the float (cx=${rippleCx}).`);
+    }
   }
 }
 
-const birdRippleCy = { GOOSE: 14, FLAMINGO: 31.5 };
+const birdRippleCy = { GOOSE: 14, FLAMINGO: 27.5 };
 for (const type of ["GOOSE", "FLAMINGO"]) {
   const persona = visible.find((candidate) => candidate.type === type);
   if (!persona) continue;
@@ -540,8 +545,13 @@ for (const type of ["GOOSE", "FLAMINGO"]) {
       && shadowMarkup.includes('class="profile-bird-wake"'),
     `${theme} ${type} must render as a water bird inside the expanded swim habitat.`);
     const rippleCy = Number(shadowMarkup.match(/class="profile-bird-ripple"[^>]*\bcy="([\d.]+)"/)?.[1]);
+    const rippleRx = Number(shadowMarkup.match(/class="profile-bird-ripple"[^>]*\brx="([\d.]+)"/)?.[1]);
     assert(Math.abs(rippleCy - birdRippleCy[type]) < 0.01,
       `${theme} ${type} waterline moved to ${rippleCy}; expected ${birdRippleCy[type]}.`);
+    if (type === "FLAMINGO") {
+      assert(Number.isFinite(rippleRx) && rippleRx <= 5.7,
+        `${theme} Flamingo water ripple should stay compact under its legs (rx=${rippleRx}).`);
+    }
   }
 }
 
