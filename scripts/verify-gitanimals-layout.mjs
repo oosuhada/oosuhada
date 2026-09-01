@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v56";
+const layoutVersion = "character-behaviors-v57";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -32,6 +32,7 @@ const farmRoamerTypes = new Set([
   "HAMSTER_TUBE",
   "GALCHI_CAT",
   "SHIBA",
+  "GOOSE",
 ]);
 const expectedFacingPivots = {
   LITTLE_CHICK_TUBE: "16.00",
@@ -96,15 +97,15 @@ const swimZoneBoundsFor = (type) => ({
   LITTLE_CHICK_TUBE: { left: 8, right: 27 },
   RABBIT_TUBE: { left: 8, right: 42.5 },
   HAMSTER_TUBE: { left: 8, right: 41.5 },
-  GOOSE: { left: 23, right: 30.5 },
-  FLAMINGO: { left: 37, right: 40.5 },
+  GOOSE: { left: 13.5, right: 35.5 },
+  FLAMINGO: { left: 2.5, right: 9.5 },
 })[type] ?? swimZoneBounds;
 const landZoneBounds = { left: 53.3, right: 85 };
 const landShorelineAnchorLeft = (type) => ({
   RABBIT: 51.1,
   HAMSTER: 49.05,
   GALCHI_CAT: 52.4,
-  SHIBA: 52.4,
+  SHIBA: 52.5,
   PENGUIN: 49.95,
   PENGUIN_SUNGLASSES: 49.95,
   DESSERT_FOX: 51.45,
@@ -337,6 +338,7 @@ const activeMovementContracts = {
   RABBIT_TUBE: { horizontalCoverage: 20, averageWeightedSpeed: 6.2 },
   HAMSTER: { horizontalCoverage: 28, averageWeightedSpeed: 6.2 },
   HAMSTER_TUBE: { horizontalCoverage: 19, averageWeightedSpeed: 6.2 },
+  GOOSE: { horizontalCoverage: 18, averageWeightedSpeed: 3.0 },
 };
 for (const [type, contract] of Object.entries(activeMovementContracts)) {
   const animation = lightAnimations.find((entry) => entry.persona.type === type);
@@ -526,7 +528,7 @@ for (const type of simpleTubeTypes) {
   }
 }
 
-const birdRippleCy = { GOOSE: 14, FLAMINGO: 34.5 };
+const birdRippleCy = { GOOSE: 14, FLAMINGO: 31.5 };
 for (const type of ["GOOSE", "FLAMINGO"]) {
   const persona = visible.find((candidate) => candidate.type === type);
   if (!persona) continue;

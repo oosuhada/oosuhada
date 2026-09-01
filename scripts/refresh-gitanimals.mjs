@@ -9,7 +9,7 @@ const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v56";
+const layoutVersion = "character-behaviors-v57";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -222,8 +222,8 @@ const swimZoneBoundsFor = (type) => ({
   LITTLE_CHICK_TUBE: { left: 8, right: 27, top: 64, bottom: 75 },
   RABBIT_TUBE: { left: 8, right: 42.5, top: 29, bottom: 72 },
   HAMSTER_TUBE: { left: 8, right: 41.5, top: 29, bottom: 72 },
-  GOOSE: { left: 23, right: 30.5, top: 53, bottom: 65 },
-  FLAMINGO: { left: 37, right: 40.5, top: 30, bottom: 50 },
+  GOOSE: { left: 13.5, right: 35.5, top: 40, bottom: 68.5 },
+  FLAMINGO: { left: 2.5, right: 9.5, top: 35, bottom: 53 },
 })[type] ?? swimZoneBounds;
 // The shoreline moves from 253px to 300px, so land movement floors move right by roughly 7.8
 // route units. Land pets retain the same slight border overlap and still roam through the far right.
@@ -235,7 +235,7 @@ const landShorelineAnchorLeft = (type) => ({
   RABBIT: 51.1,
   HAMSTER: 49.05,
   GALCHI_CAT: 52.4,
-  SHIBA: 52.4,
+  SHIBA: 52.5,
   PENGUIN: 49.95,
   PENGUIN_SUNGLASSES: 49.95,
   DESSERT_FOX: 51.45,
@@ -676,6 +676,7 @@ const distributeCharacterRoaming = (svg) => {
     "HAMSTER_TUBE",
     "GALCHI_CAT",
     "SHIBA",
+    "GOOSE",
   ]);
 
   const movementProfile = (persona, index) => {
@@ -742,12 +743,13 @@ const distributeCharacterRoaming = (svg) => {
     { x: 13, y: 46 }, { x: 27, y: 31 }, { x: 36, y: 36 }, { x: 40, y: 51 },
   ];
   const gooseSwimWaypoints = [
-    { x: 23.5, y: 56 }, { x: 26, y: 53.5 }, { x: 30, y: 56 },
-    { x: 30, y: 61 }, { x: 27, y: 64.5 }, { x: 23.5, y: 61 },
+    { x: 14.5, y: 48 }, { x: 20, y: 40.5 }, { x: 29.5, y: 43 },
+    { x: 35, y: 53 }, { x: 32.5, y: 66 }, { x: 24, y: 68 },
+    { x: 15, y: 60 },
   ];
   const flamingoSwimWaypoints = [
-    { x: 37.2, y: 34 }, { x: 38.5, y: 31 }, { x: 40, y: 35 },
-    { x: 40, y: 42 }, { x: 38.5, y: 49 }, { x: 37.1, y: 45 },
+    { x: 3.2, y: 39 }, { x: 5.1, y: 35.5 }, { x: 8.6, y: 38 },
+    { x: 9.1, y: 45 }, { x: 7.2, y: 52 }, { x: 4.0, y: 49 },
   ];
   const remapToLandZone = (waypoints, type) => {
     const left = landShorelineAnchorLeft(type);
@@ -815,7 +817,7 @@ const distributeCharacterRoaming = (svg) => {
       return interpolateClosedRoute(swimHamsterWaypoints, 0.63 + progress * (denseLayout ? 7 : 9));
     }
     if (unit.persona.type === "GOOSE") {
-      return interpolateClosedRoute(gooseSwimWaypoints, 0.35 - progress * 2);
+      return interpolateClosedRoute(gooseSwimWaypoints, 0.35 - progress * 4);
     }
     if (unit.persona.type === "FLAMINGO") {
       return interpolateClosedRoute(flamingoSwimWaypoints, 0.72 + progress);
@@ -1390,7 +1392,7 @@ const distributeCharacterRoaming = (svg) => {
         const tubeRippleRx = (scaledShadowRx + 1.2 * scale) * tubeRippleScale;
         const tubeRippleRy = (1.75 * Math.sqrt(scale)) * (tubeRippleScale === 1 ? 1 : 0.78);
         const tubeWakeScale = ["LITTLE_CHICK_TUBE", "RABBIT_TUBE"].includes(persona.type) ? 0.72 : 1;
-        const birdRippleCy = geometry.cy + (persona.type === "FLAMINGO" ? 10.5 : -3.0);
+        const birdRippleCy = geometry.cy + (persona.type === "FLAMINGO" ? 7.5 : -3.0);
         const actionSelectors = persona.type === "CAPYBARA_SWIM" && riderNeutralizerId
           ? `#${actionWrapperId},#${riderNeutralizerId}`
           : `#${actionWrapperId}`;

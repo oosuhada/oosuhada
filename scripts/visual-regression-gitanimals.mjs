@@ -51,6 +51,8 @@ const birdWaterIds = new Set(
     .filter((persona) => ["GOOSE", "FLAMINGO"].includes(persona.type))
     .map((persona) => String(persona.id)),
 );
+const gooseId = String(visiblePersonas.find((persona) => persona.type === "GOOSE")?.id ?? "");
+const flamingoId = String(visiblePersonas.find((persona) => persona.type === "FLAMINGO")?.id ?? "");
 const levelGapContractById = new Map(
   visiblePersonas
     .map((persona) => {
@@ -223,7 +225,7 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v56", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v57", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.swimZone?.width > 285 && geometry.swimZone?.width < 305,
@@ -413,6 +415,17 @@ try {
       assert(freeSwimmers.length >= 2,
         `Only ${freeSwimmers.length} swim pets traverse the expanded pond freely; `
           + "the water layout is collapsing back into fixed slots.");
+      if (gooseId) {
+        const gooseRange = fullCycleZones.swimCenterRanges[gooseId];
+        assert(gooseRange && gooseRange.maxX - gooseRange.minX >= 110
+          && gooseRange.maxY - gooseRange.minY >= 70,
+        "Goose must visibly swim across the pond instead of idling in one small patch.");
+      }
+      if (flamingoId) {
+        const flamingoRange = fullCycleZones.swimCenterRanges[flamingoId];
+        assert(flamingoRange && flamingoRange.minX <= 50 && flamingoRange.maxX <= 110,
+          "Flamingo must remain in the far-left water area.");
+      }
     }
     await page.close();
   }

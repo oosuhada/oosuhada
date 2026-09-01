@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10167",
+  "totalContributions": "10176",
   "personas": [
     {
       "id": "764406126012079806",
@@ -446,7 +446,7 @@
     {
       "id": "839862868772009175",
       "type": "PIG_SUNGLASSES",
-      "level": "5",
+      "level": "6",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.77%",
@@ -636,7 +636,7 @@
     {
       "id": "859079414326073600",
       "type": "CAPYBARA",
-      "level": "184",
+      "level": "185",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -746,7 +746,7 @@
     {
       "id": "874689586759053174",
       "type": "SHIBA",
-      "level": "171",
+      "level": "172",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
@@ -806,7 +806,7 @@
     {
       "id": "877432753874904722",
       "type": "SLIME_BLUE",
-      "level": "5",
+      "level": "6",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -986,7 +986,7 @@
     {
       "id": "879327279266773148",
       "type": "SLOTH",
-      "level": "169",
+      "level": "170",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -1046,7 +1046,7 @@
     {
       "id": "880281844388569008",
       "type": "CAPYBARA_CARROT",
-      "level": "135",
+      "level": "136",
       "visible": false,
       "appVisible": false,
       "dropRate": "5%",
@@ -1086,7 +1086,7 @@
     {
       "id": "880420628627300853",
       "type": "GOBLIN",
-      "level": "131",
+      "level": "132",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.58%",
@@ -1226,7 +1226,7 @@
     {
       "id": "881010057808638172",
       "type": "SLOTH",
-      "level": "5",
+      "level": "6",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -1266,7 +1266,7 @@
     {
       "id": "881010059226313699",
       "type": "SLIME_GREEN",
-      "level": "6",
+      "level": "7",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
