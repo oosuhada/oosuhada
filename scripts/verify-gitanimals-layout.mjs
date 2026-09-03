@@ -56,6 +56,24 @@ const assert = (condition, message) => {
   if (!condition) throw new Error(message);
 };
 
+const assertSvgTagBalance = (svg, label) => {
+  const stack = [];
+  for (const match of svg.matchAll(/<\/?(svg|g|style)\b[^>]*>/g)) {
+    const tag = match[0];
+    const name = match[1];
+    if (tag.startsWith("</")) {
+      const previous = stack.pop();
+      assert(
+        previous === name,
+        `${label} SVG has mismatched closing tag ${tag} near byte ${match.index}; expected </${previous ?? "none"}>.`,
+      );
+    } else if (!tag.endsWith("/>")) {
+      stack.push(name);
+    }
+  }
+  assert(stack.length === 0, `${label} SVG has unclosed tags: ${stack.join(", ")}.`);
+};
+
 const separationRadius = (type) => {
   if (type === "CAPYBARA_SWIM") return 9;
   if (type === "RABBIT_TUBE" || type === "HAMSTER_TUBE") return 6;
@@ -153,6 +171,8 @@ const positionAt = (animation, seconds) => {
 
 assert(light.includes(`data-profile-layout="${layoutVersion}"`), "Light SVG layout version is stale.");
 assert(dark.includes(`data-profile-layout="${layoutVersion}"`), "Dark SVG layout version is stale.");
+assertSvgTagBalance(light, "Light");
+assertSvgTagBalance(dark, "Dark");
 assert(light.includes('data-profile-zone-split="50"'), "Light SVG is missing the half-width swim/land zone split.");
 assert(dark.includes('data-profile-zone-split="50"'), "Dark SVG is missing the half-width swim/land zone split.");
 assert(light.includes('<g id="profile-swim-zone"'), "Light SVG is missing the visible swim zone.");

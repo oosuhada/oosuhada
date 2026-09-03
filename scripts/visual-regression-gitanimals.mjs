@@ -123,13 +123,16 @@ try {
       const geometry = await page.evaluate(() => {
         const rootSvg = document.querySelector("svg[data-profile-layout]");
         const rootRect = rootSvg.getBoundingClientRect();
+        const viewBox = rootSvg.viewBox.baseVal;
+        const scaleX = rootRect.width === 0 ? 1 : viewBox.width / rootRect.width;
+        const scaleY = rootRect.height === 0 ? 1 : viewBox.height / rootRect.height;
         const rectFor = (element) => {
           const rect = element.getBoundingClientRect();
           return {
-            x: Number((rect.x - rootRect.x).toFixed(2)),
-            y: Number((rect.y - rootRect.y).toFixed(2)),
-            width: Number(rect.width.toFixed(2)),
-            height: Number(rect.height.toFixed(2)),
+            x: Number(((rect.x - rootRect.x) * scaleX).toFixed(2)),
+            y: Number(((rect.y - rootRect.y) * scaleY).toFixed(2)),
+            width: Number((rect.width * scaleX).toFixed(2)),
+            height: Number((rect.height * scaleY).toFixed(2)),
           };
         };
         const visibleArtworkFor = (element) => {
@@ -147,10 +150,10 @@ try {
           const right = Math.max(...primitiveRects.map((rect) => rect.right));
           const bottom = Math.max(...primitiveRects.map((rect) => rect.bottom));
           return {
-            x: Number((left - rootRect.left).toFixed(2)),
-            y: Number((top - rootRect.top).toFixed(2)),
-            width: Number((right - left).toFixed(2)),
-            height: Number((bottom - top).toFixed(2)),
+            x: Number(((left - rootRect.left) * scaleX).toFixed(2)),
+            y: Number(((top - rootRect.top) * scaleY).toFixed(2)),
+            width: Number(((right - left) * scaleX).toFixed(2)),
+            height: Number(((bottom - top) * scaleY).toFixed(2)),
           };
         };
         return {
@@ -336,21 +339,24 @@ try {
             animation.pause();
           });
           const rootRect = rootSvg.getBoundingClientRect();
+          const viewBox = rootSvg.viewBox.baseVal;
+          const scaleX = rootRect.width === 0 ? 1 : viewBox.width / rootRect.width;
+          const scaleY = rootRect.height === 0 ? 1 : viewBox.height / rootRect.height;
           const waterRect = water.getBoundingClientRect();
-          const waterLeft = waterRect.left - rootRect.left;
-          const waterRight = waterRect.right - rootRect.left;
-          const waterTop = waterRect.top - rootRect.top;
-          const waterBottom = waterRect.bottom - rootRect.top;
+          const waterLeft = (waterRect.left - rootRect.left) * scaleX;
+          const waterRight = (waterRect.right - rootRect.left) * scaleX;
+          const waterTop = (waterRect.top - rootRect.top) * scaleY;
+          const waterBottom = (waterRect.bottom - rootRect.top) * scaleY;
           sampledFrames += 1;
           let rightSideLandPets = 0;
           landIds.forEach((id) => {
             const element = document.querySelector(`#profile-facing-${id}`);
             if (!element) return;
             const rect = element.getBoundingClientRect();
-            const gap = rect.left - rootRect.left - waterRight;
+            const gap = (rect.left - rootRect.left) * scaleX - waterRight;
             minimumLandGap = Math.min(minimumLandGap, gap);
             if (gap <= 3) borderSkimmingLandIds.add(id);
-            const centerX = rect.left - rootRect.left + rect.width / 2;
+            const centerX = (rect.left - rootRect.left + rect.width / 2) * scaleX;
             if (centerX >= 360) {
               rightVisitingLandIds.add(id);
               rightSideLandPets += 1;
@@ -361,10 +367,10 @@ try {
             const element = document.querySelector(`#profile-facing-${id}`);
             if (!element) return;
             const rect = element.getBoundingClientRect();
-            const left = rect.left - rootRect.left;
-            const right = rect.right - rootRect.left;
-            const top = rect.top - rootRect.top;
-            const bottom = rect.bottom - rootRect.top;
+            const left = (rect.left - rootRect.left) * scaleX;
+            const right = (rect.right - rootRect.left) * scaleX;
+            const top = (rect.top - rootRect.top) * scaleY;
+            const bottom = (rect.bottom - rootRect.top) * scaleY;
             const centerX = (left + right) / 2;
             const centerY = (top + bottom) / 2;
             const range = swimCenterRanges[id];
