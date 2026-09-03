@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10221",
+  "totalContributions": "10224",
   "personas": [
     {
       "id": "764406126012079806",
@@ -736,7 +736,7 @@
     {
       "id": "874478219099748325",
       "type": "SLOTH",
-      "level": "177",
+      "level": "178",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -876,7 +876,7 @@
     {
       "id": "878266697381946909",
       "type": "GOBLIN",
-      "level": "161",
+      "level": "162",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.58%",
@@ -986,7 +986,7 @@
     {
       "id": "879327279266773148",
       "type": "SLOTH",
-      "level": "170",
+      "level": "171",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
