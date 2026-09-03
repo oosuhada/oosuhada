@@ -23,6 +23,54 @@ const pollAttempts = Math.max(1, Number.parseInt(process.env.GITANIMALS_POLL_ATT
 const pollIntervalMs = Math.max(0, Number.parseInt(process.env.GITANIMALS_POLL_INTERVAL_MS ?? "2000", 10));
 const githubContributionToleranceRatio = 0.05;
 const githubContributionToleranceFloor = 250;
+// GitAnimals lost its historical contribution rows on 2026-09-03, changing 10231 -> 7219 while
+// GitHub's cumulative calendar remained ~10.1k. Keep that incident as a temporary anchor so new
+// upstream increments can still advance the displayed lifetime total while the historical rows are
+// missing. Once GitAnimals returns a cumulative value again, the normal cross-check takes over.
+const contributionRecoveryAnchor = Object.freeze({
+  upstreamTotal: 7219,
+  confirmedTotal: 10231,
+});
+
+const commitDigitGlyphs = Object.freeze({
+  0: "M2.25 0.375H8.75V2H10.375V13.375H8.75V15H2.25V13.375H0.625V2H2.25V0.375ZM5.5 8.5V11.75H3.875V13.375H7.125V6.875H5.5V3.625H7.125V2H3.875V8.5H5.5Z",
+  1: "M5.5 0.375H8.75V15H5.5V5.25H0.625V3.625H3.875V2H5.5V0.375Z",
+  2: "M5.5 6.875H7.125V2H3.875V5.25H0.625V2H2.25V0.375H8.75V2H10.375V6.875H8.75V8.5H7.125V10.125H5.5V11.75H3.875V13.375H10.375V15H0.625V11.75H2.25V10.125H3.875V8.5H5.5V6.875Z",
+  3: "M3.875 13.375H7.125V8.5H3.875V6.875H7.125V2H3.875V5.25H0.625V2H2.25V0.375H8.75V2H10.375V6.875H8.75V8.5H10.375V13.375H8.75V15H2.25V13.375H0.625V10.125H3.875V13.375Z",
+  4: "M2.25 0.375H5.5V8.5H3.875V10.125H7.125V3.625H10.375V10.125H12V11.75H10.375V15H7.125V11.75H0.625V8.5H2.25V0.375Z",
+  5: "M5.5 11.75H7.125V8.5H0.625V0.375H10.375V2H3.875V6.875H8.75V8.5H10.375V11.75H8.75V13.375H7.125V15H0.625V13.375H5.5V11.75Z",
+  6: "M2.25 3.625H3.875V0.375H8.75V2H7.125V3.625H5.5V5.25H8.75V6.875H10.375V13.375H8.75V15H2.25V13.375H0.625V5.25H2.25V3.625ZM7.125 13.375V6.875H3.875V13.375H7.125Z",
+  7: "M2.25 10.125H3.875V6.875H5.5V3.625H7.125V2H0.625V0.375H10.375V3.625H8.75V6.875H7.125V10.125H5.5V15H2.25V10.125Z",
+  8: "M2.25 6.875H0.625V2H2.25V0.375H8.75V2H10.375V6.875H8.75V8.5H10.375V13.375H8.75V15H2.25V13.375H0.625V8.5H2.25V6.875ZM3.875 2V5.25H5.5V6.875H7.125V2H3.875ZM5.5 10.125V8.5H3.875V13.375H7.125V10.125H5.5Z",
+  9: "M3.875 11.75H5.5V10.125H2.25V8.5H0.625V2H2.25V0.375H8.75V2H10.375V10.125H8.75V11.75H7.125V15H2.25V13.375H3.875V11.75ZM7.125 8.5V2H3.875V8.5H7.125Z",
+});
+const commitDigitAdvance = (digit) => (digit === "1" ? 13 : 15);
+
+const rewriteCommitTotal = (svg, total) => {
+  const commitStart = svg.indexOf('<g id="commit"');
+  const digitsMarker = '<g transform="translate(0, 2.5)">\n';
+  const digitsMarkerStart = svg.indexOf(digitsMarker, commitStart);
+  if (commitStart === -1 || digitsMarkerStart === -1) {
+    throw new Error("GitAnimals commit total artwork is missing.");
+  }
+  const digitsStart = digitsMarkerStart + digitsMarker.length;
+  const digitsEnd = svg.indexOf("\n</g>\n</g>", digitsStart);
+  if (digitsEnd === -1) {
+    throw new Error("GitAnimals commit total digit group is malformed.");
+  }
+
+  let x = 260;
+  const digitMarkup = String(total).split("").map((digit, index) => {
+    const glyph = commitDigitGlyphs[digit];
+    if (!glyph) throw new Error(`Unsupported GitAnimals contribution digit: ${digit}`);
+    const markup = `${index === 0 ? "  " : ""}<g id="commit${digit}" transform="translate(${x.toFixed(1)}, 0)">`
+      + `<path d="${glyph}" fill="black"/>\n</g>`;
+    x += commitDigitAdvance(digit);
+    return markup;
+  }).join("");
+
+  return `${svg.slice(0, digitsStart)}${digitMarkup}${svg.slice(digitsEnd)}`;
+};
 
 const wait = (milliseconds) => new Promise((resolve) => {
   setTimeout(resolve, milliseconds);
@@ -144,12 +192,19 @@ for (let attempt = 1; attempt <= pollAttempts; attempt += 1) {
       const githubContext = githubContributionTotal === undefined
         ? "GitHub cross-check unavailable"
         : `GitHub cumulative calendar reports ${githubContributionTotal}`;
+      const anchoredTotal = githubContributionTotal !== undefined
+        && fetchedGithubDistance > tolerance
+        && fetchedContributionTotal >= contributionRecoveryAnchor.upstreamTotal
+        ? contributionRecoveryAnchor.confirmedTotal
+          + (fetchedContributionTotal - contributionRecoveryAnchor.upstreamTotal)
+        : previousContributionTotal;
+      const protectedTotal = Math.max(previousContributionTotal, anchoredTotal);
       console.log(
         `GitAnimals returned an unconfirmed lower contribution total (${fetchedContributionTotal} < `
-        + `${previousContributionTotal}; ${githubContext}); preserving the last confirmed total and retrying.`,
+        + `${previousContributionTotal}; ${githubContext}); protecting cumulative total ${protectedTotal}.`,
       );
       if (attempt < pollAttempts) continue;
-      stateData.totalContributions = String(previousContributionTotal);
+      stateData.totalContributions = String(protectedTotal);
     }
   }
   state = `${JSON.stringify(stateData, null, 2)}\n`;
@@ -184,6 +239,10 @@ if (latestStateWasStale && existingAssets[0]) {
     console.log("Preserved the last confirmed contribution artwork while GitAnimals is stale.");
   }
 }
+
+// Keep the SVG number synchronized with the protected state even while the upstream farm still
+// renders its reset total. The glyphs are the same pixel paths GitAnimals uses for commit digits.
+source = rewriteCommitTotal(source, stateData.totalContributions);
 
 const movingPersonaIds = new Set(
   [...source.matchAll(/@keyframes move-([0-9]+)/g)].map((match) => match[1]),
