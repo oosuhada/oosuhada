@@ -21,7 +21,7 @@ const assetsUseCurrentLayout = existingAssets.every((asset) =>
 );
 const pollAttempts = Math.max(1, Number.parseInt(process.env.GITANIMALS_POLL_ATTEMPTS ?? "4", 10));
 const pollIntervalMs = Math.max(0, Number.parseInt(process.env.GITANIMALS_POLL_INTERVAL_MS ?? "2000", 10));
-const githubContributionToleranceRatio = 0.1;
+const githubContributionToleranceRatio = 0.05;
 const githubContributionToleranceFloor = 250;
 
 const wait = (milliseconds) => new Promise((resolve) => {
@@ -51,22 +51,44 @@ const fetchState = async () => {
 let githubContributionTotalPromise;
 const fetchGithubContributionTotal = async () => {
   githubContributionTotalPromise ??= (async () => {
-    const year = new Date().getUTCFullYear();
-    const response = await fetch(
-      `https://github.com/users/${username}/contributions?from=${year}-01-01&to=${year}-12-31`,
-      { headers: { "User-Agent": "oosuhada-profile-gitanimals-refresh" } },
-    );
-    if (!response.ok) {
-      throw new Error(`Unable to load GitHub contribution calendar: ${response.status}`);
+    const profileResponse = await fetch(`https://api.github.com/users/${username}`, {
+      headers: { "User-Agent": "oosuhada-profile-gitanimals-refresh" },
+    });
+    if (!profileResponse.ok) {
+      throw new Error(`Unable to load GitHub profile metadata: ${profileResponse.status}`);
+    }
+    const profile = await profileResponse.json();
+    const createdYear = new Date(profile.created_at).getUTCFullYear();
+    const currentYear = new Date().getUTCFullYear();
+    if (!Number.isInteger(createdYear) || createdYear > currentYear) {
+      throw new Error(`GitHub returned an invalid account creation date: ${profile.created_at}`);
     }
 
-    const calendar = await response.text();
-    const dailyCounts = [...calendar.matchAll(/>(No|[\d,]+) contributions? on [^<]+<\/tool-tip>/g)]
-      .map((match) => (match[1] === "No" ? 0 : Number(match[1].replaceAll(",", ""))));
-    if (dailyCounts.length === 0) {
-      throw new Error("GitHub contribution calendar did not contain daily contribution counts.");
-    }
-    return dailyCounts.reduce((total, count) => total + count, 0);
+    const years = Array.from({ length: currentYear - createdYear + 1 }, (_, index) => createdYear + index);
+    const yearlyTotals = await Promise.all(years.map(async (year) => {
+      const response = await fetch(
+        `https://github.com/users/${username}/contributions?from=${year}-01-01&to=${year}-12-31`,
+        { headers: { "User-Agent": "oosuhada-profile-gitanimals-refresh" } },
+      );
+      if (!response.ok) {
+        throw new Error(`Unable to load GitHub contribution calendar for ${year}: ${response.status}`);
+      }
+
+      const calendar = await response.text();
+      const dailyCounts = [...calendar.matchAll(/>(No|[\d,]+) contributions? on [^<]+<\/tool-tip>/g)]
+        .map((match) => (match[1] === "No" ? 0 : Number(match[1].replaceAll(",", ""))));
+      if (dailyCounts.length === 0) {
+        throw new Error(`GitHub contribution calendar for ${year} did not contain daily counts.`);
+      }
+      return dailyCounts.reduce((total, count) => total + count, 0);
+    }));
+
+    const total = yearlyTotals.reduce((sum, count) => sum + count, 0);
+    console.log(
+      `GitHub cumulative contribution cross-check (${createdYear}-${currentYear}): ${total} `
+      + `[${yearlyTotals.map((count, index) => `${years[index]}=${count}`).join(", ")}].`,
+    );
+    return total;
   })();
   return githubContributionTotalPromise;
 };
@@ -99,19 +121,29 @@ for (let attempt = 1; attempt <= pollAttempts; attempt += 1) {
         githubContributionToleranceFloor,
         Math.round(githubContributionTotal * githubContributionToleranceRatio),
       );
+    const fetchedGithubDistance = githubContributionTotal === undefined
+      ? Number.POSITIVE_INFINITY
+      : Math.abs(fetchedContributionTotal - githubContributionTotal);
+    const previousGithubDistance = githubContributionTotal === undefined
+      ? Number.POSITIVE_INFINITY
+      : Math.abs(previousContributionTotal - githubContributionTotal);
+    // A total is cumulative and should normally be monotonic. Only accept a decrease when GitHub's
+    // all-years calendar says the old value itself is no longer credible and the new value is.
+    // This prevents a current-year-only GitAnimals reset from replacing a valid lifetime total.
     const agreesWithGithub = githubContributionTotal !== undefined
-      && Math.abs(fetchedContributionTotal - githubContributionTotal) <= tolerance;
+      && fetchedGithubDistance <= tolerance
+      && previousGithubDistance > tolerance;
 
     if (agreesWithGithub) {
       latestStateWasStale = false;
       console.log(
         `Accepted a lower GitAnimals contribution total (${fetchedContributionTotal} < `
-        + `${previousContributionTotal}) because GitHub currently reports ${githubContributionTotal}.`,
+        + `${previousContributionTotal}) because GitHub's cumulative calendar reports ${githubContributionTotal}.`,
       );
     } else {
       const githubContext = githubContributionTotal === undefined
         ? "GitHub cross-check unavailable"
-        : `GitHub reports ${githubContributionTotal}`;
+        : `GitHub cumulative calendar reports ${githubContributionTotal}`;
       console.log(
         `GitAnimals returned an unconfirmed lower contribution total (${fetchedContributionTotal} < `
         + `${previousContributionTotal}; ${githubContext}); preserving the last confirmed total and retrying.`,
