@@ -46,6 +46,24 @@ const commitDigitGlyphs = Object.freeze({
 });
 const commitDigitAdvance = (digit) => (digit === "1" ? 13 : 15);
 
+const balancedGroupBounds = (svg, start) => {
+  const tags = svg.slice(start).matchAll(/<\/?g\b[^>]*>/g);
+  let depth = 0;
+  for (const match of tags) {
+    const tag = match[0];
+    if (tag.startsWith("</")) {
+      depth -= 1;
+      if (depth === 0) {
+        return { start, end: start + match.index + tag.length };
+      }
+      if (depth < 0) return null;
+    } else if (!tag.endsWith("/>")) {
+      depth += 1;
+    }
+  }
+  return null;
+};
+
 const rewriteCommitTotal = (svg, total) => {
   const commitStart = svg.indexOf('<g id="commit"');
   const digitsMarker = '<g transform="translate(0, 2.5)">\n';
@@ -228,8 +246,7 @@ if (!source.startsWith("<svg") || !source.includes('<g id="username"')) {
 if (latestStateWasStale && existingAssets[0]) {
   const commitArtworkBounds = (svg) => {
     const start = svg.indexOf('<g id="commit"');
-    const end = svg.indexOf('<rect x="0.5"', start);
-    return start >= 0 && end > start ? { start, end } : null;
+    return start >= 0 ? balancedGroupBounds(svg, start) : null;
   };
   const previousBounds = commitArtworkBounds(existingAssets[0]);
   const sourceBounds = commitArtworkBounds(source);
