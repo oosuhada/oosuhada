@@ -20,10 +20,13 @@ const heartSnapshotSecond = firstVisibleHeart
 // the water edge without actually entering it.
 const snapshots = [...new Set([0, heartSnapshotSecond, 22, 30, 32, 60, 90])].sort((left, right) => left - right);
 const visiblePersonas = state.personas.filter((persona) => persona.visible);
+const beeQuokkaIds = new Set(["839316493969798500"]);
+const beeIds = new Set(visiblePersonas.filter((persona) => beeQuokkaIds.has(String(persona.id))).map((persona) => String(persona.id)));
 const hasMountedPair = visiblePersonas.some((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES")
   && visiblePersonas.some((persona) => persona.type === "CAPYBARA_SWIM");
 const expectedInteractionCount = visiblePersonas.length;
 const expectedActionCount = visiblePersonas.length - (hasMountedPair ? 1 : 0);
+const expectedShadowCount = expectedActionCount - beeIds.size;
 const swimZoneIds = new Set(
   visiblePersonas
     .filter((persona) => persona.type.includes("_SWIM") || persona.type.includes("_TUBE")
@@ -35,7 +38,7 @@ if (hasMountedPair) {
   if (rider) swimZoneIds.add(String(rider.id));
 }
 const landZoneIds = new Set(
-  visiblePersonas.map((persona) => String(persona.id)).filter((id) => !swimZoneIds.has(id)),
+  visiblePersonas.map((persona) => String(persona.id)).filter((id) => !swimZoneIds.has(id) && !beeIds.has(id)),
 );
 const closeShadowTypes = new Set(["RABBIT_TUBE", "HAMSTER_TUBE", "LITTLE_CHICK_TUBE", "DESSERT_FOX"]);
 const closeShadowIds = new Set(
@@ -271,10 +274,15 @@ try {
               + `expected ${levelContract.min}-${levelContract.max}px.`);
         }
       });
+      beeIds.forEach((id) => {
+        const bee = geometry.characters.find((character) => character.id === id);
+        assert(bee?.visibleArtwork && bee.visibleArtwork.width > 0 && bee.visibleArtwork.height > 0,
+          `${theme} ${seconds}s lost the flying bee sprite.`);
+      });
       assert(geometry.actions === expectedActionCount, `${theme} ${seconds}s lost character action wrappers.`);
       assert(geometry.interactions === expectedInteractionCount,
         `${theme} ${seconds}s lost proximity interaction wrappers.`);
-      assert(geometry.shadows.length === expectedActionCount, `${theme} ${seconds}s lost grounding shadows.`);
+      assert(geometry.shadows.length === expectedShadowCount, `${theme} ${seconds}s lost grounding shadows.`);
       assert(simpleTubeWaterIds.size === geometry.simpleTubeWater.length
         && [...simpleTubeWaterIds].every((id) => geometry.simpleTubeWater.includes(id)),
       `${theme} ${seconds}s lost a simplified TUBE water ripple.`);

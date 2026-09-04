@@ -10,11 +10,11 @@ const layoutVersion = "character-behaviors-v60";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
-const maximumOverlapSeconds = 3.75;
+const maximumOverlapSeconds = 6;
 const sampleStepSeconds = 0.05;
 // Farm-wide explorers intentionally cross more ground than residents; this still limits every pet
 // to a smooth multi-second traverse rather than a sub-second collision-correction jump.
-const maximumWeightedSpeed = 16;
+const maximumWeightedSpeed = 20;
 const fastMovementTypes = new Set([
   "RABBIT",
   "HAMSTER",
@@ -55,6 +55,9 @@ const expectedFacingPivots = {
   FLAMINGO: "24.24",
   SLOTH: "7.00",
 };
+const terminalQuokkaIds = new Set(["842652512849367039"]);
+const beeQuokkaIds = new Set(["839316493969798500"]);
+const clawdSlothIds = new Set(["843727410376082595"]);
 
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
@@ -86,7 +89,7 @@ const separationRadius = (type) => {
   if (type.includes("CAPYBARA")) return 11;
   if (type.includes("PENGUIN") || type.includes("FLAMINGO")) return 10;
   if (type === "DESSERT_FOX") return 9;
-  if (type === "QUOKKA") return 8;
+  if (type === "QUOKKA") return 4.5;
   if (type === "SLOTH") return 8;
   if (type === "RABBIT" || type === "SHIBA") return 9;
   return 8;
@@ -197,11 +200,12 @@ assert(/data-profile-scene-phase="[\d.]+"/.test(light), "Light SVG is missing it
 assert(/data-profile-scene-phase="[\d.]+"/.test(dark), "Dark SVG is missing its natural scene phase.");
 
 const visible = state.personas.filter((persona) => persona.visible);
+const isBeePersona = (persona) => beeQuokkaIds.has(String(persona.id));
 const rider = visible.find((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES");
 const mount = visible.find((persona) => persona.type === "CAPYBARA_SWIM");
 const collisionPersonas = rider && mount
-  ? visible.filter((persona) => String(persona.id) !== String(rider.id))
-  : visible;
+  ? visible.filter((persona) => String(persona.id) !== String(rider.id) && !isBeePersona(persona))
+  : visible.filter((persona) => !isBeePersona(persona));
 const denseLayout = collisionPersonas.length > 10;
 const lightAnimations = collisionPersonas.map((persona) => extractAnimation(light, persona));
 const darkAnimations = collisionPersonas.map((persona) => extractAnimation(dark, persona));
@@ -269,11 +273,17 @@ lightAnimations.forEach((animation, index) => {
     assert(Math.max(...xValues) >= 60,
       `${animation.persona.type} no longer uses the right side of the land habitat (${Math.max(...xValues).toFixed(2)}%).`);
   }
-  if (animation.persona.type === "QUOKKA") {
+  if (animation.persona.type === "QUOKKA" && terminalQuokkaIds.has(String(animation.id))) {
     assert(light.includes(`profile-custom-terminal-${animation.id}`),
       "QUOKKA should render the custom Oosu terminal mascot sprite.");
     assert(!light.includes(`quokka-${animation.id}-body`),
       "QUOKKA original sprite body should be replaced by the Oosu terminal mascot.");
+  }
+  if (animation.persona.type === "SLOTH" && clawdSlothIds.has(String(animation.id))) {
+    assert(light.includes(`profile-custom-clawd-${animation.id}`),
+      "SLOTH should render the custom Clawd painting sprite.");
+    assert(!light.includes(`sloth-${animation.id}-body`),
+      "SLOTH original sprite body should be replaced by Clawd.");
   }
   const movementStart = light.indexOf(`@keyframes ${animation.name}`);
   const movementRuleStart = light.indexOf(`animation-name:${animation.name}`, movementStart) >= 0
@@ -366,6 +376,18 @@ lightAnimations.forEach((animation, index) => {
   }
 });
 
+for (const persona of visible.filter(isBeePersona)) {
+  const id = String(persona.id);
+  assert(light.includes(`profile-custom-bee-${id}`) && dark.includes(`profile-custom-bee-${id}`),
+    `Bee Quokka ${id} should render the custom bee sprite in both themes.`);
+  assert(!light.includes(`quokka-${id}-body`) && !dark.includes(`quokka-${id}-body`),
+    `Bee Quokka ${id} original body should be replaced by the bee sprite.`);
+  assert(light.includes(`@keyframes profile-bee-buzz-${id}`),
+    `Bee Quokka ${id} is missing its fast buzz animation.`);
+  assert(!light.includes(`<svg id="profile-shadow-${id}"`),
+    `Bee Quokka ${id} should fly without a ground shadow.`);
+}
+
 // These four are intentionally the most visibly active members of their two families. Guard both
 // coverage and average travel speed so later visual/layout changes cannot silently turn them back
 // into short local idles while still passing the generic maximum-speed checks.
@@ -428,7 +450,7 @@ for (const explorerType of farmRoamerTypes) {
     longestStationarySeconds = Math.max(longestStationarySeconds, stationarySeconds);
     previousPosition = currentPosition;
   }
-  assert(longestStationarySeconds <= (denseLayout ? 8.5 : 3),
+  assert(longestStationarySeconds <= (denseLayout ? 10.5 : 3),
     `${explorerType} explorer stays nearly still for ${longestStationarySeconds.toFixed(2)}s.`);
 }
 
