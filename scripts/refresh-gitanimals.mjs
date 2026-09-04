@@ -12,7 +12,7 @@ const oosuTerminalMascotPath = path.join(outputDirectory, "custom", "oosu-termin
 const clawdPaintingPath = path.join(outputDirectory, "custom", "clawd-painting.svg");
 const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v64";
+const layoutVersion = "character-behaviors-v65";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -800,7 +800,7 @@ const distributeCharacterRoaming = (svg) => {
   }
 
   const routeDuration = 120;
-  const beeRouteDuration = 40;
+  const beeRouteDuration = 60;
   const routeSampleSeconds = 0.5;
   // Begin the gentle turn before sprites visibly overlap. The extra runway lets the temporal
   // smoother separate them without a sudden correction at the collision boundary.
@@ -947,10 +947,14 @@ const distributeCharacterRoaming = (svg) => {
     { x: 86, y: 66 }, { x: 54, y: 72 }, { x: 24, y: 65 }, { x: 10, y: 45 },
     { x: 30, y: 29 }, { x: 66, y: 32 }, { x: 88, y: 46 },
   ], "GOOSE");
-  const beeFarmWaypoints = swimHamsterWaypoints.map(({ x, y }) => ({
-    x: 8 + ((x - 9) / 31) * 82,
-    y: 28 + ((y - 31) / 38) * 48,
-  }));
+  const beeFarmPosition = (progress) => {
+    const angle = 2 * Math.PI * progress;
+    // A single smooth full-farm orbit. Keep the bee lively without local zigzag/buzzing jitter.
+    return {
+      x: 50 + Math.cos(angle) * 42,
+      y: 52 + Math.sin(angle) * 25.2,
+    };
+  };
   const catExplorerPhase = Number.parseFloat(process.env.GITANIMALS_CAT_PHASE ?? "0.24");
   const shibaExplorerPhase = Number.parseFloat(process.env.GITANIMALS_SHIBA_PHASE ?? "0.04");
   const residentWideRoutePhase = (type) => ({
@@ -982,7 +986,7 @@ const distributeCharacterRoaming = (svg) => {
 
   const preferredPosition = (unit, progress) => {
     if (beeQuokkaIds.has(String(unit.persona.id))) {
-      return interpolateClosedRoute(beeFarmWaypoints, 0.63 + progress * (denseLayout ? 7 : 9));
+      return beeFarmPosition(0.63 + progress * 2);
     }
     if (terminalQuokkaIds.has(String(unit.persona.id))) {
       return interpolateClosedRoute([
@@ -1463,11 +1467,11 @@ const distributeCharacterRoaming = (svg) => {
     GOOSE: { cx: 8, cy: 17, rx: 7 },
     GALCHI_CAT: { cx: 5, cy: 14, rx: 5 },
     QUOKKA: terminalQuokkaIds.has(String(persona.id))
-      ? { cx: 7, cy: 8.2, rx: 4.1, actionCy: 8.2 }
+      ? { cx: 5.2, cy: 6.8, rx: 4.1, actionCy: 6.8 }
       : { cx: 7, cy: 10.8, rx: 4.6, actionCy: 10.8 },
     SHIBA: { cx: 5, cy: 12, rx: 5 },
     SLOTH: clawdSlothIds.has(String(persona.id))
-      ? { cx: 7, cy: 8.4, rx: 4.8, actionCy: 8.4 }
+      ? { cx: 4.7, cy: 8.4, rx: 4.8, actionCy: 8.4 }
       : { cx: 7, cy: 15.5, rx: 6, actionCy: 15.5 },
     FLAMINGO: { cx: 8, cy: 24, rx: 6 },
   })[persona.type] ?? ({
@@ -1601,13 +1605,6 @@ const distributeCharacterRoaming = (svg) => {
       } else if (isCustomFlyingBee) {
         replaceGroupContents(sizeWrapperId, beeMascotSprite(id));
         frontRootIds.push(rootId);
-        coordinatedRouteStyles += `@keyframes profile-bee-buzz-${id}{`
-          + "0%,100%{transform:translate(0,0) rotate(-2deg);}"
-          + "25%{transform:translate(.12px,-.16px) rotate(2.5deg);}"
-          + "50%{transform:translate(-.10px,.10px) rotate(-2deg);}"
-          + "75%{transform:translate(.10px,-.12px) rotate(2deg);}}"
-          + `#profile-custom-bee-${id}{animation:profile-bee-buzz-${id} .72s linear infinite;`
-          + "transform-box:fill-box;transform-origin:center;}";
       } else if (isCustomPaintingSloth) {
         replaceGroupContents(sizeWrapperId, clawdPaintingSprite(id));
       }

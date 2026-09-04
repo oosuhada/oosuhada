@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v64";
+const layoutVersion = "character-behaviors-v65";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -386,14 +386,8 @@ for (const persona of visible.filter(isBeePersona)) {
     `Bee Quokka ${id} should render the custom bee sprite in both themes.`);
   assert(!light.includes(`quokka-${id}-body`) && !dark.includes(`quokka-${id}-body`),
     `Bee Quokka ${id} original body should be replaced by the bee sprite.`);
-  assert(light.includes(`@keyframes profile-bee-buzz-${id}`),
-    `Bee Quokka ${id} is missing its fast buzz animation.`);
-  const buzzRule = light.slice(
-    light.indexOf(`@keyframes profile-bee-buzz-${id}`),
-    light.indexOf(`#profile-custom-bee-${id}`),
-  );
-  assert(!buzzRule.includes("steps("),
-    `Bee Quokka ${id} buzz animation must stay smooth instead of frame-stepped.`);
+  assert(!light.includes(`@keyframes profile-bee-buzz-${id}`),
+    `Bee Quokka ${id} should not keep a local buzz/jitter animation.`);
   assert(!light.includes(`<svg id="profile-shadow-${id}"`),
     `Bee Quokka ${id} should fly without a ground shadow.`);
   const lightBee = extractAnimation(light, persona);
@@ -422,11 +416,11 @@ for (const persona of visible.filter(isBeePersona)) {
     previous = current;
   }
   const averageSpeed = weightedDistance / lightBee.duration;
-  assert(lightBee.duration >= 36 && lightBee.duration <= 44 && darkBee.duration >= 36 && darkBee.duration <= 44,
-    `Bee Quokka ${id} should loop in about 40s, roughly 3x faster than the hamster-tube base route.`);
-  assert(averageSpeed >= 12,
+  assert(lightBee.duration >= 56 && lightBee.duration <= 64 && darkBee.duration >= 56 && darkBee.duration <= 64,
+    `Bee Quokka ${id} should loop in about 60s, roughly 2x faster than the base route.`);
+  assert(averageSpeed >= 8.5,
     `Bee Quokka ${id} should keep a fast broad full-farm flight; average ${averageSpeed.toFixed(2)} units/s.`);
-  assert(maximumSpeed <= 180,
+  assert(maximumSpeed <= 90,
     `Bee Quokka ${id} moves too abruptly (${maximumSpeed.toFixed(2)} units/s).`);
 }
 
