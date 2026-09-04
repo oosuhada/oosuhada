@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v66";
+const layoutVersion = "character-behaviors-v67";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -46,6 +46,7 @@ const expectedFacingPivots = {
   PENGUIN_SUNGLASSES: "20.75",
   CAPYBARA_CARROT: "30.76",
   CAPYBARA_SWIM: "17.40",
+  LITTLE_CHICK: "16.00",
   LITTLE_CHICK_SUNGLASSES: "14.36",
   GOOSE: "23.59",
   GALCHI_CAT: "11.75",
@@ -57,6 +58,9 @@ const expectedFacingPivots = {
 };
 const terminalQuokkaIds = new Set(["842652512849367039"]);
 const beeQuokkaIds = new Set(["839316493969798500"]);
+const venomothQuokkaIds = new Set(["839316523686430921"]);
+const frogChickIds = new Set(["835719307358968503"]);
+const flyingQuokkaIds = new Set([...beeQuokkaIds, ...venomothQuokkaIds]);
 const clawdSlothIds = new Set(["843727410376082595"]);
 
 const assert = (condition, message) => {
@@ -135,6 +139,7 @@ const characterScale = (type) => ({
 
 const isSwimZoneType = (type) => type.includes("_SWIM") || type.includes("_TUBE")
   || type === "GOOSE" || type === "FLAMINGO";
+const isSwimZonePersona = (persona) => frogChickIds.has(String(persona.id)) || isSwimZoneType(persona.type);
 const swimZoneBounds = { left: 8, right: 43 };
 const swimZoneBoundsFor = (type) => ({
   CAPYBARA_SWIM: { left: 8.5, right: 28 },
@@ -216,6 +221,9 @@ assert(/data-profile-scene-phase="[\d.]+"/.test(dark), "Dark SVG is missing its 
 
 const visible = state.personas.filter((persona) => persona.visible);
 const isBeePersona = (persona) => beeQuokkaIds.has(String(persona.id));
+const isVenomothPersona = (persona) => venomothQuokkaIds.has(String(persona.id));
+const isFlyingPersona = (persona) => flyingQuokkaIds.has(String(persona.id));
+const isOverlayPersona = (persona) => isFlyingPersona(persona) || frogChickIds.has(String(persona.id));
 const stripedTubePrefixes = {
   LITTLE_CHICK_TUBE: "little-chick",
   RABBIT_TUBE: "rabbit",
@@ -236,8 +244,8 @@ visible
 const rider = visible.find((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES");
 const mount = visible.find((persona) => persona.type === "CAPYBARA_SWIM");
 const collisionPersonas = rider && mount
-  ? visible.filter((persona) => String(persona.id) !== String(rider.id) && !isBeePersona(persona))
-  : visible.filter((persona) => !isBeePersona(persona));
+  ? visible.filter((persona) => String(persona.id) !== String(rider.id) && !isOverlayPersona(persona))
+  : visible.filter((persona) => !isOverlayPersona(persona));
 const denseLayout = collisionPersonas.length > 10;
 const lightAnimations = collisionPersonas.map((persona) => extractAnimation(light, persona));
 const darkAnimations = collisionPersonas.map((persona) => extractAnimation(dark, persona));
@@ -293,14 +301,14 @@ lightAnimations.forEach((animation, index) => {
     JSON.stringify(animation.points) === JSON.stringify(darkAnimation.points),
     `Light and dark routes differ for ${animation.persona.type} (${animation.id}).`,
   );
-  const zoneBounds = isSwimZoneType(animation.persona.type)
+  const zoneBounds = isSwimZonePersona(animation.persona)
     ? swimZoneBoundsFor(animation.persona.type)
     : { ...landZoneBounds, left: landShorelineAnchorLeft(animation.persona.type) };
   animation.points.forEach((point) => {
     assert(point.x >= zoneBounds.left - 0.01 && point.x <= zoneBounds.right + 0.01,
-      `${animation.persona.type} leaves its ${isSwimZoneType(animation.persona.type) ? "swim" : "land"} zone at x=${point.x.toFixed(2)}.`);
+      `${animation.persona.type} leaves its ${isSwimZonePersona(animation.persona) ? "swim" : "land"} zone at x=${point.x.toFixed(2)}.`);
   });
-  if (!isSwimZoneType(animation.persona.type)) {
+  if (!isSwimZonePersona(animation.persona)) {
     const xValues = animation.points.map((point) => point.x);
     assert(Math.min(...xValues) <= landShorelineAnchorLeft(animation.persona.type) + 3.5,
       `${animation.persona.type} no longer has access to the shoreline side (${Math.min(...xValues).toFixed(2)}%).`);
@@ -469,6 +477,54 @@ for (const persona of visible.filter(isBeePersona)) {
     `Bee Quokka ${id} should keep a fast broad full-farm flight; average ${averageSpeed.toFixed(2)} units/s.`);
   assert(maximumSpeed <= 90,
     `Bee Quokka ${id} moves too abruptly (${maximumSpeed.toFixed(2)} units/s).`);
+}
+
+for (const persona of visible.filter(isVenomothPersona)) {
+  const id = String(persona.id);
+  assert(light.includes(`profile-custom-venomoth-${id}`) && dark.includes(`profile-custom-venomoth-${id}`),
+    `Venomoth Quokka ${id} should render the vectorized butterfly sprite in both themes.`);
+  assert(!light.includes(`quokka-${id}-body`) && !dark.includes(`quokka-${id}-body`),
+    `Venomoth Quokka ${id} original body should be replaced.`);
+  assert(!light.includes(`<svg id="profile-shadow-${id}"`) && !dark.includes(`<svg id="profile-shadow-${id}"`),
+    `Venomoth Quokka ${id} should fly without a ground shadow.`);
+  assert(light.includes(`#profile-facing-${id}{animation:profile-facing-route-${id} 120s steps(1,end) infinite both;transform-origin:1.50px 0px;`),
+    `Venomoth Quokka ${id} should use the 120s half-bee-speed flight cycle.`);
+  assert(light.includes(`#level-wrap-${id}{translate:-10px 2px;}`)
+    && dark.includes(`#level-wrap-${id}{translate:-10px 2px;}`),
+  `Venomoth Quokka ${id} level should clear its large wings.`);
+  const flight = extractAnimation(light, persona);
+  const darkFlight = extractAnimation(dark, persona);
+  assert(JSON.stringify(flight.points) === JSON.stringify(darkFlight.points),
+    `Venomoth Quokka ${id} light and dark flight paths differ.`);
+  const xValues = flight.points.map((point) => point.x);
+  const yValues = flight.points.map((point) => point.y);
+  assert(Math.min(...xValues) <= 8.5 && Math.max(...xValues) >= 91.5,
+    `Venomoth Quokka ${id} should sweep across water and land.`);
+  assert(Math.max(...yValues) - Math.min(...yValues) >= 50,
+    `Venomoth Quokka ${id} should use the full-height flying route.`);
+  assert(flight.duration === 120 && darkFlight.duration === 120,
+    `Venomoth Quokka ${id} must take 120s, exactly twice the bee cycle.`);
+}
+
+for (const persona of visible.filter((candidate) => frogChickIds.has(String(candidate.id)))) {
+  const id = String(persona.id);
+  assert(light.includes(`profile-custom-frog-${id}`) && dark.includes(`profile-custom-frog-${id}`),
+    `Frog Little Chick ${id} should render the isolated pixel frog in both themes.`);
+  assert(!light.includes(`little-chick-${id}-body`) && !dark.includes(`little-chick-${id}-body`),
+    `Frog Little Chick ${id} original chick body should be replaced.`);
+  assert(light.includes(`#level-wrap-${id}{translate:-3px -5px;}`)
+    && dark.includes(`#level-wrap-${id}{translate:-3px -5px;}`),
+  `Frog Little Chick ${id} level should stay above the frog.`);
+  const frog = extractAnimation(light, persona);
+  const xValues = frog.points.map((point) => point.x);
+  assert(Math.min(...xValues) >= swimZoneBounds.left - 0.01 && Math.max(...xValues) <= swimZoneBounds.right + 0.01,
+    `Frog Little Chick ${id} must remain inside the water habitat.`);
+  const shadowStart = light.indexOf(`<svg id="profile-shadow-${id}"`);
+  const shadowEnd = light.indexOf("</svg>", shadowStart);
+  const waterMarkup = light.slice(shadowStart, shadowEnd);
+  assert(shadowStart !== -1 && waterMarkup.includes('class="profile-bird-ripple"')
+    && waterMarkup.includes('class="profile-bird-wake"'),
+  `Frog Little Chick ${id} should carry a small water ripple/wake.`);
 }
 
 // These four are intentionally the most visibly active members of their two families. Guard both
@@ -718,14 +774,14 @@ for (let leftIndex = 0; leftIndex < lightAnimations.length; leftIndex += 1) {
   for (let rightIndex = leftIndex + 1; rightIndex < lightAnimations.length; rightIndex += 1) {
     const left = lightAnimations[leftIndex];
     const right = lightAnimations[rightIndex];
-    const sameZone = isSwimZoneType(left.persona.type) === isSwimZoneType(right.persona.type);
+    const sameZone = isSwimZonePersona(left.persona) === isSwimZonePersona(right.persona);
     // Cross-shore pairs cannot collide: the rendered-water containment regression below is the
     // source of truth for that boundary. Treating their movement anchors as one shared floor was
     // what recreated an unnecessary empty strip beside the shoreline.
     if (!sameZone) continue;
     const threshold = separationRadius(left.persona.type) + separationRadius(right.persona.type);
     const sameFamily = animationsShareFamily(left, right);
-    const sameFamilyMinimumDistance = threshold + (sameFamily && isSwimZoneType(left.persona.type) ? 2 : 10);
+    const sameFamilyMinimumDistance = threshold + (sameFamily && isSwimZonePersona(left.persona) ? 2 : 10);
     let pairMinimumDistance = Number.POSITIVE_INFINITY;
     const overlapSamples = [];
     for (let seconds = 0; seconds < cycleSeconds; seconds += sampleStepSeconds) {
