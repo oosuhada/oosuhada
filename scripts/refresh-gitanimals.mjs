@@ -336,7 +336,7 @@ const landShorelineAnchorLeft = (type) => ({
   HAMSTER: 49.05,
   GALCHI_CAT: 52.4,
   SHIBA: 52.5,
-  QUOKKA: 52.6,
+  QUOKKA: 51.2,
   SLOTH: 52.8,
   PENGUIN: 49.95,
   PENGUIN_SUNGLASSES: 49.95,
