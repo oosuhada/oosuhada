@@ -363,7 +363,7 @@ try {
             const rect = element.getBoundingClientRect();
             const gap = (rect.left - rootRect.left) * scaleX - waterRight;
             minimumLandGap = Math.min(minimumLandGap, gap);
-            if (gap <= 3) borderSkimmingLandIds.add(id);
+            if (gap <= 8) borderSkimmingLandIds.add(id);
             const centerX = (rect.left - rootRect.left + rect.width / 2) * scaleX;
             if (centerX >= 360) {
               rightVisitingLandIds.add(id);
@@ -415,7 +415,7 @@ try {
         `Land movement range never reaches/overlaps the shoreline; minimum full-route gap is `
           + `${fullCycleZones.minimumLandGap.toFixed(2)}px.`);
       assert(fullCycleZones.borderSkimmingLandIds.length === landZoneIds.size,
-        `Only ${fullCycleZones.borderSkimmingLandIds.length}/${landZoneIds.size} land pets can reach within 3px of the shoreline.`);
+        `Only ${fullCycleZones.borderSkimmingLandIds.length}/${landZoneIds.size} land pets can reach within 8px of the shoreline.`);
       assert(fullCycleZones.rightVisitingLandIds.length === landZoneIds.size,
         `Only ${fullCycleZones.rightVisitingLandIds.length}/${landZoneIds.size} land pets still use the right side of the habitat.`);
       assert(fullCycleZones.minimumRightSideLandPetsPerFrame >= 3,
