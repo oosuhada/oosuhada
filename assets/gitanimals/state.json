@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10480",
+  "totalContributions": "10485",
   "personas": [
     {
       "id": "764406126012079806",
@@ -486,7 +486,7 @@
     {
       "id": "844776695062465051",
       "type": "GOOSE_SWIFT",
-      "level": "8",
+      "level": "10",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -676,7 +676,7 @@
     {
       "id": "865207314070736797",
       "type": "GOOSE",
-      "level": "149",
+      "level": "150",
       "visible": false,
       "appVisible": false,
       "dropRate": "9%",
@@ -836,7 +836,7 @@
     {
       "id": "878088240865850820",
       "type": "PENGUIN",
-      "level": "161",
+      "level": "162",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
@@ -916,7 +916,7 @@
     {
       "id": "878480684983893329",
       "type": "FLAMINGO",
-      "level": "171",
+      "level": "172",
       "visible": true,
       "appVisible": false,
       "dropRate": "0.48%",

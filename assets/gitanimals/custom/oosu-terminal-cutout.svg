@@ -11,7 +11,7 @@
     </linearGradient>
   </defs>
 
-  <ellipse cx="20" cy="45" rx="12" ry="2.2" fill="#050A13" opacity=".34"/>
+  <ellipse cx="20" cy="45" rx="12" ry="2.2" fill="#050A13" opacity="0"/>
 
   <!-- Rounded cloud silhouette from the provided terminal mascot image. -->
   <path d="M12 9H10V11H7V14H5V19H3V25H5V30H8V33H32V30H35V25H37V18H35V13H32V10H29V8H24V6H16V8H12V9Z" fill="#0C4A6E" opacity=".32"/>
