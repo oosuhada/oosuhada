@@ -12,7 +12,7 @@ const oosuTerminalMascotPath = path.join(outputDirectory, "custom", "oosu-termin
 const clawdPaintingPath = path.join(outputDirectory, "custom", "clawd-painting.svg");
 const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v60";
+const layoutVersion = "character-behaviors-v61";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -738,7 +738,7 @@ const distributeCharacterRoaming = (svg) => {
     }
     return clawdPaintingSource.replace(
       /<svg\b/,
-      `<svg id="profile-custom-clawd-${personaId}" class="profile-custom-clawd" x="-15" y="-28" width="44" height="44"`,
+      `<svg id="profile-custom-clawd-${personaId}" class="profile-custom-clawd" x="-24" y="-37" width="62" height="62"`,
     );
   };
 
@@ -749,7 +749,7 @@ const distributeCharacterRoaming = (svg) => {
     return beeMascotSource
       .replace(/<\?xml[^>]*>\s*/i, "")
       .replace(/<!DOCTYPE[^>]*>\s*/i, "")
-      .replace(/<svg\b/, `<svg id="profile-custom-bee-${personaId}" class="profile-custom-bee" x="-9" y="-9" width="25" height="25"`);
+      .replace(/<svg\b/, `<svg id="profile-custom-bee-${personaId}" class="profile-custom-bee" x="-10" y="-10" width="23" height="23"`);
   };
 
   let riderActionStyles = "";
@@ -977,10 +977,13 @@ const distributeCharacterRoaming = (svg) => {
 
   const preferredPosition = (unit, progress) => {
     if (beeQuokkaIds.has(String(unit.persona.id))) {
-      const loop = 2 * Math.PI * (4 * progress + 0.12);
+      // Keep the bee fast without looking like it teleports: one continuous Lissajous flight path
+      // with a closed seam, sampled into the same smooth route system as the other pets. The bee is
+      // collision/zone exempt, so no resolver force can shove it into sudden corrective jumps.
+      const loop = 2 * Math.PI * (7 * progress + 0.12);
       return {
-        x: 50 + 46 * Math.sin(loop),
-        y: 50 + 31 * Math.sin(2 * loop + 0.45),
+        x: 50 + 43 * Math.sin(loop),
+        y: 49 + 29 * Math.sin(2 * loop + 0.45),
       };
     }
     if (terminalQuokkaIds.has(String(unit.persona.id))) {
@@ -1152,6 +1155,9 @@ const distributeCharacterRoaming = (svg) => {
     });
 
     periodicSamples = periodicSamples.map((sample, sampleIndex) => sample.map((position, unitIndex) => {
+      if (isBeeUnit(unitIndex)) {
+        return { ...preferredSamples[sampleIndex][unitIndex] };
+      }
       const previous = periodicSamples[(sampleIndex - 1 + routeSampleCount) % routeSampleCount][unitIndex];
       const next = periodicSamples[(sampleIndex + 1) % routeSampleCount][unitIndex];
       const preferred = preferredSamples[sampleIndex][unitIndex];
@@ -1178,6 +1184,7 @@ const distributeCharacterRoaming = (svg) => {
     let score = 0;
     for (let leftIndex = 0; leftIndex < sample.length; leftIndex += 1) {
       for (let rightIndex = leftIndex + 1; rightIndex < sample.length; rightIndex += 1) {
+        if (isBeeUnit(leftIndex) || isBeeUnit(rightIndex)) continue;
         const left = sample[leftIndex];
         const right = sample[rightIndex];
         const horizontalGap = Math.abs(left.x - right.x);
@@ -1188,7 +1195,8 @@ const distributeCharacterRoaming = (svg) => {
         if (horizontalGap < 2) score += 1.5;
       }
     }
-    sample.forEach((position) => {
+    sample.forEach((position, unitIndex) => {
+      if (isBeeUnit(unitIndex)) return;
       if (position.y < 29 || position.y > 75) score += 0.6;
       if (position.x < 11 || position.x > 84) score += 0.3;
     });
@@ -1593,10 +1601,11 @@ const distributeCharacterRoaming = (svg) => {
         replaceGroupContents(sizeWrapperId, beeMascotSprite(id));
         frontRootIds.push(rootId);
         coordinatedRouteStyles += `@keyframes profile-bee-buzz-${id}{`
-          + "0%{transform:translate(0,0) rotate(-8deg);}25%{transform:translate(1px,-1px) rotate(10deg); }"
-          + "50%{transform:translate(-1px,.5px) rotate(-12deg);}75%{transform:translate(.8px,-.6px) rotate(8deg);}"
-          + "100%{transform:translate(0,0) rotate(-8deg);}}"
-          + `#profile-custom-bee-${id}{animation:profile-bee-buzz-${id} .28s steps(2,end) infinite;`
+          + "0%,100%{transform:translate(0,0) rotate(-6deg);}"
+          + "25%{transform:translate(.35px,-.35px) rotate(6deg);}"
+          + "50%{transform:translate(-.25px,.2px) rotate(-5deg);}"
+          + "75%{transform:translate(.25px,-.25px) rotate(5deg);}}"
+          + `#profile-custom-bee-${id}{animation:profile-bee-buzz-${id} .42s linear infinite;`
           + "transform-box:fill-box;transform-origin:center;}";
       } else if (isCustomPaintingSloth) {
         replaceGroupContents(sizeWrapperId, clawdPaintingSprite(id));

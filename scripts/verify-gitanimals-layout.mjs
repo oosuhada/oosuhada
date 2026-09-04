@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v60";
+const layoutVersion = "character-behaviors-v61";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -282,6 +282,8 @@ lightAnimations.forEach((animation, index) => {
   if (animation.persona.type === "SLOTH" && clawdSlothIds.has(String(animation.id))) {
     assert(light.includes(`profile-custom-clawd-${animation.id}`),
       "SLOTH should render the custom Clawd painting sprite.");
+    assert(new RegExp(`profile-custom-clawd-${animation.id}[^>]*width=\"62\" height=\"62\"`).test(light),
+      "SLOTH Clawd painting sprite must render at the requested 62x62 size.");
     assert(!light.includes(`sloth-${animation.id}-body`),
       "SLOTH original sprite body should be replaced by Clawd.");
   }
@@ -384,6 +386,12 @@ for (const persona of visible.filter(isBeePersona)) {
     `Bee Quokka ${id} original body should be replaced by the bee sprite.`);
   assert(light.includes(`@keyframes profile-bee-buzz-${id}`),
     `Bee Quokka ${id} is missing its fast buzz animation.`);
+  const buzzRule = light.slice(
+    light.indexOf(`@keyframes profile-bee-buzz-${id}`),
+    light.indexOf(`#profile-custom-bee-${id}`),
+  );
+  assert(!buzzRule.includes("steps("),
+    `Bee Quokka ${id} buzz animation must stay smooth instead of frame-stepped.`);
   assert(!light.includes(`<svg id="profile-shadow-${id}"`),
     `Bee Quokka ${id} should fly without a ground shadow.`);
   const lightBee = extractAnimation(light, persona);
@@ -412,9 +420,9 @@ for (const persona of visible.filter(isBeePersona)) {
     previous = current;
   }
   const averageSpeed = weightedDistance / lightBee.duration;
-  assert(averageSpeed >= 14,
-    `Bee Quokka ${id} should fly 2-3x faster than land pets; average ${averageSpeed.toFixed(2)} units/s.`);
-  assert(maximumSpeed <= 42,
+  assert(averageSpeed >= 22,
+    `Bee Quokka ${id} should fly several times faster than land pets; average ${averageSpeed.toFixed(2)} units/s.`);
+  assert(maximumSpeed <= 85,
     `Bee Quokka ${id} moves too abruptly (${maximumSpeed.toFixed(2)} units/s).`);
 }
 

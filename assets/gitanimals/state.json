@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10253",
+  "totalContributions": "10254",
   "personas": [
     {
       "id": "764406126012079806",
@@ -16,7 +16,7 @@
     {
       "id": "764406761268780573",
       "type": "DESSERT_FOX",
-      "level": "3",
+      "level": "4",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.48%",
