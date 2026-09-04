@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10487",
+  "totalContributions": "10488",
   "personas": [
     {
       "id": "764406126012079806",
@@ -796,7 +796,7 @@
     {
       "id": "877399175187244358",
       "type": "SLIME_RED",
-      "level": "172",
+      "level": "173",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",

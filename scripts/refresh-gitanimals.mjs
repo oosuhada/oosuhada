@@ -1500,7 +1500,7 @@ const distributeCharacterRoaming = (svg) => {
     SHIBA: { cx: 5, cy: 12, rx: 5 },
     SLOTH: clawdSlothIds.has(String(persona.id))
       ? { cx: 3.9, cy: 8.4, rx: 3.8, actionCy: 8.4 }
-      : { cx: 7, cy: 15.5, rx: 6, actionCy: 15.5 },
+      : { cx: 2.4, cy: 21.8, rx: 6.2, actionCy: 15.5 },
     FLAMINGO: { cx: 8, cy: 24, rx: 6 },
   })[persona.type] ?? ({
     RABBIT: { cx: 8.5, cy: 11, rx: 5 },
