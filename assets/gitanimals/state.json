@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10476",
+  "totalContributions": "10480",
   "personas": [
     {
       "id": "764406126012079806",
@@ -256,7 +256,7 @@
     {
       "id": "833704839081857700",
       "type": "PENGUIN_NODE",
-      "level": "7",
+      "level": "8",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -556,7 +556,7 @@
     {
       "id": "856219257967577654",
       "type": "GALCHI_CAT",
-      "level": "183",
+      "level": "184",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -596,7 +596,7 @@
     {
       "id": "857536199819104257",
       "type": "PENGUIN_SUNGLASSES",
-      "level": "475",
+      "level": "476",
       "visible": true,
       "appVisible": false,
       "dropRate": "1%",
@@ -726,7 +726,7 @@
     {
       "id": "873077984725154082",
       "type": "PENGUIN_SPRING",
-      "level": "8",
+      "level": "9",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",

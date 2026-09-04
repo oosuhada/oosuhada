@@ -12,7 +12,7 @@ const oosuTerminalMascotPath = path.join(outputDirectory, "custom", "oosu-termin
 const clawdPaintingPath = path.join(outputDirectory, "custom", "clawd-painting.svg");
 const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v65";
+const layoutVersion = "character-behaviors-v66";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -705,6 +705,34 @@ const distributeCharacterRoaming = (svg) => {
     }
     result = `${result.slice(0, rootOpeningEnd)}${markup}${result.slice(rootClosingStart)}`;
   };
+
+  const groupStartById = (groupId) => {
+    const escapedGroupId = groupId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const match = new RegExp(`<g\\s+id\\s*=\\s*[\"']${escapedGroupId}[\"'][^>]*>`).exec(result);
+    return match?.index ?? -1;
+  };
+
+  const simplifyStripedTube = (persona) => {
+    const tubePrefix = ({
+      LITTLE_CHICK_TUBE: "little-chick",
+      RABBIT_TUBE: "rabbit",
+      HAMSTER_TUBE: "hamster",
+    })[persona.type];
+    if (!tubePrefix) return;
+    const tubeGroupId = `${tubePrefix}-${persona.id}-tube`;
+    const tubeStart = groupStartById(tubeGroupId);
+    const tubeClosingStart = groupClosingStart(tubeStart);
+    if (tubeStart === -1 || tubeClosingStart === -1) {
+      throw new Error(`Unable to simplify striped tube for ${persona.type} (${persona.id}).`);
+    }
+    const tubeClosingEnd = result.indexOf(">", tubeClosingStart) + 1;
+    const tubeMarkup = result.slice(tubeStart, tubeClosingEnd)
+      .replace(/fill="#(?:F8F8F8|FBB3BE|FF99E7|6DB33F)"/g, 'fill="#5FC4FF"')
+      .replace(/fill="black" fill-opacity="0\.1"/g, 'fill="#0059FF" fill-opacity="0.08"');
+    result = `${result.slice(0, tubeStart)}${tubeMarkup}${result.slice(tubeClosingEnd)}`;
+  };
+
+  visiblePersonas.forEach(simplifyStripedTube);
 
   const moveRootToFront = (rootId) => {
     const rootStart = result.indexOf(`<g id="${rootId}"`);

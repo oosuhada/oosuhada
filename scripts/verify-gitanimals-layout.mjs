@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v65";
+const layoutVersion = "character-behaviors-v66";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -79,6 +79,21 @@ const assertSvgTagBalance = (svg, label) => {
     }
   }
   assert(stack.length === 0, `${label} SVG has unclosed tags: ${stack.join(", ")}.`);
+};
+
+const groupMarkupById = (svg, groupId) => {
+  const escapedGroupId = groupId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(`<g\\s+id\\s*=\\s*[\"']${escapedGroupId}[\"'][^>]*>`).exec(svg);
+  assert(match, `Missing SVG group ${groupId}.`);
+  const groupTag = /<\/?g\b[^>]*>/g;
+  groupTag.lastIndex = match.index;
+  let depth = 0;
+  for (let tagMatch = groupTag.exec(svg); tagMatch; tagMatch = groupTag.exec(svg)) {
+    const tag = tagMatch[0];
+    depth += tag.startsWith("</") ? -1 : 1;
+    if (depth === 0) return svg.slice(match.index, tagMatch.index + tag.length);
+  }
+  throw new Error(`SVG group ${groupId} is not closed.`);
 };
 
 const separationRadius = (type) => {
@@ -201,6 +216,23 @@ assert(/data-profile-scene-phase="[\d.]+"/.test(dark), "Dark SVG is missing its 
 
 const visible = state.personas.filter((persona) => persona.visible);
 const isBeePersona = (persona) => beeQuokkaIds.has(String(persona.id));
+const stripedTubePrefixes = {
+  LITTLE_CHICK_TUBE: "little-chick",
+  RABBIT_TUBE: "rabbit",
+  HAMSTER_TUBE: "hamster",
+};
+visible
+  .filter((persona) => stripedTubePrefixes[persona.type])
+  .forEach((persona) => {
+    const groupId = `${stripedTubePrefixes[persona.type]}-${persona.id}-tube`;
+    for (const [theme, svg] of [["Light", light], ["Dark", dark]]) {
+      const tubeMarkup = groupMarkupById(svg, groupId);
+      assert(!/#(?:F8F8F8|FBB3BE|FF99E7|6DB33F)\b/.test(tubeMarkup),
+        `${theme} ${persona.type} tube still contains white or alternating stripe colors.`);
+      assert((tubeMarkup.match(/fill="#5FC4FF"/g) ?? []).length >= 14,
+        `${theme} ${persona.type} tube should be simplified into a solid sky-blue float.`);
+    }
+  });
 const rider = visible.find((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES");
 const mount = visible.find((persona) => persona.type === "CAPYBARA_SWIM");
 const collisionPersonas = rider && mount
