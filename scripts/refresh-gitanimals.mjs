@@ -1495,7 +1495,7 @@ const distributeCharacterRoaming = (svg) => {
     GOOSE: { cx: 8, cy: 17, rx: 7 },
     GALCHI_CAT: { cx: 5, cy: 14, rx: 5 },
     QUOKKA: terminalQuokkaIds.has(String(persona.id))
-      ? { cx: 4.6, cy: 6.8, rx: 4.1, actionCy: 6.8 }
+      ? { cx: 3.2, cy: 5.25, rx: 3.9, actionCy: 5.25 }
       : { cx: 7, cy: 10.8, rx: 4.6, actionCy: 10.8 },
     SHIBA: { cx: 5, cy: 12, rx: 5 },
     SLOTH: clawdSlothIds.has(String(persona.id))

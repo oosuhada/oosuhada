@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10485",
+  "totalContributions": "10487",
   "personas": [
     {
       "id": "764406126012079806",
@@ -906,7 +906,7 @@
     {
       "id": "878345547788951027",
       "type": "QUOKKA",
-      "level": "186",
+      "level": "187",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
@@ -926,7 +926,7 @@
     {
       "id": "878547511457984579",
       "type": "CAPYBARA_SWIM",
-      "level": "148",
+      "level": "149",
       "visible": false,
       "appVisible": false,
       "dropRate": "3%",
