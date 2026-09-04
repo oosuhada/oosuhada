@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10504",
+  "totalContributions": "10506",
   "personas": [
     {
       "id": "764406126012079806",
@@ -456,7 +456,7 @@
     {
       "id": "842652512849367039",
       "type": "QUOKKA",
-      "level": "203",
+      "level": "204",
       "visible": true,
       "appVisible": false,
       "dropRate": "2%",
@@ -556,7 +556,7 @@
     {
       "id": "856219257967577654",
       "type": "GALCHI_CAT",
-      "level": "184",
+      "level": "185",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",

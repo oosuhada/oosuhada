@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v68";
+const layoutVersion = "character-behaviors-v69";
 const frogAsset = await readFile(path.join(root, "assets/gitanimals/custom/frog-pixel.svg"), "utf8");
 const venomothAsset = await readFile(path.join(root, "assets/gitanimals/custom/venomoth-butterfly.svg"), "utf8");
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
@@ -534,10 +534,24 @@ for (const persona of visible.filter((candidate) => frogChickIds.has(String(cand
   assert(light.includes(`#level-wrap-${id}{translate:-3px -5px;}`)
     && dark.includes(`#level-wrap-${id}{translate:-3px -5px;}`),
   `Frog Little Chick ${id} level should stay above the frog.`);
+  assert(light.includes(`#profile-size-${id}{transform:scale(2.00);`)
+    && dark.includes(`#profile-size-${id}{transform:scale(2.00);`),
+  `Frog Little Chick ${id} should render at exactly 2x its previous size.`);
+  assert(light.includes('#24512F') && light.includes('#3E7541')
+    && dark.includes('#24512F') && dark.includes('#3E7541'),
+  `Frog Little Chick ${id} should use the darker forest-green palette.`);
   const frog = extractAnimation(light, persona);
   const xValues = frog.points.map((point) => point.x);
+  const yValues = frog.points.map((point) => point.y);
   assert(Math.min(...xValues) >= swimZoneBounds.left - 0.01 && Math.max(...xValues) <= swimZoneBounds.right + 0.01,
     `Frog Little Chick ${id} must remain inside the water habitat.`);
+  assert(Math.min(...xValues) >= 38.9 && Math.max(...xValues) <= 41.10,
+    `Frog Little Chick ${id} should stay in the lower-right shoreline pocket (${Math.min(...xValues).toFixed(2)}-${Math.max(...xValues).toFixed(2)}%).`);
+  assert(Math.min(...yValues) >= 67.5 && Math.max(...yValues) <= 74.1,
+    `Frog Little Chick ${id} should stay low in the water (${Math.min(...yValues).toFixed(2)}-${Math.max(...yValues).toFixed(2)}%).`);
+  assert(Math.max(...xValues) - Math.min(...xValues) <= 2.2
+    && Math.max(...yValues) - Math.min(...yValues) <= 6.7,
+  `Frog Little Chick ${id} should keep a compact flamingo-like resident route.`);
   const shadowStart = light.indexOf(`<svg id="profile-shadow-${id}"`);
   const shadowEnd = light.indexOf("</svg>", shadowStart);
   const waterMarkup = light.slice(shadowStart, shadowEnd);

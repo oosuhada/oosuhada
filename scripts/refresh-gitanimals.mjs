@@ -14,7 +14,7 @@ const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg"
 const venomothMascotPath = path.join(outputDirectory, "custom", "venomoth-butterfly.svg");
 const frogMascotPath = path.join(outputDirectory, "custom", "frog-pixel.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v68";
+const layoutVersion = "character-behaviors-v69";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -314,7 +314,9 @@ const personaFamily = (type) => {
   return null;
 };
 
-const characterScale = (persona) => ({
+const characterScale = (persona) => {
+  if (frogChickIds.has(String(persona.id))) return 2;
+  return ({
   CAPYBARA_CARROT: 1.1,
   CAPYBARA_SWIM: 1.1,
   QUOKKA: 1,
@@ -327,7 +329,8 @@ const characterScale = (persona) => ({
   DESSERT_FOX: 0.6,
   PENGUIN: 0.9,
   PENGUIN_SUNGLASSES: 0.9,
-})[persona.type] ?? 1;
+  })[persona.type] ?? 1;
+};
 
 const isSwimZonePersona = (persona) => (
   frogChickIds.has(String(persona.id))
@@ -374,6 +377,11 @@ const landShorelineAnchorLeft = (type) => ({
 const movementZoneBounds = (persona) => {
   if (isFlyingMascotPersona(persona)) {
     return { left: 4, right: 96, top: 13, bottom: 84 };
+  }
+  if (frogChickIds.has(String(persona.id))) {
+    // The frog is deliberately a large shoreline resident. The scale-aware 5-unit inset below
+    // turns this into an effective x=39..41 pocket while keeping the doubled artwork in the water.
+    return { left: 34, right: 46, top: 67.5, bottom: 75 };
   }
   return isSwimZonePersona(persona)
     ? swimZoneBoundsFor(persona.type)
@@ -983,8 +991,9 @@ const distributeCharacterRoaming = (svg) => {
     { x: 26, y: 68 }, { x: 22, y: 65 }, { x: 15, y: 65 }, { x: 9.5, y: 67 },
   ];
   const frogSwimWaypoints = [
-    { x: 10, y: 58 }, { x: 16, y: 46 }, { x: 28, y: 36 },
-    { x: 39, y: 48 }, { x: 34, y: 66 }, { x: 20, y: 70 }, { x: 11, y: 62 },
+    // Large frog resident: stay in a compact lower-right water pocket, close to the shoreline.
+    { x: 39.2, y: 70.0 }, { x: 40.2, y: 68.5 }, { x: 41.0, y: 70.2 },
+    { x: 40.8, y: 73.2 }, { x: 39.8, y: 74.0 }, { x: 39.0, y: 72.0 },
   ];
   const swimRunnerWaypoints = [
     { x: 10, y: 52 }, { x: 17, y: 32 }, { x: 32, y: 31 },
@@ -1073,7 +1082,9 @@ const distributeCharacterRoaming = (svg) => {
       return beeFarmPosition(0.11 + progress * 2);
     }
     if (frogChickIds.has(String(unit.persona.id))) {
-      return interpolateClosedRoute(frogSwimWaypoints, 0.37 + progress * 2);
+      // One slow compact loop per farm cycle, matching the flamingo's resident-like cadence rather
+      // than roaming across the whole water habitat.
+      return interpolateClosedRoute(frogSwimWaypoints, 0.37 + progress);
     }
     if (terminalQuokkaIds.has(String(unit.persona.id))) {
       return interpolateClosedRoute([
