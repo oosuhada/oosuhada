@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10246",
+  "totalContributions": "10249",
   "personas": [
     {
       "id": "764406126012079806",
@@ -276,7 +276,7 @@
     {
       "id": "834380360140686465",
       "type": "CAPYBARA_SWIM",
-      "level": "688",
+      "level": "689",
       "visible": true,
       "appVisible": false,
       "dropRate": "3%",
@@ -446,7 +446,7 @@
     {
       "id": "839862868772009175",
       "type": "PIG_SUNGLASSES",
-      "level": "6",
+      "level": "7",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.77%",
@@ -756,7 +756,7 @@
     {
       "id": "874875861541694861",
       "type": "SHIBA",
-      "level": "175",
+      "level": "176",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",

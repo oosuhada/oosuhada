@@ -14,7 +14,7 @@ const maximumOverlapSeconds = 6;
 const sampleStepSeconds = 0.05;
 // Farm-wide explorers intentionally cross more ground than residents; this still limits every pet
 // to a smooth multi-second traverse rather than a sub-second collision-correction jump.
-const maximumWeightedSpeed = 20;
+const maximumWeightedSpeed = 22;
 const fastMovementTypes = new Set([
   "RABBIT",
   "HAMSTER",
@@ -136,7 +136,7 @@ const landShorelineAnchorLeft = (type) => ({
   GALCHI_CAT: 52.4,
   SHIBA: 52.5,
   QUOKKA: 51.2,
-  SLOTH: 52.8,
+  SLOTH: 49.95,
   PENGUIN: 49.95,
   PENGUIN_SUNGLASSES: 49.95,
   DESSERT_FOX: 51.45,
