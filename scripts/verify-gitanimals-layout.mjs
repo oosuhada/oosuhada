@@ -6,9 +6,10 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v69";
+const layoutVersion = "character-behaviors-v70";
 const frogAsset = await readFile(path.join(root, "assets/gitanimals/custom/frog-pixel.svg"), "utf8");
 const venomothAsset = await readFile(path.join(root, "assets/gitanimals/custom/venomoth-butterfly.svg"), "utf8");
+const terminalAsset = await readFile(path.join(root, "assets/gitanimals/custom/oosu-terminal-cutout.svg"), "utf8");
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -80,6 +81,16 @@ assert(venomothAsset.includes('viewBox="0 0 20 21"'),
   "Venomoth custom asset should stay on the coarser 20x21 pixel grid.");
 assert(!/<image\b|data:image|href=["'](?:https?:|data:)/i.test(venomothAsset),
   "Venomoth custom asset must remain pure inline vector artwork.");
+assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(venomothAsset),
+  "Venomoth custom asset should stay flat: no gradients or translucent shading.");
+assert(new Set([...venomothAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 4,
+  "Venomoth custom asset should keep a compact flat-color palette instead of pseudo-gradient shading.");
+assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(terminalAsset),
+  "Terminal mascot should stay flat: no gradients or translucent highlight/shadow layers.");
+assert(terminalAsset.includes('shape-rendering="crispEdges"'),
+  "Terminal mascot should use crisp pixel rendering instead of antialiased geometric precision.");
+assert(new Set([...terminalAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 4,
+  "Terminal mascot should keep a compact flat-color palette.");
 
 const assertSvgTagBalance = (svg, label) => {
   const stack = [];
@@ -348,6 +359,13 @@ lightAnimations.forEach((animation, index) => {
     assert(!light.includes(`sloth-${animation.id}-body`),
       "SLOTH original sprite body should be replaced by Clawd.");
   }
+  if (animation.persona.type === "SLOTH" && !clawdSlothIds.has(String(animation.id))) {
+    const levelRouteStart = light.indexOf(`@keyframes profile-level-route-${animation.id}`);
+    const levelRouteEnd = light.indexOf(`#level-wrap-${animation.id}`, levelRouteStart);
+    const levelRoute = light.slice(levelRouteStart, levelRouteEnd);
+    assert(levelRouteStart >= 0 && levelRoute.includes("translate:-18px 0px") && levelRoute.includes("translate:0px 0px"),
+      `SLOTH ${animation.id} level should shift left only while facing left and preserve right-facing placement.`);
+  }
   const movementStart = light.indexOf(`@keyframes ${animation.name}`);
   const movementRuleStart = light.indexOf(`animation-name:${animation.name}`, movementStart) >= 0
     ? light.indexOf(`animation-name:${animation.name}`, movementStart)
@@ -531,15 +549,15 @@ for (const persona of visible.filter((candidate) => frogChickIds.has(String(cand
     `Frog Little Chick ${id} should render the isolated pixel frog in both themes.`);
   assert(!light.includes(`little-chick-${id}-body`) && !dark.includes(`little-chick-${id}-body`),
     `Frog Little Chick ${id} original chick body should be replaced.`);
-  assert(light.includes(`#level-wrap-${id}{translate:-3px -5px;}`)
-    && dark.includes(`#level-wrap-${id}{translate:-3px -5px;}`),
+  assert(light.includes(`#level-wrap-${id}{translate:-3px -18px;}`)
+    && dark.includes(`#level-wrap-${id}{translate:-3px -18px;}`),
   `Frog Little Chick ${id} level should stay above the frog.`);
   assert(light.includes(`#profile-size-${id}{transform:scale(2.00);`)
     && dark.includes(`#profile-size-${id}{transform:scale(2.00);`),
   `Frog Little Chick ${id} should render at exactly 2x its previous size.`);
-  assert(light.includes('#24512F') && light.includes('#3E7541')
-    && dark.includes('#24512F') && dark.includes('#3E7541'),
-  `Frog Little Chick ${id} should use the darker forest-green palette.`);
+  assert(light.includes('#3E7F3C') && light.includes('#73B84D')
+    && dark.includes('#3E7F3C') && dark.includes('#73B84D'),
+  `Frog Little Chick ${id} should use the brighter tree-frog palette.`);
   const frog = extractAnimation(light, persona);
   const xValues = frog.points.map((point) => point.x);
   const yValues = frog.points.map((point) => point.y);

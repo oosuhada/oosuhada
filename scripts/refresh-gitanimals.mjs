@@ -14,7 +14,7 @@ const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg"
 const venomothMascotPath = path.join(outputDirectory, "custom", "venomoth-butterfly.svg");
 const frogMascotPath = path.join(outputDirectory, "custom", "frog-pixel.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v69";
+const layoutVersion = "character-behaviors-v70";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -1850,7 +1850,9 @@ const distributeCharacterRoaming = (svg) => {
         // the body while leaving the full wing silhouette readable.
         coordinatedRouteStyles += `#level-wrap-${id}{translate:-10px 2px;}`;
       } else if (isCustomWaterFrog) {
-        coordinatedRouteStyles += `#level-wrap-${id}{translate:-3px -5px;}`;
+        // The doubled frog is tall enough to cover the upstream label. Lift metadata fully above
+        // both eyes instead of letting the text cut through the head.
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:-3px -18px;}`;
       } else if (persona.type === "RABBIT") {
         // The rabbit artwork's visual centre moves substantially inside its wide emotion-state
         // canvas when mirrored. Keep the horizontal optical correction, but bring the label down
@@ -1893,6 +1895,13 @@ const distributeCharacterRoaming = (svg) => {
       } else if (isCustomPaintingSloth) {
         // Clawd's canvas includes paint/palette space to its left, so the label tracks that wider silhouette.
         coordinatedRouteStyles += `#level-wrap-${id}{translate:-14px -2px;}`;
+      } else if (persona.type === "SLOTH") {
+        // Upstream Sloth's visible body shifts left inside its source canvas when mirrored. Preserve
+        // the right-facing label exactly, and compensate only while it is facing left.
+        coordinatedRouteStyles += `@keyframes profile-level-route-${id}{${directionalLevelKeyframes(unitIndex, -18, 0)}}`
+          + `#level-wrap-${id}{animation-name:profile-level-route-${id} !important;animation-duration:${routeDuration}s;`
+          + "animation-timing-function:steps(1,end);animation-iteration-count:infinite;"
+          + "animation-direction:normal;animation-fill-mode:both;}";
       }
     });
   });

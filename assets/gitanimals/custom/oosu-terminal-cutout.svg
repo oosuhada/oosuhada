@@ -1,38 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 48" shape-rendering="geometricPrecision">
-  <defs>
-    <linearGradient id="oosu-terminal-body" x1="7" y1="4" x2="33" y2="46" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#E0F7FF"/>
-      <stop offset="0.42" stop-color="#7DD3FC"/>
-      <stop offset="1" stop-color="#38BDF8"/>
-    </linearGradient>
-    <linearGradient id="oosu-terminal-face" x1="9" y1="9" x2="31" y2="29" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#12304A"/>
-      <stop offset="1" stop-color="#071827"/>
-    </linearGradient>
-  </defs>
-
-  <ellipse cx="20" cy="45" rx="12" ry="2.2" fill="#050A13" opacity="0"/>
-
-  <!-- Rounded cloud silhouette from the provided terminal mascot image. -->
-  <path d="M12 9H10V11H7V14H5V19H3V25H5V30H8V33H32V30H35V25H37V18H35V13H32V10H29V8H24V6H16V8H12V9Z" fill="#0C4A6E" opacity=".32"/>
-  <path d="M12 7H10V9H7V12H5V18H3V25H5V30H8V33H32V30H35V25H37V17H35V12H32V9H29V7H24V5H16V7H12Z" fill="url(#oosu-terminal-body)"/>
-  <path d="M8 13H6V19H4V24H6V29H9V32H13V29H10V25H8V13Z" fill="#E0F7FF" opacity=".48"/>
-  <path d="M25 7H29V9H32V12H35V18H37V25H35V29H32V32H28V29H31V25H33V18H31V14H28V11H24V9H16V7H25Z" fill="#0284C7" opacity=".42"/>
-
-  <!-- Terminal face. -->
-  <rect x="9" y="13" width="22" height="15" rx="4" fill="#0B1220" opacity=".5"/>
-  <rect x="10" y="12" width="21" height="15" rx="4" fill="url(#oosu-terminal-face)"/>
-  <path d="M15 16H17V18H19V20H17V22H15V20H17V18H15V16Z" fill="#BAF3FF"/>
-  <rect x="22" y="21" width="6" height="2" fill="#BAF3FF"/>
-
-  <!-- Small body and arms. -->
-  <path d="M13 32H27V40H25V43H21V40H19V43H15V40H13V32Z" fill="#38BDF8"/>
-  <path d="M11 33H13V39H10V37H9V34H11V33Z" fill="#7DD3FC"/>
-  <path d="M27 33H29V34H31V37H30V39H27V33Z" fill="#0284C7"/>
-  <rect x="16" y="34" width="2" height="2" fill="#BAF3FF"/>
-  <rect x="18" y="36" width="2" height="2" fill="#BAF3FF"/>
-  <rect x="22" y="37" width="4" height="1.8" fill="#BAF3FF"/>
-
-  <path d="M7 17H9V25H7V28H5V25H4V20H5V18H7V17Z" fill="#FFFFFF" opacity=".22"/>
-  <rect x="13" y="30" width="13" height="1" fill="#E0F7FF" opacity=".34"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 48" shape-rendering="crispEdges">
+  <!-- Flat pixel treatment: no gradients/translucent highlights so it matches the 2D GitAnimals palette. -->
+  <path d="M12 9H10V11H7V14H5V19H3V25H5V30H8V33H32V30H35V25H37V18H35V13H32V10H29V8H24V6H16V8H12V9Z" fill="#15384D"/>
+  <path d="M12 7H10V9H7V12H5V18H3V25H5V30H8V33H32V30H35V25H37V17H35V12H32V9H29V7H24V5H16V7H12V7Z" fill="#58B9E6"/>
+  <rect x="9" y="12" width="22" height="15" fill="#102635"/>
+  <path d="M15 16H17V18H19V20H17V22H15V20H17V18H15V16Z" fill="#D5F5FF"/>
+  <rect x="22" y="21" width="6" height="2" fill="#D5F5FF"/>
+  <path d="M13 32H27V40H25V43H21V40H19V43H15V40H13V32Z" fill="#58B9E6"/>
+  <path d="M11 33H13V39H10V37H9V34H11V33Z" fill="#58B9E6"/>
+  <path d="M27 33H29V34H31V37H30V39H27V33Z" fill="#58B9E6"/>
+  <rect x="16" y="34" width="2" height="2" fill="#D5F5FF"/>
+  <rect x="18" y="36" width="2" height="2" fill="#D5F5FF"/>
+  <rect x="22" y="37" width="4" height="2" fill="#D5F5FF"/>
 </svg>

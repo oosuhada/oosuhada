@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10506",
+  "totalContributions": "10507",
   "personas": [
     {
       "id": "764406126012079806",
@@ -506,7 +506,7 @@
     {
       "id": "845594179269177447",
       "type": "PENGUIN_KOTLIN",
-      "level": "7",
+      "level": "8",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
