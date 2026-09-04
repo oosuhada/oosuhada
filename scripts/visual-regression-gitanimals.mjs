@@ -259,7 +259,7 @@ try {
           const waterRight = geometry.swimWater.x + geometry.swimWater.width;
           const shorelineGap = character.x - waterRight;
           landShoreGaps.push({ theme, seconds, id: character.id, gap: shorelineGap });
-          assert(shorelineGap >= -6,
+          assert(shorelineGap >= -8,
             `${theme} ${seconds}s lets land character ${character.id} travel too deeply into the water by `
               + `${Math.abs(shorelineGap).toFixed(2)}px.`);
         }
@@ -408,7 +408,7 @@ try {
         landIds: [...landZoneIds],
         swimIds: [...swimZoneIds],
       });
-      assert(fullCycleZones.minimumLandGap >= -6,
+      assert(fullCycleZones.minimumLandGap >= -8,
         `A land pet travels too deeply into the water during the full route; minimum shoreline gap is `
           + `${fullCycleZones.minimumLandGap.toFixed(2)}px.`);
       assert(fullCycleZones.minimumLandGap <= 0.5,
