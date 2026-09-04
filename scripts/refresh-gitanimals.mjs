@@ -14,7 +14,7 @@ const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg"
 const venomothMascotPath = path.join(outputDirectory, "custom", "venomoth-butterfly.svg");
 const frogMascotPath = path.join(outputDirectory, "custom", "frog-pixel.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v70";
+const layoutVersion = "character-behaviors-v71";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -1852,7 +1852,7 @@ const distributeCharacterRoaming = (svg) => {
       } else if (isCustomWaterFrog) {
         // The doubled frog is tall enough to cover the upstream label. Lift metadata fully above
         // both eyes instead of letting the text cut through the head.
-        coordinatedRouteStyles += `#level-wrap-${id}{translate:-3px -38px;}`;
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:-8px -32px;}`;
       } else if (persona.type === "RABBIT") {
         // The rabbit artwork's visual centre moves substantially inside its wide emotion-state
         // canvas when mirrored. Keep the horizontal optical correction, but bring the label down

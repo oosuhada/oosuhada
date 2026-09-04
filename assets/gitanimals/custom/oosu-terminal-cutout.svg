@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 48" shape-rendering="crispEdges">
   <!-- Flat pixel treatment: no gradients/translucent highlights so it matches the 2D GitAnimals palette. -->
   <path d="M12 9H10V11H7V14H5V19H3V25H5V30H8V33H32V30H35V25H37V18H35V13H32V10H29V8H24V6H16V8H12V9Z" fill="#15384D"/>
-  <path d="M12 7H10V9H7V12H5V18H3V25H5V30H8V33H32V30H35V25H37V17H35V12H32V9H29V7H24V5H16V7H12V7Z" fill="#58B9E6"/>
+  <path d="M12 7H10V9H7V12H5V18H3V25H5V30H8V33H32V30H35V25H37V17H35V12H32V9H29V7H24V5H16V7H12V7Z" fill="#3A83F6"/>
   <rect x="9" y="12" width="22" height="15" fill="#102635"/>
   <path d="M15 16H17V18H19V20H17V22H15V20H17V18H15V16Z" fill="#D5F5FF"/>
   <rect x="22" y="21" width="6" height="2" fill="#D5F5FF"/>
-  <path d="M13 32H27V40H25V43H21V40H19V43H15V40H13V32Z" fill="#58B9E6"/>
-  <path d="M11 33H13V39H10V37H9V34H11V33Z" fill="#58B9E6"/>
-  <path d="M27 33H29V34H31V37H30V39H27V33Z" fill="#58B9E6"/>
+  <path d="M13 32H27V40H25V43H21V40H19V43H15V40H13V32Z" fill="#3A83F6"/>
+  <path d="M11 33H13V39H10V37H9V34H11V33Z" fill="#3A83F6"/>
+  <path d="M27 33H29V34H31V37H30V39H27V33Z" fill="#3A83F6"/>
   <rect x="16" y="34" width="2" height="2" fill="#D5F5FF"/>
   <rect x="18" y="36" width="2" height="2" fill="#D5F5FF"/>
   <rect x="22" y="37" width="4" height="2" fill="#D5F5FF"/>

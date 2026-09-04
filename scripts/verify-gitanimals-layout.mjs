@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v70";
+const layoutVersion = "character-behaviors-v71";
 const frogAsset = await readFile(path.join(root, "assets/gitanimals/custom/frog-pixel.svg"), "utf8");
 const venomothAsset = await readFile(path.join(root, "assets/gitanimals/custom/venomoth-butterfly.svg"), "utf8");
 const terminalAsset = await readFile(path.join(root, "assets/gitanimals/custom/oosu-terminal-cutout.svg"), "utf8");
@@ -85,12 +85,16 @@ assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(venomothAsset),
   "Venomoth custom asset should stay flat: no gradients or translucent shading.");
 assert(new Set([...venomothAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 4,
   "Venomoth custom asset should keep a compact flat-color palette instead of pseudo-gradient shading.");
+assert(!venomothAsset.includes('#E6B2EA') && venomothAsset.includes('#B778C3'),
+  "Venomoth wings should use one purple fill instead of a lighter second wing tone.");
 assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(terminalAsset),
   "Terminal mascot should stay flat: no gradients or translucent highlight/shadow layers.");
 assert(terminalAsset.includes('shape-rendering="crispEdges"'),
   "Terminal mascot should use crisp pixel rendering instead of antialiased geometric precision.");
 assert(new Set([...terminalAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 4,
   "Terminal mascot should keep a compact flat-color palette.");
+assert(terminalAsset.includes('#3A83F6'),
+  "Terminal mascot body should use the darker blue sampled from the provided reference button.");
 
 const assertSvgTagBalance = (svg, label) => {
   const stack = [];
@@ -549,8 +553,8 @@ for (const persona of visible.filter((candidate) => frogChickIds.has(String(cand
     `Frog Little Chick ${id} should render the isolated pixel frog in both themes.`);
   assert(!light.includes(`little-chick-${id}-body`) && !dark.includes(`little-chick-${id}-body`),
     `Frog Little Chick ${id} original chick body should be replaced.`);
-  assert(light.includes(`#level-wrap-${id}{translate:-3px -38px;}`)
-    && dark.includes(`#level-wrap-${id}{translate:-3px -38px;}`),
+  assert(light.includes(`#level-wrap-${id}{translate:-8px -32px;}`)
+    && dark.includes(`#level-wrap-${id}{translate:-8px -32px;}`),
   `Frog Little Chick ${id} level should stay above the frog.`);
   assert(light.includes(`#profile-size-${id}{transform:scale(2.00);`)
     && dark.includes(`#profile-size-${id}{transform:scale(2.00);`),
