@@ -549,8 +549,8 @@ for (const persona of visible.filter((candidate) => frogChickIds.has(String(cand
     `Frog Little Chick ${id} should render the isolated pixel frog in both themes.`);
   assert(!light.includes(`little-chick-${id}-body`) && !dark.includes(`little-chick-${id}-body`),
     `Frog Little Chick ${id} original chick body should be replaced.`);
-  assert(light.includes(`#level-wrap-${id}{translate:-3px -18px;}`)
-    && dark.includes(`#level-wrap-${id}{translate:-3px -18px;}`),
+  assert(light.includes(`#level-wrap-${id}{translate:-3px -38px;}`)
+    && dark.includes(`#level-wrap-${id}{translate:-3px -38px;}`),
   `Frog Little Chick ${id} level should stay above the frog.`);
   assert(light.includes(`#profile-size-${id}{transform:scale(2.00);`)
     && dark.includes(`#profile-size-${id}{transform:scale(2.00);`),

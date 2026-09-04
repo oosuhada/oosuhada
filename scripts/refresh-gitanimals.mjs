@@ -1852,7 +1852,7 @@ const distributeCharacterRoaming = (svg) => {
       } else if (isCustomWaterFrog) {
         // The doubled frog is tall enough to cover the upstream label. Lift metadata fully above
         // both eyes instead of letting the text cut through the head.
-        coordinatedRouteStyles += `#level-wrap-${id}{translate:-3px -18px;}`;
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:-3px -38px;}`;
       } else if (persona.type === "RABBIT") {
         // The rabbit artwork's visual centre moves substantially inside its wide emotion-state
         // canvas when mirrored. Keep the horizontal optical correction, but bring the label down
