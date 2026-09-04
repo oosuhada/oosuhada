@@ -6,7 +6,9 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v67";
+const layoutVersion = "character-behaviors-v68";
+const frogAsset = await readFile(path.join(root, "assets/gitanimals/custom/frog-pixel.svg"), "utf8");
+const venomothAsset = await readFile(path.join(root, "assets/gitanimals/custom/venomoth-butterfly.svg"), "utf8");
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -66,6 +68,18 @@ const clawdSlothIds = new Set(["843727410376082595"]);
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
 };
+
+assert(frogAsset.includes('viewBox="0 0 21 16"'),
+  "Frog custom asset should stay on the coarser 21x16 pixel grid.");
+assert(frogAsset.includes("M6 1h2v1h-2Z") && frogAsset.includes("M13 1h2v1h-2Z")
+  && frogAsset.includes("M6 2h2v1h-2Z") && frogAsset.includes("M13 2h2v1h-2Z"),
+"Frog custom asset must preserve both dark pupils instead of dropping the left eye.");
+assert(!/<image\b|data:image|href=["'](?:https?:|data:)/i.test(frogAsset),
+  "Frog custom asset must remain pure inline vector artwork.");
+assert(venomothAsset.includes('viewBox="0 0 20 21"'),
+  "Venomoth custom asset should stay on the coarser 20x21 pixel grid.");
+assert(!/<image\b|data:image|href=["'](?:https?:|data:)/i.test(venomothAsset),
+  "Venomoth custom asset must remain pure inline vector artwork.");
 
 const assertSvgTagBalance = (svg, label) => {
   const stack = [];
@@ -487,8 +501,13 @@ for (const persona of visible.filter(isVenomothPersona)) {
     `Venomoth Quokka ${id} original body should be replaced.`);
   assert(!light.includes(`<svg id="profile-shadow-${id}"`) && !dark.includes(`<svg id="profile-shadow-${id}"`),
     `Venomoth Quokka ${id} should fly without a ground shadow.`);
-  assert(light.includes(`#profile-facing-${id}{animation:profile-facing-route-${id} 120s steps(1,end) infinite both;transform-origin:1.50px 0px;`),
-    `Venomoth Quokka ${id} should use the 120s half-bee-speed flight cycle.`);
+  assert(light.includes(`#profile-facing-${id}{animation:profile-facing-route-${id} 120s steps(1,end) infinite both;transform-box:fill-box;transform-origin:center center;`),
+    `Venomoth Quokka ${id} should flip around its own artwork center on the 120s flight cycle.`);
+  const venomothFacingStart = light.indexOf(`@keyframes profile-facing-route-${id}`);
+  const venomothFacingEnd = light.indexOf(`#profile-facing-${id}`, venomothFacingStart);
+  const venomothFacingBody = light.slice(venomothFacingStart, venomothFacingEnd);
+  assert(venomothFacingBody.includes("scaleX(-1)") && venomothFacingBody.includes("scaleX(1)"),
+    `Venomoth Quokka ${id} must face left while flying left and right while flying right.`);
   assert(light.includes(`#level-wrap-${id}{translate:-10px 2px;}`)
     && dark.includes(`#level-wrap-${id}{translate:-10px 2px;}`),
   `Venomoth Quokka ${id} level should clear its large wings.`);

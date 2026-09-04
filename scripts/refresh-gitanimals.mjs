@@ -14,7 +14,7 @@ const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg"
 const venomothMascotPath = path.join(outputDirectory, "custom", "venomoth-butterfly.svg");
 const frogMascotPath = path.join(outputDirectory, "custom", "frog-pixel.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v67";
+const layoutVersion = "character-behaviors-v68";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -1713,9 +1713,12 @@ const distributeCharacterRoaming = (svg) => {
       } else if (isCustomPaintingSloth) {
         replaceGroupContents(sizeWrapperId, clawdPaintingSprite(id));
       }
+      const facingOriginStyle = isCustomFlyingVenomoth
+        ? "transform-box:fill-box;transform-origin:center center;"
+        : `transform-origin:${pivot.toFixed(2)}px 0px;`;
       coordinatedRouteStyles += `@keyframes profile-facing-route-${id}{${facing}}`
         + `#${facingWrapperId}{animation:profile-facing-route-${id} ${personaRouteDuration}s steps(1,end) infinite both;`
-        + `transform-origin:${pivot.toFixed(2)}px 0px;}`
+        + `${facingOriginStyle}}`
         + `#${sizeWrapperId}{transform:scale(${scale.toFixed(2)});`
         + `transform-origin:${(geometry.cx * 3).toFixed(2)}px ${(geometry.cy * 3).toFixed(2)}px;}`;
 
