@@ -12,7 +12,7 @@ const oosuTerminalMascotPath = path.join(outputDirectory, "custom", "oosu-termin
 const clawdPaintingPath = path.join(outputDirectory, "custom", "clawd-painting.svg");
 const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v62";
+const layoutVersion = "character-behaviors-v63";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -800,7 +800,7 @@ const distributeCharacterRoaming = (svg) => {
   }
 
   const routeDuration = 120;
-  const beeRouteDuration = 54;
+  const beeRouteDuration = 96;
   const routeSampleSeconds = 0.5;
   // Begin the gentle turn before sprites visibly overlap. The extra runway lets the temporal
   // smoother separate them without a sudden correction at the collision boundary.
@@ -947,13 +947,15 @@ const distributeCharacterRoaming = (svg) => {
     { x: 86, y: 66 }, { x: 54, y: 72 }, { x: 24, y: 65 }, { x: 10, y: 45 },
     { x: 30, y: 29 }, { x: 66, y: 32 }, { x: 88, y: 46 },
   ], "GOOSE");
-  const beeExplorerWaypoints = [
-    // Explorer-style patrol copied from the land roamers, but stretched across the entire farm.
-    // The bee is an air unit, so it deliberately ignores the water/land split and collision solver.
-    { x: 7, y: 29 }, { x: 35, y: 18 }, { x: 70, y: 27 }, { x: 94, y: 18 },
-    { x: 86, y: 48 }, { x: 61, y: 38 }, { x: 88, y: 73 }, { x: 48, y: 82 },
-    { x: 14, y: 69 }, { x: 28, y: 46 }, { x: 54, y: 58 }, { x: 8, y: 41 },
-  ];
+  const beeFlightPosition = (progress) => {
+    // A small air mascot should feel lively without looking like it is bouncing between pins.
+    // Use a continuous figure-eight / orbit curve instead of long waypoint-to-waypoint chords.
+    const t = 2 * Math.PI * ((((progress % 1) + 1) % 1));
+    return {
+      x: 50 + 44 * Math.sin(t) + 5.5 * Math.sin(3 * t + 0.7),
+      y: 51 + 24 * Math.sin(2 * t + 0.45) + 4 * Math.sin(5 * t + 1.7),
+    };
+  };
   const catExplorerPhase = Number.parseFloat(process.env.GITANIMALS_CAT_PHASE ?? "0.24");
   const shibaExplorerPhase = Number.parseFloat(process.env.GITANIMALS_SHIBA_PHASE ?? "0.04");
   const residentWideRoutePhase = (type) => ({
@@ -985,7 +987,7 @@ const distributeCharacterRoaming = (svg) => {
 
   const preferredPosition = (unit, progress) => {
     if (beeQuokkaIds.has(String(unit.persona.id))) {
-      return interpolateClosedRoute(beeExplorerWaypoints, 0.12 + progress);
+      return beeFlightPosition(0.12 + progress);
     }
     if (terminalQuokkaIds.has(String(unit.persona.id))) {
       return interpolateClosedRoute([
@@ -1605,11 +1607,11 @@ const distributeCharacterRoaming = (svg) => {
         replaceGroupContents(sizeWrapperId, beeMascotSprite(id));
         frontRootIds.push(rootId);
         coordinatedRouteStyles += `@keyframes profile-bee-buzz-${id}{`
-          + "0%,100%{transform:translate(0,0) rotate(-6deg);}"
-          + "25%{transform:translate(.35px,-.35px) rotate(6deg);}"
-          + "50%{transform:translate(-.25px,.2px) rotate(-5deg);}"
-          + "75%{transform:translate(.25px,-.25px) rotate(5deg);}}"
-          + `#profile-custom-bee-${id}{animation:profile-bee-buzz-${id} .42s linear infinite;`
+          + "0%,100%{transform:translate(0,0) rotate(-2deg);}"
+          + "25%{transform:translate(.12px,-.16px) rotate(2.5deg);}"
+          + "50%{transform:translate(-.10px,.10px) rotate(-2deg);}"
+          + "75%{transform:translate(.10px,-.12px) rotate(2deg);}}"
+          + `#profile-custom-bee-${id}{animation:profile-bee-buzz-${id} .72s linear infinite;`
           + "transform-box:fill-box;transform-origin:center;}";
       } else if (isCustomPaintingSloth) {
         replaceGroupContents(sizeWrapperId, clawdPaintingSprite(id));

@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v62";
+const layoutVersion = "character-behaviors-v63";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -420,11 +420,11 @@ for (const persona of visible.filter(isBeePersona)) {
     previous = current;
   }
   const averageSpeed = weightedDistance / lightBee.duration;
-  assert(lightBee.duration <= 60.01 && darkBee.duration <= 60.01,
-    `Bee Quokka ${id} should loop in about 60s for a 2x-speed flight.`);
-  assert(averageSpeed >= 12,
-    `Bee Quokka ${id} should keep a fast full-farm flight; average ${averageSpeed.toFixed(2)} units/s.`);
-  assert(maximumSpeed <= 85,
+  assert(lightBee.duration >= 84 && lightBee.duration <= 100 && darkBee.duration >= 84 && darkBee.duration <= 100,
+    `Bee Quokka ${id} should loop in about 90s for a lively but readable flight.`);
+  assert(averageSpeed >= 4,
+    `Bee Quokka ${id} should keep a broad full-farm flight; average ${averageSpeed.toFixed(2)} units/s.`);
+  assert(maximumSpeed <= 30,
     `Bee Quokka ${id} moves too abruptly (${maximumSpeed.toFixed(2)} units/s).`);
 }
 
