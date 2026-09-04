@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10249",
+  "totalContributions": "10250",
   "personas": [
     {
       "id": "764406126012079806",
@@ -116,7 +116,7 @@
     {
       "id": "782656606814770346",
       "type": "LITTLE_CHICK_SWIFT",
-      "level": "10",
+      "level": "11",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
