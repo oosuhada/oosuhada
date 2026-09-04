@@ -12,7 +12,7 @@ const oosuTerminalMascotPath = path.join(outputDirectory, "custom", "oosu-termin
 const clawdPaintingPath = path.join(outputDirectory, "custom", "clawd-painting.svg");
 const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v63";
+const layoutVersion = "character-behaviors-v64";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -800,7 +800,7 @@ const distributeCharacterRoaming = (svg) => {
   }
 
   const routeDuration = 120;
-  const beeRouteDuration = 96;
+  const beeRouteDuration = 40;
   const routeSampleSeconds = 0.5;
   // Begin the gentle turn before sprites visibly overlap. The extra runway lets the temporal
   // smoother separate them without a sudden correction at the collision boundary.
@@ -947,15 +947,10 @@ const distributeCharacterRoaming = (svg) => {
     { x: 86, y: 66 }, { x: 54, y: 72 }, { x: 24, y: 65 }, { x: 10, y: 45 },
     { x: 30, y: 29 }, { x: 66, y: 32 }, { x: 88, y: 46 },
   ], "GOOSE");
-  const beeFlightPosition = (progress) => {
-    // A small air mascot should feel lively without looking like it is bouncing between pins.
-    // Use a continuous figure-eight / orbit curve instead of long waypoint-to-waypoint chords.
-    const t = 2 * Math.PI * ((((progress % 1) + 1) % 1));
-    return {
-      x: 50 + 44 * Math.sin(t) + 5.5 * Math.sin(3 * t + 0.7),
-      y: 51 + 24 * Math.sin(2 * t + 0.45) + 4 * Math.sin(5 * t + 1.7),
-    };
-  };
+  const beeFarmWaypoints = swimHamsterWaypoints.map(({ x, y }) => ({
+    x: 8 + ((x - 9) / 31) * 82,
+    y: 28 + ((y - 31) / 38) * 48,
+  }));
   const catExplorerPhase = Number.parseFloat(process.env.GITANIMALS_CAT_PHASE ?? "0.24");
   const shibaExplorerPhase = Number.parseFloat(process.env.GITANIMALS_SHIBA_PHASE ?? "0.04");
   const residentWideRoutePhase = (type) => ({
@@ -987,7 +982,7 @@ const distributeCharacterRoaming = (svg) => {
 
   const preferredPosition = (unit, progress) => {
     if (beeQuokkaIds.has(String(unit.persona.id))) {
-      return beeFlightPosition(0.12 + progress);
+      return interpolateClosedRoute(beeFarmWaypoints, 0.63 + progress * (denseLayout ? 7 : 9));
     }
     if (terminalQuokkaIds.has(String(unit.persona.id))) {
       return interpolateClosedRoute([
