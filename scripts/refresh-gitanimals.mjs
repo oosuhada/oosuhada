@@ -12,7 +12,7 @@ const oosuTerminalMascotPath = path.join(outputDirectory, "custom", "oosu-termin
 const clawdPaintingPath = path.join(outputDirectory, "custom", "clawd-painting.svg");
 const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v61";
+const layoutVersion = "character-behaviors-v62";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -800,6 +800,7 @@ const distributeCharacterRoaming = (svg) => {
   }
 
   const routeDuration = 120;
+  const beeRouteDuration = 54;
   const routeSampleSeconds = 0.5;
   // Begin the gentle turn before sprites visibly overlap. The extra runway lets the temporal
   // smoother separate them without a sudden correction at the collision boundary.
@@ -946,6 +947,13 @@ const distributeCharacterRoaming = (svg) => {
     { x: 86, y: 66 }, { x: 54, y: 72 }, { x: 24, y: 65 }, { x: 10, y: 45 },
     { x: 30, y: 29 }, { x: 66, y: 32 }, { x: 88, y: 46 },
   ], "GOOSE");
+  const beeExplorerWaypoints = [
+    // Explorer-style patrol copied from the land roamers, but stretched across the entire farm.
+    // The bee is an air unit, so it deliberately ignores the water/land split and collision solver.
+    { x: 7, y: 29 }, { x: 35, y: 18 }, { x: 70, y: 27 }, { x: 94, y: 18 },
+    { x: 86, y: 48 }, { x: 61, y: 38 }, { x: 88, y: 73 }, { x: 48, y: 82 },
+    { x: 14, y: 69 }, { x: 28, y: 46 }, { x: 54, y: 58 }, { x: 8, y: 41 },
+  ];
   const catExplorerPhase = Number.parseFloat(process.env.GITANIMALS_CAT_PHASE ?? "0.24");
   const shibaExplorerPhase = Number.parseFloat(process.env.GITANIMALS_SHIBA_PHASE ?? "0.04");
   const residentWideRoutePhase = (type) => ({
@@ -977,15 +985,7 @@ const distributeCharacterRoaming = (svg) => {
 
   const preferredPosition = (unit, progress) => {
     if (beeQuokkaIds.has(String(unit.persona.id))) {
-      // A bee should read as a smooth figure-eight hover, not a zigzag dart. Use a true sideways
-      // infinity path whose lobes cross at the centre; four loops per farm cycle keeps it lively
-      // while avoiding the frantic back-and-forth created by the earlier seven-loop Lissajous path.
-      const loop = 2 * Math.PI * (4 * progress + 0.12);
-      const lobe = Math.sin(loop);
-      return {
-        x: 50 + 43 * lobe,
-        y: 49 + 29 * lobe * Math.cos(loop) * 2,
-      };
+      return interpolateClosedRoute(beeExplorerWaypoints, 0.12 + progress);
     }
     if (terminalQuokkaIds.has(String(unit.persona.id))) {
       return interpolateClosedRoute([
@@ -1465,10 +1465,12 @@ const distributeCharacterRoaming = (svg) => {
     CAPYBARA_SWIM: { cx: 10, cy: 18, rx: 11 },
     GOOSE: { cx: 8, cy: 17, rx: 7 },
     GALCHI_CAT: { cx: 5, cy: 14, rx: 5 },
-    QUOKKA: { cx: 7, cy: 10.8, rx: 4.6, actionCy: 10.8 },
+    QUOKKA: terminalQuokkaIds.has(String(persona.id))
+      ? { cx: 7, cy: 8.2, rx: 4.1, actionCy: 8.2 }
+      : { cx: 7, cy: 10.8, rx: 4.6, actionCy: 10.8 },
     SHIBA: { cx: 5, cy: 12, rx: 5 },
     SLOTH: clawdSlothIds.has(String(persona.id))
-      ? { cx: 7, cy: 11.2, rx: 7.4, actionCy: 11.2 }
+      ? { cx: 7, cy: 8.4, rx: 4.8, actionCy: 8.4 }
       : { cx: 7, cy: 15.5, rx: 6, actionCy: 15.5 },
     FLAMINGO: { cx: 8, cy: 24, rx: 6 },
   })[persona.type] ?? ({
@@ -1560,6 +1562,7 @@ const distributeCharacterRoaming = (svg) => {
       const isCustomFlyingBee = persona.type === "QUOKKA" && beeQuokkaIds.has(id);
       const isCustomPaintingSloth = persona.type === "SLOTH" && clawdSlothIds.has(id);
       const hasCustomArtwork = isCustomTerminalQuokka || isCustomFlyingBee || isCustomPaintingSloth;
+      const personaRouteDuration = isCustomFlyingBee ? beeRouteDuration : routeDuration;
       const movement = routeKeyframes(unitIndex, isRider ? 5 : 0, isRider ? -6 : 0);
       const facing = hasCustomArtwork ? "0%,100%{transform:scaleX(1);}" : facingKeyframes(unitIndex);
       let rootId;
@@ -1571,13 +1574,13 @@ const distributeCharacterRoaming = (svg) => {
         replaceKeyframeBody(`move-${id}`, movement);
         // Labels are siblings of the facing wrapper, so the old counter-flip must stay neutral.
         replaceKeyframeBody(`reverse-flip-${id}`, "0%,100%{transform:scaleX(1);}");
-        configureAnimation(`move-${id}`, routeDuration, "infinite", "normal");
-        configureAnimation(`reverse-flip-${id}`, routeDuration, "infinite", "normal");
+        configureAnimation(`move-${id}`, personaRouteDuration, "infinite", "normal");
+        configureAnimation(`reverse-flip-${id}`, personaRouteDuration, "infinite", "normal");
         configureTimingFunction(`reverse-flip-${id}`, "steps(1,end)");
       } else {
         rootId = staticPersonaRoots.get(id);
         coordinatedRouteStyles += `@keyframes profile-route-${id}{${movement}}`
-          + `#${rootId}{animation-name:profile-route-${id};animation-duration:${routeDuration}s;`
+          + `#${rootId}{animation-name:profile-route-${id};animation-duration:${personaRouteDuration}s;`
           + "animation-timing-function:linear;animation-iteration-count:infinite;"
           + "animation-direction:normal;animation-fill-mode:both;}";
       }
@@ -1764,6 +1767,9 @@ const distributeCharacterRoaming = (svg) => {
       } else if (persona.type === "GALCHI_CAT") {
         // The cat's upstream metadata sits conspicuously high over its ears at 0.8x.
         coordinatedRouteStyles += `#level-wrap-${id}{translate:0 8px;}`;
+      } else if (isCustomPaintingSloth) {
+        // Clawd's canvas includes paint/palette space to its left, so the label tracks that wider silhouette.
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:-26px -2px;}`;
       }
     });
   });
