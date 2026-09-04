@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10472",
+  "totalContributions": "10474",
   "personas": [
     {
       "id": "764406126012079806",
@@ -196,7 +196,7 @@
     {
       "id": "829259874410923323",
       "type": "LITTLE_CHICK_ANGEL",
-      "level": "326",
+      "level": "327",
       "visible": false,
       "appVisible": false,
       "dropRate": "0%",
@@ -646,7 +646,7 @@
     {
       "id": "859359944015713030",
       "type": "GHOST",
-      "level": "184",
+      "level": "185",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.48%",

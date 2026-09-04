@@ -1769,7 +1769,7 @@ const distributeCharacterRoaming = (svg) => {
         coordinatedRouteStyles += `#level-wrap-${id}{translate:0 8px;}`;
       } else if (isCustomPaintingSloth) {
         // Clawd's canvas includes paint/palette space to its left, so the label tracks that wider silhouette.
-        coordinatedRouteStyles += `#level-wrap-${id}{translate:-26px -2px;}`;
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:-14px -2px;}`;
       }
     });
   });

@@ -278,6 +278,8 @@ lightAnimations.forEach((animation, index) => {
   if (animation.persona.type === "QUOKKA" && terminalQuokkaIds.has(String(animation.id))) {
     assert(light.includes(`profile-custom-terminal-${animation.id}`),
       "QUOKKA should render the custom Oosu terminal mascot sprite.");
+    assert(!/[#]73A8FF|[#]3F75E8|[#]2451B7|[#]224FAE/.test(light + dark),
+      "The custom Oosu terminal mascot should not use the old saturated blue palette.");
     assert(!light.includes(`quokka-${animation.id}-body`),
       "QUOKKA original sprite body should be replaced by the Oosu terminal mascot.");
   }
@@ -286,6 +288,9 @@ lightAnimations.forEach((animation, index) => {
       "SLOTH should render the custom Clawd painting sprite.");
     assert(new RegExp(`profile-custom-clawd-${animation.id}[^>]*width=\"62\" height=\"62\"`).test(light),
       "SLOTH Clawd painting sprite must render at the requested 62x62 size.");
+    assert(light.includes(`#level-wrap-${animation.id}{translate:-14px -2px;}`)
+      && dark.includes(`#level-wrap-${animation.id}{translate:-14px -2px;}`),
+    "SLOTH Clawd level label should move right while staying above the enlarged sprite.");
     assert(!light.includes(`sloth-${animation.id}-body`),
       "SLOTH original sprite body should be replaced by Clawd.");
   }
