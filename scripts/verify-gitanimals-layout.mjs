@@ -6,7 +6,10 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v65";
+const layoutVersion = "character-behaviors-v71";
+const frogAsset = await readFile(path.join(root, "assets/gitanimals/custom/frog-pixel.svg"), "utf8");
+const venomothAsset = await readFile(path.join(root, "assets/gitanimals/custom/venomoth-butterfly.svg"), "utf8");
+const terminalAsset = await readFile(path.join(root, "assets/gitanimals/custom/oosu-terminal-cutout.svg"), "utf8");
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
@@ -46,6 +49,7 @@ const expectedFacingPivots = {
   PENGUIN_SUNGLASSES: "20.75",
   CAPYBARA_CARROT: "30.76",
   CAPYBARA_SWIM: "17.40",
+  LITTLE_CHICK: "16.00",
   LITTLE_CHICK_SUNGLASSES: "14.36",
   GOOSE: "23.59",
   GALCHI_CAT: "11.75",
@@ -57,11 +61,40 @@ const expectedFacingPivots = {
 };
 const terminalQuokkaIds = new Set(["842652512849367039"]);
 const beeQuokkaIds = new Set(["839316493969798500"]);
+const venomothQuokkaIds = new Set(["839316523686430921"]);
+const frogChickIds = new Set(["835719307358968503"]);
+const flyingQuokkaIds = new Set([...beeQuokkaIds, ...venomothQuokkaIds]);
 const clawdSlothIds = new Set(["843727410376082595"]);
 
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
 };
+
+assert(frogAsset.includes('viewBox="0 0 21 16"'),
+  "Frog custom asset should stay on the coarser 21x16 pixel grid.");
+assert(frogAsset.includes("M6 1h2v1h-2Z") && frogAsset.includes("M13 1h2v1h-2Z")
+  && frogAsset.includes("M6 2h2v1h-2Z") && frogAsset.includes("M13 2h2v1h-2Z"),
+"Frog custom asset must preserve both dark pupils instead of dropping the left eye.");
+assert(!/<image\b|data:image|href=["'](?:https?:|data:)/i.test(frogAsset),
+  "Frog custom asset must remain pure inline vector artwork.");
+assert(venomothAsset.includes('viewBox="0 0 20 21"'),
+  "Venomoth custom asset should stay on the coarser 20x21 pixel grid.");
+assert(!/<image\b|data:image|href=["'](?:https?:|data:)/i.test(venomothAsset),
+  "Venomoth custom asset must remain pure inline vector artwork.");
+assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(venomothAsset),
+  "Venomoth custom asset should stay flat: no gradients or translucent shading.");
+assert(new Set([...venomothAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 4,
+  "Venomoth custom asset should keep a compact flat-color palette instead of pseudo-gradient shading.");
+assert(!venomothAsset.includes('#E6B2EA') && venomothAsset.includes('#B778C3'),
+  "Venomoth wings should use one purple fill instead of a lighter second wing tone.");
+assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(terminalAsset),
+  "Terminal mascot should stay flat: no gradients or translucent highlight/shadow layers.");
+assert(terminalAsset.includes('shape-rendering="crispEdges"'),
+  "Terminal mascot should use crisp pixel rendering instead of antialiased geometric precision.");
+assert(new Set([...terminalAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 4,
+  "Terminal mascot should keep a compact flat-color palette.");
+assert(terminalAsset.includes('#3A83F6'),
+  "Terminal mascot body should use the darker blue sampled from the provided reference button.");
 
 const assertSvgTagBalance = (svg, label) => {
   const stack = [];
@@ -79,6 +112,21 @@ const assertSvgTagBalance = (svg, label) => {
     }
   }
   assert(stack.length === 0, `${label} SVG has unclosed tags: ${stack.join(", ")}.`);
+};
+
+const groupMarkupById = (svg, groupId) => {
+  const escapedGroupId = groupId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(`<g\\s+id\\s*=\\s*[\"']${escapedGroupId}[\"'][^>]*>`).exec(svg);
+  assert(match, `Missing SVG group ${groupId}.`);
+  const groupTag = /<\/?g\b[^>]*>/g;
+  groupTag.lastIndex = match.index;
+  let depth = 0;
+  for (let tagMatch = groupTag.exec(svg); tagMatch; tagMatch = groupTag.exec(svg)) {
+    const tag = tagMatch[0];
+    depth += tag.startsWith("</") ? -1 : 1;
+    if (depth === 0) return svg.slice(match.index, tagMatch.index + tag.length);
+  }
+  throw new Error(`SVG group ${groupId} is not closed.`);
 };
 
 const separationRadius = (type) => {
@@ -120,6 +168,7 @@ const characterScale = (type) => ({
 
 const isSwimZoneType = (type) => type.includes("_SWIM") || type.includes("_TUBE")
   || type === "GOOSE" || type === "FLAMINGO";
+const isSwimZonePersona = (persona) => frogChickIds.has(String(persona.id)) || isSwimZoneType(persona.type);
 const swimZoneBounds = { left: 8, right: 43 };
 const swimZoneBoundsFor = (type) => ({
   CAPYBARA_SWIM: { left: 8.5, right: 28 },
@@ -201,11 +250,31 @@ assert(/data-profile-scene-phase="[\d.]+"/.test(dark), "Dark SVG is missing its 
 
 const visible = state.personas.filter((persona) => persona.visible);
 const isBeePersona = (persona) => beeQuokkaIds.has(String(persona.id));
+const isVenomothPersona = (persona) => venomothQuokkaIds.has(String(persona.id));
+const isFlyingPersona = (persona) => flyingQuokkaIds.has(String(persona.id));
+const isOverlayPersona = (persona) => isFlyingPersona(persona) || frogChickIds.has(String(persona.id));
+const stripedTubePrefixes = {
+  LITTLE_CHICK_TUBE: "little-chick",
+  RABBIT_TUBE: "rabbit",
+  HAMSTER_TUBE: "hamster",
+};
+visible
+  .filter((persona) => stripedTubePrefixes[persona.type])
+  .forEach((persona) => {
+    const groupId = `${stripedTubePrefixes[persona.type]}-${persona.id}-tube`;
+    for (const [theme, svg] of [["Light", light], ["Dark", dark]]) {
+      const tubeMarkup = groupMarkupById(svg, groupId);
+      assert(!/#(?:F8F8F8|FBB3BE|FF99E7|6DB33F)\b/.test(tubeMarkup),
+        `${theme} ${persona.type} tube still contains white or alternating stripe colors.`);
+      assert((tubeMarkup.match(/fill="#5FC4FF"/g) ?? []).length >= 14,
+        `${theme} ${persona.type} tube should be simplified into a solid sky-blue float.`);
+    }
+  });
 const rider = visible.find((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES");
 const mount = visible.find((persona) => persona.type === "CAPYBARA_SWIM");
 const collisionPersonas = rider && mount
-  ? visible.filter((persona) => String(persona.id) !== String(rider.id) && !isBeePersona(persona))
-  : visible.filter((persona) => !isBeePersona(persona));
+  ? visible.filter((persona) => String(persona.id) !== String(rider.id) && !isOverlayPersona(persona))
+  : visible.filter((persona) => !isOverlayPersona(persona));
 const denseLayout = collisionPersonas.length > 10;
 const lightAnimations = collisionPersonas.map((persona) => extractAnimation(light, persona));
 const darkAnimations = collisionPersonas.map((persona) => extractAnimation(dark, persona));
@@ -261,14 +330,14 @@ lightAnimations.forEach((animation, index) => {
     JSON.stringify(animation.points) === JSON.stringify(darkAnimation.points),
     `Light and dark routes differ for ${animation.persona.type} (${animation.id}).`,
   );
-  const zoneBounds = isSwimZoneType(animation.persona.type)
+  const zoneBounds = isSwimZonePersona(animation.persona)
     ? swimZoneBoundsFor(animation.persona.type)
     : { ...landZoneBounds, left: landShorelineAnchorLeft(animation.persona.type) };
   animation.points.forEach((point) => {
     assert(point.x >= zoneBounds.left - 0.01 && point.x <= zoneBounds.right + 0.01,
-      `${animation.persona.type} leaves its ${isSwimZoneType(animation.persona.type) ? "swim" : "land"} zone at x=${point.x.toFixed(2)}.`);
+      `${animation.persona.type} leaves its ${isSwimZonePersona(animation.persona) ? "swim" : "land"} zone at x=${point.x.toFixed(2)}.`);
   });
-  if (!isSwimZoneType(animation.persona.type)) {
+  if (!isSwimZonePersona(animation.persona)) {
     const xValues = animation.points.map((point) => point.x);
     assert(Math.min(...xValues) <= landShorelineAnchorLeft(animation.persona.type) + 3.5,
       `${animation.persona.type} no longer has access to the shoreline side (${Math.min(...xValues).toFixed(2)}%).`);
@@ -278,6 +347,8 @@ lightAnimations.forEach((animation, index) => {
   if (animation.persona.type === "QUOKKA" && terminalQuokkaIds.has(String(animation.id))) {
     assert(light.includes(`profile-custom-terminal-${animation.id}`),
       "QUOKKA should render the custom Oosu terminal mascot sprite.");
+    assert(!/[#]73A8FF|[#]3F75E8|[#]2451B7|[#]224FAE/.test(light + dark),
+      "The custom Oosu terminal mascot should not use the old saturated blue palette.");
     assert(!light.includes(`quokka-${animation.id}-body`),
       "QUOKKA original sprite body should be replaced by the Oosu terminal mascot.");
   }
@@ -286,8 +357,18 @@ lightAnimations.forEach((animation, index) => {
       "SLOTH should render the custom Clawd painting sprite.");
     assert(new RegExp(`profile-custom-clawd-${animation.id}[^>]*width=\"62\" height=\"62\"`).test(light),
       "SLOTH Clawd painting sprite must render at the requested 62x62 size.");
+    assert(light.includes(`#level-wrap-${animation.id}{translate:-14px -2px;}`)
+      && dark.includes(`#level-wrap-${animation.id}{translate:-14px -2px;}`),
+    "SLOTH Clawd level label should move right while staying above the enlarged sprite.");
     assert(!light.includes(`sloth-${animation.id}-body`),
       "SLOTH original sprite body should be replaced by Clawd.");
+  }
+  if (animation.persona.type === "SLOTH" && !clawdSlothIds.has(String(animation.id))) {
+    const levelRouteStart = light.indexOf(`@keyframes profile-level-route-${animation.id}`);
+    const levelRouteEnd = light.indexOf(`#level-wrap-${animation.id}`, levelRouteStart);
+    const levelRoute = light.slice(levelRouteStart, levelRouteEnd);
+    assert(levelRouteStart >= 0 && levelRoute.includes("translate:-18px 0px") && levelRoute.includes("translate:0px 0px"),
+      `SLOTH ${animation.id} level should shift left only while facing left and preserve right-facing placement.`);
   }
   const movementStart = light.indexOf(`@keyframes ${animation.name}`);
   const movementRuleStart = light.indexOf(`animation-name:${animation.name}`, movementStart) >= 0
@@ -390,6 +471,16 @@ for (const persona of visible.filter(isBeePersona)) {
     `Bee Quokka ${id} should not keep a local buzz/jitter animation.`);
   assert(!light.includes(`<svg id="profile-shadow-${id}"`),
     `Bee Quokka ${id} should fly without a ground shadow.`);
+  assert(light.includes(`#profile-facing-${id}{animation:profile-facing-route-${id} 60s steps(1,end) infinite both;transform-origin:1.50px 0px;`),
+    `Bee Quokka ${id} should turn around its visual center on the same 60s flight cycle.`);
+  const beeFacingStart = light.indexOf(`@keyframes profile-facing-route-${id}`);
+  const beeFacingEnd = light.indexOf(`#profile-facing-${id}`, beeFacingStart);
+  const beeFacingBody = light.slice(beeFacingStart, beeFacingEnd);
+  assert(beeFacingBody.includes("scaleX(-1)") && beeFacingBody.includes("scaleX(1)"),
+    `Bee Quokka ${id} should face left while flying left and right while flying right.`);
+  assert(light.includes(`#level-wrap-${id}{translate:-5px 12px;}`)
+    && dark.includes(`#level-wrap-${id}{translate:-5px 12px;}`),
+  `Bee Quokka ${id} level should sit lower and slightly left of the fast-flying sprite.`);
   const lightBee = extractAnimation(light, persona);
   const darkBee = extractAnimation(dark, persona);
   assert(JSON.stringify(lightBee.points) === JSON.stringify(darkBee.points),
@@ -422,6 +513,73 @@ for (const persona of visible.filter(isBeePersona)) {
     `Bee Quokka ${id} should keep a fast broad full-farm flight; average ${averageSpeed.toFixed(2)} units/s.`);
   assert(maximumSpeed <= 90,
     `Bee Quokka ${id} moves too abruptly (${maximumSpeed.toFixed(2)} units/s).`);
+}
+
+for (const persona of visible.filter(isVenomothPersona)) {
+  const id = String(persona.id);
+  assert(light.includes(`profile-custom-venomoth-${id}`) && dark.includes(`profile-custom-venomoth-${id}`),
+    `Venomoth Quokka ${id} should render the vectorized butterfly sprite in both themes.`);
+  assert(!light.includes(`quokka-${id}-body`) && !dark.includes(`quokka-${id}-body`),
+    `Venomoth Quokka ${id} original body should be replaced.`);
+  assert(!light.includes(`<svg id="profile-shadow-${id}"`) && !dark.includes(`<svg id="profile-shadow-${id}"`),
+    `Venomoth Quokka ${id} should fly without a ground shadow.`);
+  assert(light.includes(`#profile-facing-${id}{animation:profile-facing-route-${id} 120s steps(1,end) infinite both;transform-box:fill-box;transform-origin:center center;`),
+    `Venomoth Quokka ${id} should flip around its own artwork center on the 120s flight cycle.`);
+  const venomothFacingStart = light.indexOf(`@keyframes profile-facing-route-${id}`);
+  const venomothFacingEnd = light.indexOf(`#profile-facing-${id}`, venomothFacingStart);
+  const venomothFacingBody = light.slice(venomothFacingStart, venomothFacingEnd);
+  assert(venomothFacingBody.includes("scaleX(-1)") && venomothFacingBody.includes("scaleX(1)"),
+    `Venomoth Quokka ${id} must face left while flying left and right while flying right.`);
+  assert(light.includes(`#level-wrap-${id}{translate:-10px 2px;}`)
+    && dark.includes(`#level-wrap-${id}{translate:-10px 2px;}`),
+  `Venomoth Quokka ${id} level should clear its large wings.`);
+  const flight = extractAnimation(light, persona);
+  const darkFlight = extractAnimation(dark, persona);
+  assert(JSON.stringify(flight.points) === JSON.stringify(darkFlight.points),
+    `Venomoth Quokka ${id} light and dark flight paths differ.`);
+  const xValues = flight.points.map((point) => point.x);
+  const yValues = flight.points.map((point) => point.y);
+  assert(Math.min(...xValues) <= 8.5 && Math.max(...xValues) >= 91.5,
+    `Venomoth Quokka ${id} should sweep across water and land.`);
+  assert(Math.max(...yValues) - Math.min(...yValues) >= 50,
+    `Venomoth Quokka ${id} should use the full-height flying route.`);
+  assert(flight.duration === 120 && darkFlight.duration === 120,
+    `Venomoth Quokka ${id} must take 120s, exactly twice the bee cycle.`);
+}
+
+for (const persona of visible.filter((candidate) => frogChickIds.has(String(candidate.id)))) {
+  const id = String(persona.id);
+  assert(light.includes(`profile-custom-frog-${id}`) && dark.includes(`profile-custom-frog-${id}`),
+    `Frog Little Chick ${id} should render the isolated pixel frog in both themes.`);
+  assert(!light.includes(`little-chick-${id}-body`) && !dark.includes(`little-chick-${id}-body`),
+    `Frog Little Chick ${id} original chick body should be replaced.`);
+  assert(light.includes(`#level-wrap-${id}{translate:-8px -32px;}`)
+    && dark.includes(`#level-wrap-${id}{translate:-8px -32px;}`),
+  `Frog Little Chick ${id} level should stay above the frog.`);
+  assert(light.includes(`#profile-size-${id}{transform:scale(2.00);`)
+    && dark.includes(`#profile-size-${id}{transform:scale(2.00);`),
+  `Frog Little Chick ${id} should render at exactly 2x its previous size.`);
+  assert(light.includes('#3E7F3C') && light.includes('#73B84D')
+    && dark.includes('#3E7F3C') && dark.includes('#73B84D'),
+  `Frog Little Chick ${id} should use the brighter tree-frog palette.`);
+  const frog = extractAnimation(light, persona);
+  const xValues = frog.points.map((point) => point.x);
+  const yValues = frog.points.map((point) => point.y);
+  assert(Math.min(...xValues) >= swimZoneBounds.left - 0.01 && Math.max(...xValues) <= swimZoneBounds.right + 0.01,
+    `Frog Little Chick ${id} must remain inside the water habitat.`);
+  assert(Math.min(...xValues) >= 38.9 && Math.max(...xValues) <= 41.10,
+    `Frog Little Chick ${id} should stay in the lower-right shoreline pocket (${Math.min(...xValues).toFixed(2)}-${Math.max(...xValues).toFixed(2)}%).`);
+  assert(Math.min(...yValues) >= 67.5 && Math.max(...yValues) <= 74.1,
+    `Frog Little Chick ${id} should stay low in the water (${Math.min(...yValues).toFixed(2)}-${Math.max(...yValues).toFixed(2)}%).`);
+  assert(Math.max(...xValues) - Math.min(...xValues) <= 2.2
+    && Math.max(...yValues) - Math.min(...yValues) <= 6.7,
+  `Frog Little Chick ${id} should keep a compact flamingo-like resident route.`);
+  const shadowStart = light.indexOf(`<svg id="profile-shadow-${id}"`);
+  const shadowEnd = light.indexOf("</svg>", shadowStart);
+  const waterMarkup = light.slice(shadowStart, shadowEnd);
+  assert(shadowStart !== -1 && waterMarkup.includes('class="profile-bird-ripple"')
+    && waterMarkup.includes('class="profile-bird-wake"'),
+  `Frog Little Chick ${id} should carry a small water ripple/wake.`);
 }
 
 // These four are intentionally the most visibly active members of their two families. Guard both
@@ -671,14 +829,14 @@ for (let leftIndex = 0; leftIndex < lightAnimations.length; leftIndex += 1) {
   for (let rightIndex = leftIndex + 1; rightIndex < lightAnimations.length; rightIndex += 1) {
     const left = lightAnimations[leftIndex];
     const right = lightAnimations[rightIndex];
-    const sameZone = isSwimZoneType(left.persona.type) === isSwimZoneType(right.persona.type);
+    const sameZone = isSwimZonePersona(left.persona) === isSwimZonePersona(right.persona);
     // Cross-shore pairs cannot collide: the rendered-water containment regression below is the
     // source of truth for that boundary. Treating their movement anchors as one shared floor was
     // what recreated an unnecessary empty strip beside the shoreline.
     if (!sameZone) continue;
     const threshold = separationRadius(left.persona.type) + separationRadius(right.persona.type);
     const sameFamily = animationsShareFamily(left, right);
-    const sameFamilyMinimumDistance = threshold + (sameFamily && isSwimZoneType(left.persona.type) ? 2 : 10);
+    const sameFamilyMinimumDistance = threshold + (sameFamily && isSwimZonePersona(left.persona) ? 2 : 10);
     let pairMinimumDistance = Number.POSITIVE_INFINITY;
     const overlapSamples = [];
     for (let seconds = 0; seconds < cycleSeconds; seconds += sampleStepSeconds) {

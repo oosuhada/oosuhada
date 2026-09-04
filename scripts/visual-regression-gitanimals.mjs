@@ -21,16 +21,20 @@ const heartSnapshotSecond = firstVisibleHeart
 const snapshots = [...new Set([0, heartSnapshotSecond, 22, 30, 32, 60, 90])].sort((left, right) => left - right);
 const visiblePersonas = state.personas.filter((persona) => persona.visible);
 const beeQuokkaIds = new Set(["839316493969798500"]);
+const venomothQuokkaIds = new Set(["839316523686430921"]);
+const frogChickIds = new Set(["835719307358968503"]);
 const beeIds = new Set(visiblePersonas.filter((persona) => beeQuokkaIds.has(String(persona.id))).map((persona) => String(persona.id)));
+const venomothIds = new Set(visiblePersonas.filter((persona) => venomothQuokkaIds.has(String(persona.id))).map((persona) => String(persona.id)));
+const flyingIds = new Set([...beeIds, ...venomothIds]);
 const hasMountedPair = visiblePersonas.some((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES")
   && visiblePersonas.some((persona) => persona.type === "CAPYBARA_SWIM");
 const expectedInteractionCount = visiblePersonas.length;
 const expectedActionCount = visiblePersonas.length - (hasMountedPair ? 1 : 0);
-const expectedShadowCount = expectedActionCount - beeIds.size;
+const expectedShadowCount = expectedActionCount - flyingIds.size;
 const swimZoneIds = new Set(
   visiblePersonas
     .filter((persona) => persona.type.includes("_SWIM") || persona.type.includes("_TUBE")
-      || persona.type === "GOOSE" || persona.type === "FLAMINGO")
+      || persona.type === "GOOSE" || persona.type === "FLAMINGO" || frogChickIds.has(String(persona.id)))
     .map((persona) => String(persona.id)),
 );
 if (hasMountedPair) {
@@ -38,7 +42,7 @@ if (hasMountedPair) {
   if (rider) swimZoneIds.add(String(rider.id));
 }
 const landZoneIds = new Set(
-  visiblePersonas.map((persona) => String(persona.id)).filter((id) => !swimZoneIds.has(id) && !beeIds.has(id)),
+  visiblePersonas.map((persona) => String(persona.id)).filter((id) => !swimZoneIds.has(id) && !flyingIds.has(id)),
 );
 const closeShadowTypes = new Set(["RABBIT_TUBE", "HAMSTER_TUBE", "LITTLE_CHICK_TUBE", "DESSERT_FOX"]);
 const closeShadowIds = new Set(
@@ -51,7 +55,7 @@ const simpleTubeWaterIds = new Set(
 );
 const birdWaterIds = new Set(
   visiblePersonas
-    .filter((persona) => ["GOOSE", "FLAMINGO"].includes(persona.type))
+    .filter((persona) => ["GOOSE", "FLAMINGO"].includes(persona.type) || frogChickIds.has(String(persona.id)))
     .map((persona) => String(persona.id)),
 );
 const gooseId = String(visiblePersonas.find((persona) => persona.type === "GOOSE")?.id ?? "");
@@ -231,7 +235,7 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v65", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v71", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.swimZone?.width > 285 && geometry.swimZone?.width < 305,
@@ -278,6 +282,11 @@ try {
         const bee = geometry.characters.find((character) => character.id === id);
         assert(bee?.visibleArtwork && bee.visibleArtwork.width > 0 && bee.visibleArtwork.height > 0,
           `${theme} ${seconds}s lost the flying bee sprite.`);
+      });
+      venomothIds.forEach((id) => {
+        const venomoth = geometry.characters.find((character) => character.id === id);
+        assert(venomoth?.visibleArtwork && venomoth.visibleArtwork.width > 0 && venomoth.visibleArtwork.height > 0,
+          `${theme} ${seconds}s lost the flying Venomoth butterfly sprite.`);
       });
       assert(geometry.actions === expectedActionCount, `${theme} ${seconds}s lost character action wrappers.`);
       assert(geometry.interactions === expectedInteractionCount,
