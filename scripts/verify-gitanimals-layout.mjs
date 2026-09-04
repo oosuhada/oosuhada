@@ -183,6 +183,8 @@ assert(light.includes(`data-profile-layout="${layoutVersion}"`), "Light SVG layo
 assert(dark.includes(`data-profile-layout="${layoutVersion}"`), "Dark SVG layout version is stale.");
 assertSvgTagBalance(light, "Light");
 assertSvgTagBalance(dark, "Dark");
+assert(!light.includes("data:image") && !dark.includes("data:image"),
+  "Farm SVG must not embed raster data URIs; GitHub README image rendering can drop them.");
 assert(light.includes('data-profile-zone-split="50"'), "Light SVG is missing the half-width swim/land zone split.");
 assert(dark.includes('data-profile-zone-split="50"'), "Dark SVG is missing the half-width swim/land zone split.");
 assert(light.includes('<g id="profile-swim-zone"'), "Light SVG is missing the visible swim zone.");
