@@ -738,7 +738,7 @@ const distributeCharacterRoaming = (svg) => {
     }
     return clawdPaintingSource.replace(
       /<svg\b/,
-      `<svg id="profile-custom-clawd-${personaId}" class="profile-custom-clawd" x="-10" y="-18" width="31" height="31"`,
+      `<svg id="profile-custom-clawd-${personaId}" class="profile-custom-clawd" x="-15" y="-28" width="44" height="44"`,
     );
   };
 
@@ -977,10 +977,10 @@ const distributeCharacterRoaming = (svg) => {
 
   const preferredPosition = (unit, progress) => {
     if (beeQuokkaIds.has(String(unit.persona.id))) {
-      const loop = 2 * Math.PI * progress;
+      const loop = 2 * Math.PI * (4 * progress + 0.12);
       return {
-        x: 12 + (((progress * 4.7 + 0.19) % 1) * 74),
-        y: 44 + 20 * Math.sin(loop * 5.2) + 12 * Math.sin(loop * 11.3 + 0.8),
+        x: 50 + 46 * Math.sin(loop),
+        y: 50 + 31 * Math.sin(2 * loop + 0.45),
       };
     }
     if (terminalQuokkaIds.has(String(unit.persona.id))) {
@@ -1458,7 +1458,9 @@ const distributeCharacterRoaming = (svg) => {
     GALCHI_CAT: { cx: 5, cy: 14, rx: 5 },
     QUOKKA: { cx: 7, cy: 10.8, rx: 4.6, actionCy: 10.8 },
     SHIBA: { cx: 5, cy: 12, rx: 5 },
-    SLOTH: { cx: 7, cy: 15.5, rx: 6, actionCy: 15.5 },
+    SLOTH: clawdSlothIds.has(String(persona.id))
+      ? { cx: 7, cy: 11.2, rx: 7.4, actionCy: 11.2 }
+      : { cx: 7, cy: 15.5, rx: 6, actionCy: 15.5 },
     FLAMINGO: { cx: 8, cy: 24, rx: 6 },
   })[persona.type] ?? ({
     RABBIT: { cx: 8.5, cy: 11, rx: 5 },

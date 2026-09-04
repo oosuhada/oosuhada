@@ -386,6 +386,36 @@ for (const persona of visible.filter(isBeePersona)) {
     `Bee Quokka ${id} is missing its fast buzz animation.`);
   assert(!light.includes(`<svg id="profile-shadow-${id}"`),
     `Bee Quokka ${id} should fly without a ground shadow.`);
+  const lightBee = extractAnimation(light, persona);
+  const darkBee = extractAnimation(dark, persona);
+  assert(JSON.stringify(lightBee.points) === JSON.stringify(darkBee.points),
+    `Bee Quokka ${id} light and dark flight paths differ.`);
+  const xValues = lightBee.points.map((point) => point.x);
+  const yValues = lightBee.points.map((point) => point.y);
+  assert(Math.min(...xValues) <= 8.5 && Math.max(...xValues) >= 91.5,
+    `Bee Quokka ${id} should sweep across both water and land (${Math.min(...xValues).toFixed(2)}-${Math.max(...xValues).toFixed(2)}%).`);
+  assert(Math.max(...yValues) - Math.min(...yValues) >= 50,
+    `Bee Quokka ${id} should fly through a tall looping path.`);
+  const start = positionAt(lightBee, 0);
+  const nearEnd = positionAt(lightBee, lightBee.duration - sampleStepSeconds);
+  const seamDistance = Math.hypot((start.x - nearEnd.x) * 2, start.y - nearEnd.y);
+  assert(seamDistance <= 3,
+    `Bee Quokka ${id} jumps across its loop seam (${seamDistance.toFixed(2)} units).`);
+  let maximumSpeed = 0;
+  let weightedDistance = 0;
+  let previous = start;
+  for (let seconds = sampleStepSeconds; seconds < lightBee.duration; seconds += sampleStepSeconds) {
+    const current = positionAt(lightBee, seconds);
+    const distance = Math.hypot((current.x - previous.x) * 2, current.y - previous.y);
+    weightedDistance += distance;
+    maximumSpeed = Math.max(maximumSpeed, distance / sampleStepSeconds);
+    previous = current;
+  }
+  const averageSpeed = weightedDistance / lightBee.duration;
+  assert(averageSpeed >= 14,
+    `Bee Quokka ${id} should fly 2-3x faster than land pets; average ${averageSpeed.toFixed(2)} units/s.`);
+  assert(maximumSpeed <= 42,
+    `Bee Quokka ${id} moves too abruptly (${maximumSpeed.toFixed(2)} units/s).`);
 }
 
 // These four are intentionally the most visibly active members of their two families. Guard both
