@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10469",
+  "totalContributions": "10472",
   "personas": [
     {
       "id": "764406126012079806",
@@ -146,7 +146,7 @@
     {
       "id": "786426802227731455",
       "type": "HAMSTER_KOTLIN",
-      "level": "6",
+      "level": "7",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -706,7 +706,7 @@
     {
       "id": "869762253656795781",
       "type": "WHITE_CAT",
-      "level": "6",
+      "level": "7",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.87%",
@@ -1176,7 +1176,7 @@
     {
       "id": "880481552927132372",
       "type": "GOOSE",
-      "level": "52",
+      "level": "53",
       "visible": false,
       "appVisible": false,
       "dropRate": "9%",

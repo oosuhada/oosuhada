@@ -1467,11 +1467,11 @@ const distributeCharacterRoaming = (svg) => {
     GOOSE: { cx: 8, cy: 17, rx: 7 },
     GALCHI_CAT: { cx: 5, cy: 14, rx: 5 },
     QUOKKA: terminalQuokkaIds.has(String(persona.id))
-      ? { cx: 5.2, cy: 6.8, rx: 4.1, actionCy: 6.8 }
+      ? { cx: 4.6, cy: 6.8, rx: 4.1, actionCy: 6.8 }
       : { cx: 7, cy: 10.8, rx: 4.6, actionCy: 10.8 },
     SHIBA: { cx: 5, cy: 12, rx: 5 },
     SLOTH: clawdSlothIds.has(String(persona.id))
-      ? { cx: 4.7, cy: 8.4, rx: 4.8, actionCy: 8.4 }
+      ? { cx: 3.9, cy: 8.4, rx: 3.8, actionCy: 8.4 }
       : { cx: 7, cy: 15.5, rx: 6, actionCy: 15.5 },
     FLAMINGO: { cx: 8, cy: 24, rx: 6 },
   })[persona.type] ?? ({
@@ -1565,7 +1565,9 @@ const distributeCharacterRoaming = (svg) => {
       const hasCustomArtwork = isCustomTerminalQuokka || isCustomFlyingBee || isCustomPaintingSloth;
       const personaRouteDuration = isCustomFlyingBee ? beeRouteDuration : routeDuration;
       const movement = routeKeyframes(unitIndex, isRider ? 5 : 0, isRider ? -6 : 0);
-      const facing = hasCustomArtwork ? "0%,100%{transform:scaleX(1);}" : facingKeyframes(unitIndex);
+      const facing = isCustomFlyingBee
+        ? facingKeyframes(unitIndex)
+        : hasCustomArtwork ? "0%,100%{transform:scaleX(1);}" : facingKeyframes(unitIndex);
       let rootId;
       if (movingPersonaIds.has(id)) {
         const animationRuleStart = result.indexOf(`animation-name: move-${id}`);
@@ -1594,7 +1596,7 @@ const distributeCharacterRoaming = (svg) => {
       wrapGroupContents(rootId, interactionWrapperId);
 
       const facingWrapperId = `profile-facing-${id}`;
-      const pivot = facingPivot(persona);
+      const pivot = isCustomFlyingBee ? 1.5 : facingPivot(persona);
       const geometry = groundGeometry(persona);
       const scale = characterScale(persona);
       wrapArtworkContents(rootId, facingWrapperId, id);
@@ -1609,13 +1611,13 @@ const distributeCharacterRoaming = (svg) => {
         replaceGroupContents(sizeWrapperId, clawdPaintingSprite(id));
       }
       coordinatedRouteStyles += `@keyframes profile-facing-route-${id}{${facing}}`
-        + `#${facingWrapperId}{animation:profile-facing-route-${id} ${routeDuration}s steps(1,end) infinite both;`
+        + `#${facingWrapperId}{animation:profile-facing-route-${id} ${personaRouteDuration}s steps(1,end) infinite both;`
         + `transform-origin:${pivot.toFixed(2)}px 0px;}`
         + `#${sizeWrapperId}{transform:scale(${scale.toFixed(2)});`
         + `transform-origin:${(geometry.cx * 3).toFixed(2)}px ${(geometry.cy * 3).toFixed(2)}px;}`;
 
       coordinatedRouteStyles += `@keyframes profile-interaction-route-${id}{${interactionKeyframes(unitIndex)}}`
-        + `#${interactionWrapperId}{animation:profile-interaction-route-${id} ${routeDuration}s linear infinite both;`
+        + `#${interactionWrapperId}{animation:profile-interaction-route-${id} ${personaRouteDuration}s linear infinite both;`
         + `transform-origin:${pivot.toFixed(2)}px 36px;}`;
 
       if (!isRider && !isCustomFlyingBee) {
@@ -1722,7 +1724,11 @@ const distributeCharacterRoaming = (svg) => {
 
       // Emotion artwork can extend above the normal sprite bounds. Keep the label above that
       // artwork instead of letting the rabbit's ! / ... state or the capybara's carrot cover it.
-      if (persona.type === "RABBIT") {
+      if (isCustomFlyingBee) {
+        // The bee flies through the full farm and sits visually above the route anchor. Keep the
+        // level close to its body without covering the wings.
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:-5px 12px;}`;
+      } else if (persona.type === "RABBIT") {
         // The rabbit artwork's visual centre moves substantially inside its wide emotion-state
         // canvas when mirrored. Keep the horizontal optical correction, but bring the label down
         // close to the visible ears instead of leaving the large source-art gap above the rabbit.

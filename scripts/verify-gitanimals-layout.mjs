@@ -390,6 +390,16 @@ for (const persona of visible.filter(isBeePersona)) {
     `Bee Quokka ${id} should not keep a local buzz/jitter animation.`);
   assert(!light.includes(`<svg id="profile-shadow-${id}"`),
     `Bee Quokka ${id} should fly without a ground shadow.`);
+  assert(light.includes(`#profile-facing-${id}{animation:profile-facing-route-${id} 60s steps(1,end) infinite both;transform-origin:1.50px 0px;`),
+    `Bee Quokka ${id} should turn around its visual center on the same 60s flight cycle.`);
+  const beeFacingStart = light.indexOf(`@keyframes profile-facing-route-${id}`);
+  const beeFacingEnd = light.indexOf(`#profile-facing-${id}`, beeFacingStart);
+  const beeFacingBody = light.slice(beeFacingStart, beeFacingEnd);
+  assert(beeFacingBody.includes("scaleX(-1)") && beeFacingBody.includes("scaleX(1)"),
+    `Bee Quokka ${id} should face left while flying left and right while flying right.`);
+  assert(light.includes(`#level-wrap-${id}{translate:-5px 12px;}`)
+    && dark.includes(`#level-wrap-${id}{translate:-5px 12px;}`),
+  `Bee Quokka ${id} level should sit lower and slightly left of the fast-flying sprite.`);
   const lightBee = extractAnimation(light, persona);
   const darkBee = extractAnimation(dark, persona);
   assert(JSON.stringify(lightBee.points) === JSON.stringify(darkBee.points),
