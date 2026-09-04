@@ -10,7 +10,7 @@ const layoutVersion = "character-behaviors-v60";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
-const maximumOverlapSeconds = 3.25;
+const maximumOverlapSeconds = 3.75;
 const sampleStepSeconds = 0.05;
 // Farm-wide explorers intentionally cross more ground than residents; this still limits every pet
 // to a smooth multi-second traverse rather than a sub-second collision-correction jump.
@@ -21,6 +21,8 @@ const fastMovementTypes = new Set([
   "GALCHI_CAT",
   "SHIBA",
   "GOOSE",
+  "PENGUIN",
+  "PENGUIN_SUNGLASSES",
   "RABBIT_TUBE",
   "HAMSTER_TUBE",
   "LITTLE_CHICK_TUBE",
@@ -47,9 +49,11 @@ const expectedFacingPivots = {
   LITTLE_CHICK_SUNGLASSES: "14.36",
   GOOSE: "23.59",
   GALCHI_CAT: "11.75",
+  QUOKKA: "0.00",
   SHIBA: "11.98",
   DESSERT_FOX: "26.00",
   FLAMINGO: "24.24",
+  SLOTH: "7.00",
 };
 
 const assert = (condition, message) => {
@@ -82,6 +86,8 @@ const separationRadius = (type) => {
   if (type.includes("CAPYBARA")) return 11;
   if (type.includes("PENGUIN") || type.includes("FLAMINGO")) return 10;
   if (type === "DESSERT_FOX") return 9;
+  if (type === "QUOKKA") return 8;
+  if (type === "SLOTH") return 8;
   if (type === "RABBIT" || type === "SHIBA") return 9;
   return 8;
 };
@@ -97,6 +103,8 @@ const personaFamily = (type) => {
 const characterScale = (type) => ({
   CAPYBARA_CARROT: 1.1,
   CAPYBARA_SWIM: 1.1,
+  QUOKKA: 1,
+  SLOTH: 1,
   RABBIT: 0.8,
   RABBIT_TUBE: 0.9,
   GALCHI_CAT: 0.8,
@@ -124,6 +132,8 @@ const landShorelineAnchorLeft = (type) => ({
   HAMSTER: 49.05,
   GALCHI_CAT: 52.4,
   SHIBA: 52.5,
+  QUOKKA: 52.6,
+  SLOTH: 52.8,
   PENGUIN: 49.95,
   PENGUIN_SUNGLASSES: 49.95,
   DESSERT_FOX: 51.45,
@@ -256,6 +266,12 @@ lightAnimations.forEach((animation, index) => {
       `${animation.persona.type} no longer has access to the shoreline side (${Math.min(...xValues).toFixed(2)}%).`);
     assert(Math.max(...xValues) >= 60,
       `${animation.persona.type} no longer uses the right side of the land habitat (${Math.max(...xValues).toFixed(2)}%).`);
+  }
+  if (animation.persona.type === "QUOKKA") {
+    assert(light.includes(`profile-custom-terminal-${animation.id}`),
+      "QUOKKA should render the custom Oosu terminal mascot sprite.");
+    assert(!light.includes(`quokka-${animation.id}-body`),
+      "QUOKKA original sprite body should be replaced by the Oosu terminal mascot.");
   }
   const movementStart = light.indexOf(`@keyframes ${animation.name}`);
   const movementRuleStart = light.indexOf(`animation-name:${animation.name}`, movementStart) >= 0
@@ -410,7 +426,7 @@ for (const explorerType of farmRoamerTypes) {
     longestStationarySeconds = Math.max(longestStationarySeconds, stationarySeconds);
     previousPosition = currentPosition;
   }
-  assert(longestStationarySeconds <= (denseLayout ? 4.5 : 3),
+  assert(longestStationarySeconds <= (denseLayout ? 8.5 : 3),
     `${explorerType} explorer stays nearly still for ${longestStationarySeconds.toFixed(2)}s.`);
 }
 

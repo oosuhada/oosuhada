@@ -8,6 +8,7 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
+const oosuTerminalMascotPath = path.join(outputDirectory, "custom", "oosu-terminal-cutout.svg");
 const readmePath = path.join(root, "README.md");
 const layoutVersion = "character-behaviors-v60";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
@@ -16,6 +17,7 @@ const previousContributionTotal = Number(previousStateData?.totalContributions ?
 const existingAssets = await Promise.all(
   [lightPath, darkPath].map((file) => readFile(file, "utf8").catch(() => "")),
 );
+const oosuTerminalMascotSource = (await readFile(oosuTerminalMascotPath, "utf8").catch(() => "")).trim();
 const assetsUseCurrentLayout = existingAssets.every((asset) =>
   asset.includes(`data-profile-layout="${layoutVersion}"`),
 );
@@ -71,9 +73,11 @@ const rewriteCommitTotal = (svg, total) => {
   if (commitStart === -1 || digitsMarkerStart === -1) {
     throw new Error("GitAnimals commit total artwork is missing.");
   }
-  const digitsStart = digitsMarkerStart + digitsMarker.length;
-  const digitsEnd = svg.indexOf("\n</g>\n</g>", digitsStart);
-  if (digitsEnd === -1) {
+  const digitsGroupBounds = balancedGroupBounds(svg, digitsMarkerStart);
+  const digitsGroupClosing = "</g>";
+  const digitsStart = svg.indexOf(">", digitsMarkerStart) + 1;
+  const digitsEnd = digitsGroupBounds?.end - digitsGroupClosing.length;
+  if (!digitsGroupBounds || digitsStart === 0 || digitsEnd <= digitsStart) {
     throw new Error("GitAnimals commit total digit group is malformed.");
   }
 
@@ -243,20 +247,6 @@ if (!source.startsWith("<svg") || !source.includes('<g id="username"')) {
   throw new Error("GitAnimals returned an unexpected SVG structure.");
 }
 
-if (latestStateWasStale && existingAssets[0]) {
-  const commitArtworkBounds = (svg) => {
-    const start = svg.indexOf('<g id="commit"');
-    return start >= 0 ? balancedGroupBounds(svg, start) : null;
-  };
-  const previousBounds = commitArtworkBounds(existingAssets[0]);
-  const sourceBounds = commitArtworkBounds(source);
-  if (previousBounds && sourceBounds) {
-    const previousCommitArtwork = existingAssets[0].slice(previousBounds.start, previousBounds.end);
-    source = `${source.slice(0, sourceBounds.start)}${previousCommitArtwork}${source.slice(sourceBounds.end)}`;
-    console.log("Preserved the last confirmed contribution artwork while GitAnimals is stale.");
-  }
-}
-
 // Keep the SVG number synchronized with the protected state even while the upstream farm still
 // renders its reset total. The glyphs are the same pixel paths GitAnimals uses for commit digits.
 source = rewriteCommitTotal(source, stateData.totalContributions);
@@ -304,6 +294,8 @@ const personaFamily = (type) => {
 const characterScale = (persona) => ({
   CAPYBARA_CARROT: 1.1,
   CAPYBARA_SWIM: 1.1,
+  QUOKKA: 1,
+  SLOTH: 1,
   RABBIT: 0.8,
   RABBIT_TUBE: 0.9,
   GALCHI_CAT: 0.8,
@@ -344,6 +336,8 @@ const landShorelineAnchorLeft = (type) => ({
   HAMSTER: 49.05,
   GALCHI_CAT: 52.4,
   SHIBA: 52.5,
+  QUOKKA: 52.6,
+  SLOTH: 52.8,
   PENGUIN: 49.95,
   PENGUIN_SUNGLASSES: 49.95,
   DESSERT_FOX: 51.45,
@@ -690,6 +684,26 @@ const distributeCharacterRoaming = (svg) => {
     result = `${result.slice(0, rootClosingStart)}${markup}${result.slice(rootClosingStart)}`;
   };
 
+  const replaceGroupContents = (rootId, markup) => {
+    const rootStart = result.indexOf(`<g id="${rootId}"`);
+    const rootOpeningEnd = result.indexOf(">", rootStart) + 1;
+    const rootClosingStart = groupClosingStart(rootStart);
+    if (rootStart === -1 || rootOpeningEnd === 0 || rootClosingStart === -1) {
+      throw new Error(`Unable to replace the contents of ${rootId}.`);
+    }
+    result = `${result.slice(0, rootOpeningEnd)}${markup}${result.slice(rootClosingStart)}`;
+  };
+
+  const oosuTerminalMascotSprite = (personaId) => {
+    if (oosuTerminalMascotSource === "") {
+      throw new Error("Missing assets/gitanimals/custom/oosu-terminal-cutout.svg.");
+    }
+    return oosuTerminalMascotSource.replace(
+      /<svg\b/,
+      `<svg id="profile-custom-terminal-${personaId}" class="profile-custom-terminal" x="-7" y="-22" width="28" height="34"`,
+    );
+  };
+
   let riderActionStyles = "";
   let riderNeutralizerId = "";
   if (rider && mount && movingPersonaIds.has(String(rider.id)) && movingPersonaIds.has(String(mount.id))) {
@@ -773,6 +787,8 @@ const distributeCharacterRoaming = (svg) => {
     "GALCHI_CAT",
     "SHIBA",
     "GOOSE",
+    "PENGUIN",
+    "PENGUIN_SUNGLASSES",
     "RABBIT_TUBE",
     "HAMSTER_TUBE",
     "LITTLE_CHICK_TUBE",
@@ -882,6 +898,8 @@ const distributeCharacterRoaming = (svg) => {
   const shibaExplorerPhase = Number.parseFloat(process.env.GITANIMALS_SHIBA_PHASE ?? "0.04");
   const residentWideRoutePhase = (type) => ({
     CAPYBARA_CARROT: 0.08,
+    QUOKKA: 0.19,
+    SLOTH: 0.72,
     PENGUIN: 0.32,
     PENGUIN_SUNGLASSES: 0.32,
     DESSERT_FOX: 0.58,
@@ -1179,6 +1197,8 @@ const distributeCharacterRoaming = (svg) => {
   // Measured from paired +1/-1 renders of each sprite at the same animation timestamp. These local
   // pivots keep the visible artwork centre fixed even when hidden emotion states enlarge its SVG box.
   const facingPivot = (persona) => ({
+    QUOKKA: 0.00,
+    SLOTH: 7.00,
     RABBIT_TUBE: 10.00,
     HAMSTER_TUBE: 21.00,
     LITTLE_CHICK_TUBE: 16.00,
@@ -1312,6 +1332,14 @@ const distributeCharacterRoaming = (svg) => {
           + "62%{transform:translate(0,1px) rotate(4deg);}67%{transform:translate(0,-1px) rotate(-3deg);}"
           + "80%{transform:translate(1px,-2px) rotate(4deg);}86%{transform:translate(-1px,0) rotate(-3deg);}",
       },
+      SLOTH: {
+        duration: 78,
+        body: "0%,18%,38%,58%,78%,100%{transform:translate(0,0) rotate(0deg);}"
+          + "22%{transform:translate(0,-.8px) rotate(-1deg);}27%{transform:translate(.4px,0) rotate(1deg);}"
+          + "44%{transform:translate(-.5px,.3px) rotate(-1deg);}50%{transform:translate(0,0) rotate(1deg);}"
+          + "64%{transform:translate(.5px,-.6px) rotate(1deg);}70%{transform:translate(0,.2px) rotate(-1deg);}"
+          + "84%{transform:translate(-.4px,0) rotate(-1deg);}90%{transform:translate(0,-.5px) rotate(1deg);}",
+      },
       FLAMINGO: {
         duration: 70,
         body: "0%,14%,30%,46%,62%,78%,94%,100%{transform:translate(0,0) rotate(0deg);}"
@@ -1358,7 +1386,9 @@ const distributeCharacterRoaming = (svg) => {
     CAPYBARA_SWIM: { cx: 10, cy: 18, rx: 11 },
     GOOSE: { cx: 8, cy: 17, rx: 7 },
     GALCHI_CAT: { cx: 5, cy: 14, rx: 5 },
+    QUOKKA: { cx: 7, cy: 15, rx: 6, actionCy: 15 },
     SHIBA: { cx: 5, cy: 12, rx: 5 },
+    SLOTH: { cx: 7, cy: 15.5, rx: 6, actionCy: 15.5 },
     FLAMINGO: { cx: 8, cy: 24, rx: 6 },
   })[persona.type] ?? ({
     RABBIT: { cx: 8.5, cy: 11, rx: 5 },
@@ -1444,8 +1474,9 @@ const distributeCharacterRoaming = (svg) => {
     unit.members.forEach((persona) => {
       const id = String(persona.id);
       const isRider = hasMountedPair && id === String(rider.id);
+      const isCustomTerminalQuokka = persona.type === "QUOKKA";
       const movement = routeKeyframes(unitIndex, isRider ? 5 : 0, isRider ? -6 : 0);
-      const facing = facingKeyframes(unitIndex);
+      const facing = isCustomTerminalQuokka ? "0%,100%{transform:scaleX(1);}" : facingKeyframes(unitIndex);
       let rootId;
       if (movingPersonaIds.has(id)) {
         const animationRuleStart = result.indexOf(`animation-name: move-${id}`);
@@ -1480,6 +1511,9 @@ const distributeCharacterRoaming = (svg) => {
       wrapArtworkContents(rootId, facingWrapperId, id);
       const sizeWrapperId = `profile-size-${id}`;
       wrapGroupContents(facingWrapperId, sizeWrapperId);
+      if (isCustomTerminalQuokka) {
+        replaceGroupContents(sizeWrapperId, oosuTerminalMascotSprite(id));
+      }
       coordinatedRouteStyles += `@keyframes profile-facing-route-${id}{${facing}}`
         + `#${facingWrapperId}{animation:profile-facing-route-${id} ${routeDuration}s steps(1,end) infinite both;`
         + `transform-origin:${pivot.toFixed(2)}px 0px;}`
