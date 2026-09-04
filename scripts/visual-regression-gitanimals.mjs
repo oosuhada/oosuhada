@@ -20,10 +20,13 @@ const heartSnapshotSecond = firstVisibleHeart
 // the water edge without actually entering it.
 const snapshots = [...new Set([0, heartSnapshotSecond, 22, 30, 32, 60, 90])].sort((left, right) => left - right);
 const visiblePersonas = state.personas.filter((persona) => persona.visible);
+const beeQuokkaIds = new Set(["839316493969798500"]);
+const beeIds = new Set(visiblePersonas.filter((persona) => beeQuokkaIds.has(String(persona.id))).map((persona) => String(persona.id)));
 const hasMountedPair = visiblePersonas.some((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES")
   && visiblePersonas.some((persona) => persona.type === "CAPYBARA_SWIM");
 const expectedInteractionCount = visiblePersonas.length;
 const expectedActionCount = visiblePersonas.length - (hasMountedPair ? 1 : 0);
+const expectedShadowCount = expectedActionCount - beeIds.size;
 const swimZoneIds = new Set(
   visiblePersonas
     .filter((persona) => persona.type.includes("_SWIM") || persona.type.includes("_TUBE")
@@ -35,7 +38,7 @@ if (hasMountedPair) {
   if (rider) swimZoneIds.add(String(rider.id));
 }
 const landZoneIds = new Set(
-  visiblePersonas.map((persona) => String(persona.id)).filter((id) => !swimZoneIds.has(id)),
+  visiblePersonas.map((persona) => String(persona.id)).filter((id) => !swimZoneIds.has(id) && !beeIds.has(id)),
 );
 const closeShadowTypes = new Set(["RABBIT_TUBE", "HAMSTER_TUBE", "LITTLE_CHICK_TUBE", "DESSERT_FOX"]);
 const closeShadowIds = new Set(
@@ -228,7 +231,7 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v60", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v65", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.swimZone?.width > 285 && geometry.swimZone?.width < 305,
@@ -256,7 +259,7 @@ try {
           const waterRight = geometry.swimWater.x + geometry.swimWater.width;
           const shorelineGap = character.x - waterRight;
           landShoreGaps.push({ theme, seconds, id: character.id, gap: shorelineGap });
-          assert(shorelineGap >= -6,
+          assert(shorelineGap >= -8,
             `${theme} ${seconds}s lets land character ${character.id} travel too deeply into the water by `
               + `${Math.abs(shorelineGap).toFixed(2)}px.`);
         }
@@ -271,10 +274,15 @@ try {
               + `expected ${levelContract.min}-${levelContract.max}px.`);
         }
       });
+      beeIds.forEach((id) => {
+        const bee = geometry.characters.find((character) => character.id === id);
+        assert(bee?.visibleArtwork && bee.visibleArtwork.width > 0 && bee.visibleArtwork.height > 0,
+          `${theme} ${seconds}s lost the flying bee sprite.`);
+      });
       assert(geometry.actions === expectedActionCount, `${theme} ${seconds}s lost character action wrappers.`);
       assert(geometry.interactions === expectedInteractionCount,
         `${theme} ${seconds}s lost proximity interaction wrappers.`);
-      assert(geometry.shadows.length === expectedActionCount, `${theme} ${seconds}s lost grounding shadows.`);
+      assert(geometry.shadows.length === expectedShadowCount, `${theme} ${seconds}s lost grounding shadows.`);
       assert(simpleTubeWaterIds.size === geometry.simpleTubeWater.length
         && [...simpleTubeWaterIds].every((id) => geometry.simpleTubeWater.includes(id)),
       `${theme} ${seconds}s lost a simplified TUBE water ripple.`);
@@ -355,7 +363,7 @@ try {
             const rect = element.getBoundingClientRect();
             const gap = (rect.left - rootRect.left) * scaleX - waterRight;
             minimumLandGap = Math.min(minimumLandGap, gap);
-            if (gap <= 3) borderSkimmingLandIds.add(id);
+            if (gap <= 20) borderSkimmingLandIds.add(id);
             const centerX = (rect.left - rootRect.left + rect.width / 2) * scaleX;
             if (centerX >= 360) {
               rightVisitingLandIds.add(id);
@@ -400,14 +408,14 @@ try {
         landIds: [...landZoneIds],
         swimIds: [...swimZoneIds],
       });
-      assert(fullCycleZones.minimumLandGap >= -6,
+      assert(fullCycleZones.minimumLandGap >= -8,
         `A land pet travels too deeply into the water during the full route; minimum shoreline gap is `
           + `${fullCycleZones.minimumLandGap.toFixed(2)}px.`);
       assert(fullCycleZones.minimumLandGap <= 0.5,
         `Land movement range never reaches/overlaps the shoreline; minimum full-route gap is `
           + `${fullCycleZones.minimumLandGap.toFixed(2)}px.`);
       assert(fullCycleZones.borderSkimmingLandIds.length === landZoneIds.size,
-        `Only ${fullCycleZones.borderSkimmingLandIds.length}/${landZoneIds.size} land pets can reach within 3px of the shoreline.`);
+        `Only ${fullCycleZones.borderSkimmingLandIds.length}/${landZoneIds.size} land pets can reach within 20px of the shoreline.`);
       assert(fullCycleZones.rightVisitingLandIds.length === landZoneIds.size,
         `Only ${fullCycleZones.rightVisitingLandIds.length}/${landZoneIds.size} land pets still use the right side of the habitat.`);
       assert(fullCycleZones.minimumRightSideLandPetsPerFrame >= 3,

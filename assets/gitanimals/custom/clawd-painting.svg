@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-15 -25 45 45" shape-rendering="crispEdges">
+  <defs>
+    <style>
+      .clawd-painting-body{transform-origin:7.5px 13px;animation:clawd-painting-bob 2.6s infinite ease-in-out;}
+      .clawd-painting-eye{transform-origin:7.5px 9px;animation:clawd-painting-blink 3.2s infinite;}
+      .clawd-painting-brush{transform-origin:13px 10px;animation:clawd-painting-dab 1s infinite alternate ease-in-out;}
+      .clawd-painting-spark{opacity:0;animation:clawd-painting-spark 2s var(--clawd-sd,0s) infinite ease-out;}
+      @keyframes clawd-painting-bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-.4px);}}
+      @keyframes clawd-painting-blink{0%,47%,53%,100%{transform:scaleY(1);}50%{transform:scaleY(.1);}}
+      @keyframes clawd-painting-dab{0%{transform:rotate(-32deg);}100%{transform:rotate(-6deg);}}
+      @keyframes clawd-painting-spark{0%{opacity:0;transform:translateY(0) scale(.4);}30%{opacity:1;}100%{opacity:0;transform:translateY(-6px) scale(1);}}
+    </style>
+  </defs>
+
+  <g class="clawd-painting-body">
+    <g fill="#DE886D">
+      <rect x="3" y="13" width="1" height="2"/><rect x="5" y="13" width="1" height="2"/>
+      <rect x="9" y="13" width="1" height="2"/><rect x="11" y="13" width="1" height="2"/>
+    </g>
+    <rect x="2" y="6" width="11" height="7" fill="#DE886D"/>
+    <g class="clawd-painting-eye" fill="#000"><rect x="4" y="8" width="1" height="2"/><rect x="10" y="8" width="1" height="2"/></g>
+    <rect x="0" y="9" width="2" height="2" fill="#DE886D"/>
+    <g>
+      <ellipse cx="-1.6" cy="11.6" rx="3.5" ry="2.4" fill="#CAA46E"/>
+      <ellipse cx="-1.4" cy="12" rx="1" ry=".8" fill="#1A1208"/>
+      <circle cx="-3.4" cy="10.8" r=".7" fill="#FF5A5A"/><circle cx="-1.8" cy="9.9" r=".7" fill="#4AD6FF"/>
+      <circle cx="-.1" cy="10.4" r=".7" fill="#FFD14A"/><circle cx="-3.2" cy="12.4" r=".7" fill="#5AD17A"/>
+    </g>
+    <g class="clawd-painting-brush">
+      <rect x="13" y="9" width="2" height="2" fill="#DE886D"/>
+      <rect x="10.1" y="3" width=".8" height="7" rx=".3" fill="#A9743A" transform="rotate(30,10.5,6.5)"/>
+      <polygon points="8.6,3.6 10.4,2.2 11,3.4 9.4,4.6" fill="#FF5A5A"/>
+    </g>
+    <g>
+      <rect class="clawd-painting-spark" style="--clawd-sd:0s" x="7.6" y="1.6" width="1" height="1" rx=".2" fill="#4AD6FF"/>
+      <rect class="clawd-painting-spark" style="--clawd-sd:-.9s" x="11" y="2.4" width="1" height="1" rx=".2" fill="#FFD14A"/>
+      <rect class="clawd-painting-spark" style="--clawd-sd:-1.4s" x="9.4" y="0.6" width="1" height="1" rx=".2" fill="#FF5A5A"/>
+    </g>
+  </g>
+</svg>

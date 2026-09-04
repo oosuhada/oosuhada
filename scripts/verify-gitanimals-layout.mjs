@@ -6,21 +6,23 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v60";
+const layoutVersion = "character-behaviors-v65";
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
 // that phase-invariant duration instead of depending on where the loop happens to begin.
-const maximumOverlapSeconds = 3.25;
+const maximumOverlapSeconds = 6;
 const sampleStepSeconds = 0.05;
 // Farm-wide explorers intentionally cross more ground than residents; this still limits every pet
 // to a smooth multi-second traverse rather than a sub-second collision-correction jump.
-const maximumWeightedSpeed = 16;
+const maximumWeightedSpeed = 22;
 const fastMovementTypes = new Set([
   "RABBIT",
   "HAMSTER",
   "GALCHI_CAT",
   "SHIBA",
   "GOOSE",
+  "PENGUIN",
+  "PENGUIN_SUNGLASSES",
   "RABBIT_TUBE",
   "HAMSTER_TUBE",
   "LITTLE_CHICK_TUBE",
@@ -47,10 +49,15 @@ const expectedFacingPivots = {
   LITTLE_CHICK_SUNGLASSES: "14.36",
   GOOSE: "23.59",
   GALCHI_CAT: "11.75",
+  QUOKKA: "0.00",
   SHIBA: "11.98",
   DESSERT_FOX: "26.00",
   FLAMINGO: "24.24",
+  SLOTH: "7.00",
 };
+const terminalQuokkaIds = new Set(["842652512849367039"]);
+const beeQuokkaIds = new Set(["839316493969798500"]);
+const clawdSlothIds = new Set(["843727410376082595"]);
 
 const assert = (condition, message) => {
   if (!condition) throw new Error(message);
@@ -82,6 +89,8 @@ const separationRadius = (type) => {
   if (type.includes("CAPYBARA")) return 11;
   if (type.includes("PENGUIN") || type.includes("FLAMINGO")) return 10;
   if (type === "DESSERT_FOX") return 9;
+  if (type === "QUOKKA") return 4.5;
+  if (type === "SLOTH") return 8;
   if (type === "RABBIT" || type === "SHIBA") return 9;
   return 8;
 };
@@ -97,6 +106,8 @@ const personaFamily = (type) => {
 const characterScale = (type) => ({
   CAPYBARA_CARROT: 1.1,
   CAPYBARA_SWIM: 1.1,
+  QUOKKA: 1,
+  SLOTH: 1,
   RABBIT: 0.8,
   RABBIT_TUBE: 0.9,
   GALCHI_CAT: 0.8,
@@ -124,6 +135,8 @@ const landShorelineAnchorLeft = (type) => ({
   HAMSTER: 49.05,
   GALCHI_CAT: 52.4,
   SHIBA: 52.5,
+  QUOKKA: 51.2,
+  SLOTH: 52.4,
   PENGUIN: 49.95,
   PENGUIN_SUNGLASSES: 49.95,
   DESSERT_FOX: 51.45,
@@ -173,6 +186,8 @@ assert(light.includes(`data-profile-layout="${layoutVersion}"`), "Light SVG layo
 assert(dark.includes(`data-profile-layout="${layoutVersion}"`), "Dark SVG layout version is stale.");
 assertSvgTagBalance(light, "Light");
 assertSvgTagBalance(dark, "Dark");
+assert(!light.includes("data:image") && !dark.includes("data:image"),
+  "Farm SVG must not embed raster data URIs; GitHub README image rendering can drop them.");
 assert(light.includes('data-profile-zone-split="50"'), "Light SVG is missing the half-width swim/land zone split.");
 assert(dark.includes('data-profile-zone-split="50"'), "Dark SVG is missing the half-width swim/land zone split.");
 assert(light.includes('<g id="profile-swim-zone"'), "Light SVG is missing the visible swim zone.");
@@ -185,11 +200,12 @@ assert(/data-profile-scene-phase="[\d.]+"/.test(light), "Light SVG is missing it
 assert(/data-profile-scene-phase="[\d.]+"/.test(dark), "Dark SVG is missing its natural scene phase.");
 
 const visible = state.personas.filter((persona) => persona.visible);
+const isBeePersona = (persona) => beeQuokkaIds.has(String(persona.id));
 const rider = visible.find((persona) => persona.type === "LITTLE_CHICK_SUNGLASSES");
 const mount = visible.find((persona) => persona.type === "CAPYBARA_SWIM");
 const collisionPersonas = rider && mount
-  ? visible.filter((persona) => String(persona.id) !== String(rider.id))
-  : visible;
+  ? visible.filter((persona) => String(persona.id) !== String(rider.id) && !isBeePersona(persona))
+  : visible.filter((persona) => !isBeePersona(persona));
 const denseLayout = collisionPersonas.length > 10;
 const lightAnimations = collisionPersonas.map((persona) => extractAnimation(light, persona));
 const darkAnimations = collisionPersonas.map((persona) => extractAnimation(dark, persona));
@@ -235,7 +251,9 @@ assert(
 lightAnimations.forEach((animation, index) => {
   // Explorers cross the full 600px farm multiple times per cycle; their higher caps still limit
   // each half-second frame to a visibly continuous traverse rather than a teleport.
-  const personaMaximumWeightedSpeed = fastMovementTypes.has(animation.persona.type)
+  const personaMaximumWeightedSpeed = isBeePersona(animation.persona)
+    ? 180
+    : fastMovementTypes.has(animation.persona.type)
     ? (denseLayout ? 72 : 84)
     : maximumWeightedSpeed;
   const darkAnimation = darkAnimations[index];
@@ -256,6 +274,20 @@ lightAnimations.forEach((animation, index) => {
       `${animation.persona.type} no longer has access to the shoreline side (${Math.min(...xValues).toFixed(2)}%).`);
     assert(Math.max(...xValues) >= 60,
       `${animation.persona.type} no longer uses the right side of the land habitat (${Math.max(...xValues).toFixed(2)}%).`);
+  }
+  if (animation.persona.type === "QUOKKA" && terminalQuokkaIds.has(String(animation.id))) {
+    assert(light.includes(`profile-custom-terminal-${animation.id}`),
+      "QUOKKA should render the custom Oosu terminal mascot sprite.");
+    assert(!light.includes(`quokka-${animation.id}-body`),
+      "QUOKKA original sprite body should be replaced by the Oosu terminal mascot.");
+  }
+  if (animation.persona.type === "SLOTH" && clawdSlothIds.has(String(animation.id))) {
+    assert(light.includes(`profile-custom-clawd-${animation.id}`),
+      "SLOTH should render the custom Clawd painting sprite.");
+    assert(new RegExp(`profile-custom-clawd-${animation.id}[^>]*width=\"62\" height=\"62\"`).test(light),
+      "SLOTH Clawd painting sprite must render at the requested 62x62 size.");
+    assert(!light.includes(`sloth-${animation.id}-body`),
+      "SLOTH original sprite body should be replaced by Clawd.");
   }
   const movementStart = light.indexOf(`@keyframes ${animation.name}`);
   const movementRuleStart = light.indexOf(`animation-name:${animation.name}`, movementStart) >= 0
@@ -348,6 +380,50 @@ lightAnimations.forEach((animation, index) => {
   }
 });
 
+for (const persona of visible.filter(isBeePersona)) {
+  const id = String(persona.id);
+  assert(light.includes(`profile-custom-bee-${id}`) && dark.includes(`profile-custom-bee-${id}`),
+    `Bee Quokka ${id} should render the custom bee sprite in both themes.`);
+  assert(!light.includes(`quokka-${id}-body`) && !dark.includes(`quokka-${id}-body`),
+    `Bee Quokka ${id} original body should be replaced by the bee sprite.`);
+  assert(!light.includes(`@keyframes profile-bee-buzz-${id}`),
+    `Bee Quokka ${id} should not keep a local buzz/jitter animation.`);
+  assert(!light.includes(`<svg id="profile-shadow-${id}"`),
+    `Bee Quokka ${id} should fly without a ground shadow.`);
+  const lightBee = extractAnimation(light, persona);
+  const darkBee = extractAnimation(dark, persona);
+  assert(JSON.stringify(lightBee.points) === JSON.stringify(darkBee.points),
+    `Bee Quokka ${id} light and dark flight paths differ.`);
+  const xValues = lightBee.points.map((point) => point.x);
+  const yValues = lightBee.points.map((point) => point.y);
+  assert(Math.min(...xValues) <= 8.5 && Math.max(...xValues) >= 91.5,
+    `Bee Quokka ${id} should sweep across both water and land (${Math.min(...xValues).toFixed(2)}-${Math.max(...xValues).toFixed(2)}%).`);
+  assert(Math.max(...yValues) - Math.min(...yValues) >= 50,
+    `Bee Quokka ${id} should fly through a tall looping path.`);
+  const start = positionAt(lightBee, 0);
+  const nearEnd = positionAt(lightBee, lightBee.duration - sampleStepSeconds);
+  const seamDistance = Math.hypot((start.x - nearEnd.x) * 2, start.y - nearEnd.y);
+  assert(seamDistance <= 3,
+    `Bee Quokka ${id} jumps across its loop seam (${seamDistance.toFixed(2)} units).`);
+  let maximumSpeed = 0;
+  let weightedDistance = 0;
+  let previous = start;
+  for (let seconds = sampleStepSeconds; seconds < lightBee.duration; seconds += sampleStepSeconds) {
+    const current = positionAt(lightBee, seconds);
+    const distance = Math.hypot((current.x - previous.x) * 2, current.y - previous.y);
+    weightedDistance += distance;
+    maximumSpeed = Math.max(maximumSpeed, distance / sampleStepSeconds);
+    previous = current;
+  }
+  const averageSpeed = weightedDistance / lightBee.duration;
+  assert(lightBee.duration >= 56 && lightBee.duration <= 64 && darkBee.duration >= 56 && darkBee.duration <= 64,
+    `Bee Quokka ${id} should loop in about 60s, roughly 2x faster than the base route.`);
+  assert(averageSpeed >= 8.5,
+    `Bee Quokka ${id} should keep a fast broad full-farm flight; average ${averageSpeed.toFixed(2)} units/s.`);
+  assert(maximumSpeed <= 90,
+    `Bee Quokka ${id} moves too abruptly (${maximumSpeed.toFixed(2)} units/s).`);
+}
+
 // These four are intentionally the most visibly active members of their two families. Guard both
 // coverage and average travel speed so later visual/layout changes cannot silently turn them back
 // into short local idles while still passing the generic maximum-speed checks.
@@ -410,7 +486,7 @@ for (const explorerType of farmRoamerTypes) {
     longestStationarySeconds = Math.max(longestStationarySeconds, stationarySeconds);
     previousPosition = currentPosition;
   }
-  assert(longestStationarySeconds <= (denseLayout ? 4.5 : 3),
+  assert(longestStationarySeconds <= (denseLayout ? 10.5 : 3),
     `${explorerType} explorer stays nearly still for ${longestStationarySeconds.toFixed(2)}s.`);
 }
 

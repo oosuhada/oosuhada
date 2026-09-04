@@ -8,14 +8,23 @@ const outputDirectory = path.join(root, "assets", "gitanimals");
 const statePath = path.join(outputDirectory, "state.json");
 const lightPath = path.join(outputDirectory, "farm-light.svg");
 const darkPath = path.join(outputDirectory, "farm-dark.svg");
+const oosuTerminalMascotPath = path.join(outputDirectory, "custom", "oosu-terminal-cutout.svg");
+const clawdPaintingPath = path.join(outputDirectory, "custom", "clawd-painting.svg");
+const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v60";
+const layoutVersion = "character-behaviors-v65";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
 const existingAssets = await Promise.all(
   [lightPath, darkPath].map((file) => readFile(file, "utf8").catch(() => "")),
 );
+const oosuTerminalMascotSource = (await readFile(oosuTerminalMascotPath, "utf8").catch(() => "")).trim();
+const clawdPaintingSource = (await readFile(clawdPaintingPath, "utf8").catch(() => "")).trim();
+const beeMascotSource = (await readFile(beeMascotPath, "utf8").catch(() => "")).trim();
+const terminalQuokkaIds = new Set(["842652512849367039"]);
+const beeQuokkaIds = new Set(["839316493969798500"]);
+const clawdSlothIds = new Set(["843727410376082595"]);
 const assetsUseCurrentLayout = existingAssets.every((asset) =>
   asset.includes(`data-profile-layout="${layoutVersion}"`),
 );
@@ -71,9 +80,11 @@ const rewriteCommitTotal = (svg, total) => {
   if (commitStart === -1 || digitsMarkerStart === -1) {
     throw new Error("GitAnimals commit total artwork is missing.");
   }
-  const digitsStart = digitsMarkerStart + digitsMarker.length;
-  const digitsEnd = svg.indexOf("\n</g>\n</g>", digitsStart);
-  if (digitsEnd === -1) {
+  const digitsGroupBounds = balancedGroupBounds(svg, digitsMarkerStart);
+  const digitsGroupClosing = "</g>";
+  const digitsStart = svg.indexOf(">", digitsMarkerStart) + 1;
+  const digitsEnd = digitsGroupBounds?.end - digitsGroupClosing.length;
+  if (!digitsGroupBounds || digitsStart === 0 || digitsEnd <= digitsStart) {
     throw new Error("GitAnimals commit total digit group is malformed.");
   }
 
@@ -243,20 +254,6 @@ if (!source.startsWith("<svg") || !source.includes('<g id="username"')) {
   throw new Error("GitAnimals returned an unexpected SVG structure.");
 }
 
-if (latestStateWasStale && existingAssets[0]) {
-  const commitArtworkBounds = (svg) => {
-    const start = svg.indexOf('<g id="commit"');
-    return start >= 0 ? balancedGroupBounds(svg, start) : null;
-  };
-  const previousBounds = commitArtworkBounds(existingAssets[0]);
-  const sourceBounds = commitArtworkBounds(source);
-  if (previousBounds && sourceBounds) {
-    const previousCommitArtwork = existingAssets[0].slice(previousBounds.start, previousBounds.end);
-    source = `${source.slice(0, sourceBounds.start)}${previousCommitArtwork}${source.slice(sourceBounds.end)}`;
-    console.log("Preserved the last confirmed contribution artwork while GitAnimals is stale.");
-  }
-}
-
 // Keep the SVG number synchronized with the protected state even while the upstream farm still
 // renders its reset total. The glyphs are the same pixel paths GitAnimals uses for commit digits.
 source = rewriteCommitTotal(source, stateData.totalContributions);
@@ -304,6 +301,8 @@ const personaFamily = (type) => {
 const characterScale = (persona) => ({
   CAPYBARA_CARROT: 1.1,
   CAPYBARA_SWIM: 1.1,
+  QUOKKA: 1,
+  SLOTH: 1,
   RABBIT: 0.8,
   RABBIT_TUBE: 0.9,
   GALCHI_CAT: 0.8,
@@ -344,14 +343,21 @@ const landShorelineAnchorLeft = (type) => ({
   HAMSTER: 49.05,
   GALCHI_CAT: 52.4,
   SHIBA: 52.5,
+  QUOKKA: 51.2,
+  SLOTH: 52.4,
   PENGUIN: 49.95,
   PENGUIN_SUNGLASSES: 49.95,
   DESSERT_FOX: 51.45,
   CAPYBARA_CARROT: 53.35,
 })[type] ?? landZoneBounds.left;
-const movementZoneBounds = (persona) => isSwimZonePersona(persona)
-  ? swimZoneBoundsFor(persona.type)
-  : { ...landZoneBounds, left: landShorelineAnchorLeft(persona.type) };
+const movementZoneBounds = (persona) => {
+  if (beeQuokkaIds.has(String(persona.id))) {
+    return { left: 4, right: 96, top: 13, bottom: 84 };
+  }
+  return isSwimZonePersona(persona)
+    ? swimZoneBoundsFor(persona.type)
+    : { ...landZoneBounds, left: landShorelineAnchorLeft(persona.type) };
+};
 
 const distributeCharacterRoaming = (svg) => {
   if (visiblePersonas.length === 0) {
@@ -690,6 +696,62 @@ const distributeCharacterRoaming = (svg) => {
     result = `${result.slice(0, rootClosingStart)}${markup}${result.slice(rootClosingStart)}`;
   };
 
+  const replaceGroupContents = (rootId, markup) => {
+    const rootStart = result.indexOf(`<g id="${rootId}"`);
+    const rootOpeningEnd = result.indexOf(">", rootStart) + 1;
+    const rootClosingStart = groupClosingStart(rootStart);
+    if (rootStart === -1 || rootOpeningEnd === 0 || rootClosingStart === -1) {
+      throw new Error(`Unable to replace the contents of ${rootId}.`);
+    }
+    result = `${result.slice(0, rootOpeningEnd)}${markup}${result.slice(rootClosingStart)}`;
+  };
+
+  const moveRootToFront = (rootId) => {
+    const rootStart = result.indexOf(`<g id="${rootId}"`);
+    const rootClosingStart = groupClosingStart(rootStart);
+    if (rootStart === -1 || rootClosingStart === -1) {
+      throw new Error(`Unable to move ${rootId} to the front.`);
+    }
+    const rootClosingEnd = result.indexOf(">", rootClosingStart) + 1;
+    const rootMarkup = result.slice(rootStart, rootClosingEnd);
+    result = `${result.slice(0, rootStart)}${result.slice(rootClosingEnd)}`;
+    const outerSvgClosingStart = result.lastIndexOf("</svg>");
+    if (outerSvgClosingStart === -1) {
+      throw new Error("Unable to find the farm SVG closing tag.");
+    }
+    result = `${result.slice(0, outerSvgClosingStart)}${rootMarkup}${result.slice(outerSvgClosingStart)}`;
+  };
+
+  const oosuTerminalMascotSprite = (personaId) => {
+    if (oosuTerminalMascotSource === "") {
+      throw new Error("Missing assets/gitanimals/custom/oosu-terminal-cutout.svg.");
+    }
+    return oosuTerminalMascotSource.replace(
+      /<svg\b/,
+      `<svg id="profile-custom-terminal-${personaId}" class="profile-custom-terminal" x="-7" y="-22" width="28" height="34"`,
+    );
+  };
+
+  const clawdPaintingSprite = (personaId) => {
+    if (clawdPaintingSource === "") {
+      throw new Error("Missing assets/gitanimals/custom/clawd-painting.svg.");
+    }
+    return clawdPaintingSource.replace(
+      /<svg\b/,
+      `<svg id="profile-custom-clawd-${personaId}" class="profile-custom-clawd" x="-24" y="-37" width="62" height="62"`,
+    );
+  };
+
+  const beeMascotSprite = (personaId) => {
+    if (beeMascotSource === "") {
+      throw new Error("Missing assets/gitanimals/custom/bee-svgrepo-com.svg.");
+    }
+    return beeMascotSource
+      .replace(/<\?xml[^>]*>\s*/i, "")
+      .replace(/<!DOCTYPE[^>]*>\s*/i, "")
+      .replace(/<svg\b/, `<svg id="profile-custom-bee-${personaId}" class="profile-custom-bee" x="-10" y="-10" width="23" height="23"`);
+  };
+
   let riderActionStyles = "";
   let riderNeutralizerId = "";
   if (rider && mount && movingPersonaIds.has(String(rider.id)) && movingPersonaIds.has(String(mount.id))) {
@@ -738,6 +800,7 @@ const distributeCharacterRoaming = (svg) => {
   }
 
   const routeDuration = 120;
+  const beeRouteDuration = 60;
   const routeSampleSeconds = 0.5;
   // Begin the gentle turn before sprites visibly overlap. The extra runway lets the temporal
   // smoother separate them without a sudden correction at the collision boundary.
@@ -756,12 +819,16 @@ const distributeCharacterRoaming = (svg) => {
       anchor: anchorAssignments.get(String(persona.id)),
       members,
       families,
-      zone: isSwimZonePersona(persona) ? "swim" : "land",
+      zone: beeQuokkaIds.has(String(persona.id)) ? "air" : (isSwimZonePersona(persona) ? "swim" : "land"),
     };
   });
   const unitsShareFamily = (leftIndex, rightIndex) =>
     [...routeUnits[leftIndex].families].some((family) => routeUnits[rightIndex].families.has(family));
-  const unitsShareZone = (leftIndex, rightIndex) => routeUnits[leftIndex].zone === routeUnits[rightIndex].zone;
+  const isBeeUnit = (unitIndex) => beeQuokkaIds.has(String(routeUnits[unitIndex].persona.id));
+  const unitsShareZone = (leftIndex, rightIndex) => {
+    if (isBeeUnit(leftIndex) || isBeeUnit(rightIndex)) return false;
+    return routeUnits[leftIndex].zone === routeUnits[rightIndex].zone;
+  };
 
   // Keep the established fast movers, and explicitly make the rabbit/hamster family feel like the
   // active runners of their zone. Land Rabbit/Hamster stay fast on the right, while their TUBE
@@ -773,6 +840,8 @@ const distributeCharacterRoaming = (svg) => {
     "GALCHI_CAT",
     "SHIBA",
     "GOOSE",
+    "PENGUIN",
+    "PENGUIN_SUNGLASSES",
     "RABBIT_TUBE",
     "HAMSTER_TUBE",
     "LITTLE_CHICK_TUBE",
@@ -827,8 +896,8 @@ const distributeCharacterRoaming = (svg) => {
   };
 
   const landRunnerWaypoints = [
-    { x: landShorelineAnchorLeft("RABBIT"), y: 62 }, { x: 55, y: 45 }, { x: 66, y: 29 },
-    { x: 83, y: 36 }, { x: 84, y: 61 }, { x: 64, y: 73 }, { x: 44, y: 68 },
+    { x: landShorelineAnchorLeft("RABBIT"), y: 58 }, { x: 55, y: 44 }, { x: 66, y: 30 },
+    { x: 83, y: 36 }, { x: 84, y: 59 }, { x: 64, y: 70 }, { x: 52, y: 65 },
   ];
   const capybaraSwimWaypoints = [
     { x: 9.5, y: 34 }, { x: 13, y: 30 }, { x: 20, y: 32 },
@@ -878,10 +947,20 @@ const distributeCharacterRoaming = (svg) => {
     { x: 86, y: 66 }, { x: 54, y: 72 }, { x: 24, y: 65 }, { x: 10, y: 45 },
     { x: 30, y: 29 }, { x: 66, y: 32 }, { x: 88, y: 46 },
   ], "GOOSE");
+  const beeFarmPosition = (progress) => {
+    const angle = 2 * Math.PI * progress;
+    // A single smooth full-farm orbit. Keep the bee lively without local zigzag/buzzing jitter.
+    return {
+      x: 50 + Math.cos(angle) * 42,
+      y: 52 + Math.sin(angle) * 25.2,
+    };
+  };
   const catExplorerPhase = Number.parseFloat(process.env.GITANIMALS_CAT_PHASE ?? "0.24");
   const shibaExplorerPhase = Number.parseFloat(process.env.GITANIMALS_SHIBA_PHASE ?? "0.04");
   const residentWideRoutePhase = (type) => ({
     CAPYBARA_CARROT: 0.08,
+    QUOKKA: 0.19,
+    SLOTH: 0.72,
     PENGUIN: 0.32,
     PENGUIN_SUNGLASSES: 0.32,
     DESSERT_FOX: 0.58,
@@ -906,6 +985,19 @@ const distributeCharacterRoaming = (svg) => {
   };
 
   const preferredPosition = (unit, progress) => {
+    if (beeQuokkaIds.has(String(unit.persona.id))) {
+      return beeFarmPosition(0.63 + progress * 2);
+    }
+    if (terminalQuokkaIds.has(String(unit.persona.id))) {
+      return interpolateClosedRoute([
+        { x: landShorelineAnchorLeft("QUOKKA"), y: 51 },
+        { x: 58, y: 45 },
+        { x: 72, y: 44 },
+        { x: 82, y: 51 },
+        { x: 76, y: 60 },
+        { x: 60, y: 59 },
+      ], 0.17 + progress);
+    }
     if (unit.persona.type === "CAPYBARA_SWIM") {
       return interpolateClosedRoute(capybaraSwimWaypoints, progress);
     }
@@ -984,6 +1076,7 @@ const distributeCharacterRoaming = (svg) => {
     if (type.includes("CAPYBARA")) return 11;
     if (type.includes("PENGUIN") || type.includes("FLAMINGO")) return 10;
     if (type === "DESSERT_FOX") return 9;
+    if (type === "QUOKKA") return 4.5;
     if (type === "RABBIT" || type === "SHIBA") return 9;
     return 8;
   };
@@ -1064,6 +1157,9 @@ const distributeCharacterRoaming = (svg) => {
     });
 
     periodicSamples = periodicSamples.map((sample, sampleIndex) => sample.map((position, unitIndex) => {
+      if (isBeeUnit(unitIndex)) {
+        return { ...preferredSamples[sampleIndex][unitIndex] };
+      }
       const previous = periodicSamples[(sampleIndex - 1 + routeSampleCount) % routeSampleCount][unitIndex];
       const next = periodicSamples[(sampleIndex + 1) % routeSampleCount][unitIndex];
       const preferred = preferredSamples[sampleIndex][unitIndex];
@@ -1090,6 +1186,7 @@ const distributeCharacterRoaming = (svg) => {
     let score = 0;
     for (let leftIndex = 0; leftIndex < sample.length; leftIndex += 1) {
       for (let rightIndex = leftIndex + 1; rightIndex < sample.length; rightIndex += 1) {
+        if (isBeeUnit(leftIndex) || isBeeUnit(rightIndex)) continue;
         const left = sample[leftIndex];
         const right = sample[rightIndex];
         const horizontalGap = Math.abs(left.x - right.x);
@@ -1100,7 +1197,8 @@ const distributeCharacterRoaming = (svg) => {
         if (horizontalGap < 2) score += 1.5;
       }
     }
-    sample.forEach((position) => {
+    sample.forEach((position, unitIndex) => {
+      if (isBeeUnit(unitIndex)) return;
       if (position.y < 29 || position.y > 75) score += 0.6;
       if (position.x < 11 || position.x > 84) score += 0.3;
     });
@@ -1179,6 +1277,8 @@ const distributeCharacterRoaming = (svg) => {
   // Measured from paired +1/-1 renders of each sprite at the same animation timestamp. These local
   // pivots keep the visible artwork centre fixed even when hidden emotion states enlarge its SVG box.
   const facingPivot = (persona) => ({
+    QUOKKA: 0.00,
+    SLOTH: 7.00,
     RABBIT_TUBE: 10.00,
     HAMSTER_TUBE: 21.00,
     LITTLE_CHICK_TUBE: 16.00,
@@ -1312,6 +1412,14 @@ const distributeCharacterRoaming = (svg) => {
           + "62%{transform:translate(0,1px) rotate(4deg);}67%{transform:translate(0,-1px) rotate(-3deg);}"
           + "80%{transform:translate(1px,-2px) rotate(4deg);}86%{transform:translate(-1px,0) rotate(-3deg);}",
       },
+      SLOTH: {
+        duration: 78,
+        body: "0%,18%,38%,58%,78%,100%{transform:translate(0,0) rotate(0deg);}"
+          + "22%{transform:translate(0,-.8px) rotate(-1deg);}27%{transform:translate(.4px,0) rotate(1deg);}"
+          + "44%{transform:translate(-.5px,.3px) rotate(-1deg);}50%{transform:translate(0,0) rotate(1deg);}"
+          + "64%{transform:translate(.5px,-.6px) rotate(1deg);}70%{transform:translate(0,.2px) rotate(-1deg);}"
+          + "84%{transform:translate(-.4px,0) rotate(-1deg);}90%{transform:translate(0,-.5px) rotate(1deg);}",
+      },
       FLAMINGO: {
         duration: 70,
         body: "0%,14%,30%,46%,62%,78%,94%,100%{transform:translate(0,0) rotate(0deg);}"
@@ -1358,7 +1466,13 @@ const distributeCharacterRoaming = (svg) => {
     CAPYBARA_SWIM: { cx: 10, cy: 18, rx: 11 },
     GOOSE: { cx: 8, cy: 17, rx: 7 },
     GALCHI_CAT: { cx: 5, cy: 14, rx: 5 },
+    QUOKKA: terminalQuokkaIds.has(String(persona.id))
+      ? { cx: 5.2, cy: 6.8, rx: 4.1, actionCy: 6.8 }
+      : { cx: 7, cy: 10.8, rx: 4.6, actionCy: 10.8 },
     SHIBA: { cx: 5, cy: 12, rx: 5 },
+    SLOTH: clawdSlothIds.has(String(persona.id))
+      ? { cx: 4.7, cy: 8.4, rx: 4.8, actionCy: 8.4 }
+      : { cx: 7, cy: 15.5, rx: 6, actionCy: 15.5 },
     FLAMINGO: { cx: 8, cy: 24, rx: 6 },
   })[persona.type] ?? ({
     RABBIT: { cx: 8.5, cy: 11, rx: 5 },
@@ -1440,12 +1554,18 @@ const distributeCharacterRoaming = (svg) => {
   }).join("");
 
   let coordinatedRouteStyles = "";
+  const frontRootIds = [];
   routeUnits.forEach((unit, unitIndex) => {
     unit.members.forEach((persona) => {
       const id = String(persona.id);
       const isRider = hasMountedPair && id === String(rider.id);
+      const isCustomTerminalQuokka = persona.type === "QUOKKA" && terminalQuokkaIds.has(id);
+      const isCustomFlyingBee = persona.type === "QUOKKA" && beeQuokkaIds.has(id);
+      const isCustomPaintingSloth = persona.type === "SLOTH" && clawdSlothIds.has(id);
+      const hasCustomArtwork = isCustomTerminalQuokka || isCustomFlyingBee || isCustomPaintingSloth;
+      const personaRouteDuration = isCustomFlyingBee ? beeRouteDuration : routeDuration;
       const movement = routeKeyframes(unitIndex, isRider ? 5 : 0, isRider ? -6 : 0);
-      const facing = facingKeyframes(unitIndex);
+      const facing = hasCustomArtwork ? "0%,100%{transform:scaleX(1);}" : facingKeyframes(unitIndex);
       let rootId;
       if (movingPersonaIds.has(id)) {
         const animationRuleStart = result.indexOf(`animation-name: move-${id}`);
@@ -1455,13 +1575,13 @@ const distributeCharacterRoaming = (svg) => {
         replaceKeyframeBody(`move-${id}`, movement);
         // Labels are siblings of the facing wrapper, so the old counter-flip must stay neutral.
         replaceKeyframeBody(`reverse-flip-${id}`, "0%,100%{transform:scaleX(1);}");
-        configureAnimation(`move-${id}`, routeDuration, "infinite", "normal");
-        configureAnimation(`reverse-flip-${id}`, routeDuration, "infinite", "normal");
+        configureAnimation(`move-${id}`, personaRouteDuration, "infinite", "normal");
+        configureAnimation(`reverse-flip-${id}`, personaRouteDuration, "infinite", "normal");
         configureTimingFunction(`reverse-flip-${id}`, "steps(1,end)");
       } else {
         rootId = staticPersonaRoots.get(id);
         coordinatedRouteStyles += `@keyframes profile-route-${id}{${movement}}`
-          + `#${rootId}{animation-name:profile-route-${id};animation-duration:${routeDuration}s;`
+          + `#${rootId}{animation-name:profile-route-${id};animation-duration:${personaRouteDuration}s;`
           + "animation-timing-function:linear;animation-iteration-count:infinite;"
           + "animation-direction:normal;animation-fill-mode:both;}";
       }
@@ -1480,6 +1600,14 @@ const distributeCharacterRoaming = (svg) => {
       wrapArtworkContents(rootId, facingWrapperId, id);
       const sizeWrapperId = `profile-size-${id}`;
       wrapGroupContents(facingWrapperId, sizeWrapperId);
+      if (isCustomTerminalQuokka) {
+        replaceGroupContents(sizeWrapperId, oosuTerminalMascotSprite(id));
+      } else if (isCustomFlyingBee) {
+        replaceGroupContents(sizeWrapperId, beeMascotSprite(id));
+        frontRootIds.push(rootId);
+      } else if (isCustomPaintingSloth) {
+        replaceGroupContents(sizeWrapperId, clawdPaintingSprite(id));
+      }
       coordinatedRouteStyles += `@keyframes profile-facing-route-${id}{${facing}}`
         + `#${facingWrapperId}{animation:profile-facing-route-${id} ${routeDuration}s steps(1,end) infinite both;`
         + `transform-origin:${pivot.toFixed(2)}px 0px;}`
@@ -1490,7 +1618,7 @@ const distributeCharacterRoaming = (svg) => {
         + `#${interactionWrapperId}{animation:profile-interaction-route-${id} ${routeDuration}s linear infinite both;`
         + `transform-origin:${pivot.toFixed(2)}px 36px;}`;
 
-      if (!isRider) {
+      if (!isRider && !isCustomFlyingBee) {
         const profile = actionProfile(persona, unitIndex);
         const scaledShadowRx = geometry.rx * scale;
         const scaledShadowRy = 1.15 * Math.sqrt(scale);
@@ -1633,9 +1761,14 @@ const distributeCharacterRoaming = (svg) => {
       } else if (persona.type === "GALCHI_CAT") {
         // The cat's upstream metadata sits conspicuously high over its ears at 0.8x.
         coordinatedRouteStyles += `#level-wrap-${id}{translate:0 8px;}`;
+      } else if (isCustomPaintingSloth) {
+        // Clawd's canvas includes paint/palette space to its left, so the label tracks that wider silhouette.
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:-26px -2px;}`;
       }
     });
   });
+
+  frontRootIds.forEach(moveRootToFront);
 
   const ambientBehaviorStyles = "@keyframes profile-water-bed{"
     + "0%,100%{transform:scale(.985,.97);opacity:.1;}50%{transform:scale(1.015,1.03);opacity:.18;}}"
