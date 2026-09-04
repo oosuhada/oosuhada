@@ -420,8 +420,8 @@ for (const persona of visible.filter(isBeePersona)) {
     previous = current;
   }
   const averageSpeed = weightedDistance / lightBee.duration;
-  assert(averageSpeed >= 22,
-    `Bee Quokka ${id} should fly several times faster than land pets; average ${averageSpeed.toFixed(2)} units/s.`);
+  assert(averageSpeed >= 14,
+    `Bee Quokka ${id} should keep a lively figure-eight flight; average ${averageSpeed.toFixed(2)} units/s.`);
   assert(maximumSpeed <= 85,
     `Bee Quokka ${id} moves too abruptly (${maximumSpeed.toFixed(2)} units/s).`);
 }

@@ -977,13 +977,14 @@ const distributeCharacterRoaming = (svg) => {
 
   const preferredPosition = (unit, progress) => {
     if (beeQuokkaIds.has(String(unit.persona.id))) {
-      // Keep the bee fast without looking like it teleports: one continuous Lissajous flight path
-      // with a closed seam, sampled into the same smooth route system as the other pets. The bee is
-      // collision/zone exempt, so no resolver force can shove it into sudden corrective jumps.
-      const loop = 2 * Math.PI * (7 * progress + 0.12);
+      // A bee should read as a smooth figure-eight hover, not a zigzag dart. Use a true sideways
+      // infinity path whose lobes cross at the centre; four loops per farm cycle keeps it lively
+      // while avoiding the frantic back-and-forth created by the earlier seven-loop Lissajous path.
+      const loop = 2 * Math.PI * (4 * progress + 0.12);
+      const lobe = Math.sin(loop);
       return {
-        x: 50 + 43 * Math.sin(loop),
-        y: 49 + 29 * Math.sin(2 * loop + 0.45),
+        x: 50 + 43 * lobe,
+        y: 49 + 29 * lobe * Math.cos(loop) * 2,
       };
     }
     if (terminalQuokkaIds.has(String(unit.persona.id))) {
