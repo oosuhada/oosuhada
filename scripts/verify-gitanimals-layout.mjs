@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v74";
+const layoutVersion = "character-behaviors-v75";
 const frogAsset = await readFile(path.join(root, "assets/gitanimals/custom/frog-pixel.svg"), "utf8");
 const venomothAsset = await readFile(path.join(root, "assets/gitanimals/custom/venomoth-butterfly.svg"), "utf8");
 const terminalAsset = await readFile(path.join(root, "assets/gitanimals/custom/oosu-terminal-cutout.svg"), "utf8");
@@ -83,11 +83,14 @@ assert(!/<image\b|data:image|href=["'](?:https?:|data:)/i.test(venomothAsset),
   "Venomoth custom asset must remain pure inline vector artwork.");
 assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(venomothAsset),
   "Venomoth custom asset should stay flat: no gradients or translucent shading.");
-assert(new Set([...venomothAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 4,
+assert(new Set([...venomothAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 5,
   "Venomoth custom asset should keep a compact flat-color palette instead of pseudo-gradient shading.");
-assert(!venomothAsset.includes('#E6B2EA') && !venomothAsset.includes('#B778C3')
-  && venomothAsset.includes('#9B6FC7'),
-  "Venomoth wings should use the muted GitAnimals-style purple as one flat wing fill.");
+assert(venomothAsset.includes('#C8AED6') && venomothAsset.includes('#8D778F')
+  && venomothAsset.includes('#B7AFB8'),
+  "Venomoth should keep the softer reference-derived lavender, mauve, and gray body palette.");
+assert(!venomothAsset.includes('#241B2B') && !venomothAsset.includes('#101010')
+  && !venomothAsset.includes('#000000'),
+  "Venomoth must not restore the heavy black outer contour.");
 assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(terminalAsset),
   "Terminal mascot should stay flat: no gradients or translucent highlight/shadow layers.");
 assert(terminalAsset.includes('shape-rendering="crispEdges"'),
