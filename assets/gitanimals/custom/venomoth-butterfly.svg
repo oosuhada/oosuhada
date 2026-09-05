@@ -3,9 +3,12 @@
   <path fill="#C8AED6" d="M15 0h4v1h-4Z M0 1h2v1h-2Z M14 1h6v1h-6Z M0 2h3v1h-3Z M14 2h6v1h-6Z M0 3h3v1h-3Z M13 3h7v1h-7Z M0 4h4v1h-4Z M12 4h8v1h-8Z M1 5h4v1h-4Z M13 5h6v1h-6Z M1 6h4v1h-4Z M7 6h2v1h-2Z M14 6h5v1h-5Z M2 7h4v1h-4Z M7 7h2v1h-2Z M13 7h6v1h-6Z M3 8h6v1h-6Z M12 8h7v1h-7Z M3 9h6v1h-6Z M14 9h5v1h-5Z M4 10h5v1h-5Z M14 10h5v1h-5Z M4 11h5v1h-5Z M14 11h6v1h-6Z M4 12h5v1h-5Z M14 12h6v1h-6Z M5 13h4v1h-4Z M14 13h5v1h-5Z M6 14h3v1h-3Z M15 14h5v1h-5Z M6 15h3v1h-3Z M14 15h5v1h-5Z M5 16h5v1h-5Z M14 16h5v1h-5Z M6 17h4v1h-4Z M14 17h5v1h-5Z M6 18h3v1h-3Z M13 18h1v1h-1Z M15 18h1v1h-1Z M17 18h2v1h-2Z M7 19h1v1h-1Z M13 19h1v1h-1Z"/>
   <path fill="#8D778F" d="M12 5h1v1h-1Z M10 6h1v1h-1Z M12 6h2v1h-2Z M10 7h3v1h-3Z M10 8h2v1h-2Z M10 9h2v1h-2Z M9 10h3v1h-3Z M9 11h5v1h-5Z M9 12h5v1h-5Z M9 13h5v1h-5Z M9 14h6v1h-6Z M9 15h1v1h-1Z M13 15h1v1h-1Z"/>
   <path fill="#B7AFB8" d="M10 15h3v1h-3Z M10 16h4v1h-4Z M10 17h4v1h-4Z M10 18h3v1h-3Z M10 19h3v1h-3Z M10 20h3v1h-3Z"/>
-  <!-- Oversized twin eyes are intentionally explicit on this coarse grid so both remain readable at README scale. -->
-  <path id="venomoth-eye-left" fill="#EEF5F7" d="M7 8h4v1h-4Z M7 9h4v1h-4Z M8 10h3v1h-3Z"/>
-  <path id="venomoth-eye-right" fill="#EEF5F7" d="M13 8h4v1h-4Z M13 9h4v1h-4Z M13 10h3v1h-3Z"/>
+  <!-- Large rounded pixel eyes with centered 2x2 pupils read more like a cute GitAnimal face at README scale. -->
+  <path id="venomoth-eye-left" fill="#EEF5F7" d="M7 8h4v1h-4Z M7 9h4v2h-4Z M8 11h3v1h-3Z"/>
+  <path id="venomoth-eye-right" fill="#EEF5F7" d="M13 8h4v1h-4Z M13 9h4v2h-4Z M13 11h3v1h-3Z"/>
   <path id="venomoth-pupil-left" fill="#4A414C" d="M8 9h2v2h-2Z"/>
   <path id="venomoth-pupil-right" fill="#4A414C" d="M14 9h2v2h-2Z"/>
+  <!-- One bright pixel in each pupil gives the simple character-eye catchlight the user requested. -->
+  <path id="venomoth-highlight-left" fill="#FFFFFF" d="M8 9h1v1h-1Z"/>
+  <path id="venomoth-highlight-right" fill="#FFFFFF" d="M14 9h1v1h-1Z"/>
 </svg>

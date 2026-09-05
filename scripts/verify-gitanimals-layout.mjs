@@ -6,9 +6,10 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v76";
+const layoutVersion = "character-behaviors-v80";
 const frogAsset = await readFile(path.join(root, "assets/gitanimals/custom/frog-pixel.svg"), "utf8");
 const venomothAsset = await readFile(path.join(root, "assets/gitanimals/custom/venomoth-butterfly.svg"), "utf8");
+const beeAsset = await readFile(path.join(root, "assets/gitanimals/custom/bee-svgrepo-com.svg"), "utf8");
 const terminalAsset = await readFile(path.join(root, "assets/gitanimals/custom/oosu-terminal-cutout.svg"), "utf8");
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
@@ -83,7 +84,7 @@ assert(!/<image\b|data:image|href=["'](?:https?:|data:)/i.test(venomothAsset),
   "Venomoth custom asset must remain pure inline vector artwork.");
 assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(venomothAsset),
   "Venomoth custom asset should stay flat: no gradients or translucent shading.");
-assert(new Set([...venomothAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 5,
+assert(new Set([...venomothAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 6,
   "Venomoth custom asset should keep a compact flat-color palette instead of pseudo-gradient shading.");
 assert(venomothAsset.includes('#C8AED6') && venomothAsset.includes('#8D778F')
   && venomothAsset.includes('#B7AFB8'),
@@ -94,6 +95,24 @@ assert(!venomothAsset.includes('#241B2B') && !venomothAsset.includes('#101010')
 assert(venomothAsset.includes('id="venomoth-eye-left"') && venomothAsset.includes('id="venomoth-eye-right"')
   && venomothAsset.includes('id="venomoth-pupil-left"') && venomothAsset.includes('id="venomoth-pupil-right"'),
   "Venomoth must preserve two separately addressable oversized eyes and two pupils.");
+assert(venomothAsset.includes('d="M8 9h2v2h-2Z"') && venomothAsset.includes('d="M14 9h2v2h-2Z"'),
+  "Venomoth pupils should stay large, square, and centered inside the oversized eyes.");
+assert(venomothAsset.includes('id="venomoth-highlight-left"')
+  && venomothAsset.includes('id="venomoth-highlight-right"')
+  && venomothAsset.includes('fill="#FFFFFF"'),
+  "Venomoth pupils should keep one bright catchlight pixel each for a friendly character-eye look.");
+assert(beeAsset.includes('viewBox="0 0 18 14"') && beeAsset.includes('shape-rendering="crispEdges"'),
+  "Bee should stay on the compact GitAnimals-style 18x14 crisp pixel grid.");
+assert(!/<image\b|data:image|href=["'](?:https?:|data:)/i.test(beeAsset)
+  && !/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(beeAsset),
+  "Bee custom asset should remain flat pure vector artwork with no raster refs, gradients, or translucent shading.");
+assert(new Set([...beeAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 5,
+  "Bee should keep a compact GitAnimals-style flat palette.");
+assert(beeAsset.includes('id="bee-eye"') && beeAsset.includes('id="bee-pupil"')
+  && !beeAsset.includes('#070000') && !beeAsset.includes('#000000'),
+  "Bee should use a friendly readable eye and avoid the old heavy black SVGRepo styling.");
+assert(beeAsset.includes('d="M13 6h3v3h-3Z"') && beeAsset.includes('d="M14 7h1v1h-1Z"'),
+  "Bee pupil should remain centered in a larger friendly pixel eye.");
 assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(terminalAsset),
   "Terminal mascot should stay flat: no gradients or translucent highlight/shadow layers.");
 assert(terminalAsset.includes('shape-rendering="crispEdges"'),
@@ -536,11 +555,25 @@ for (const persona of visible.filter(isVenomothPersona)) {
   const venomothFacingEnd = light.indexOf(`#profile-facing-${id}`, venomothFacingStart);
   const venomothFacingBody = light.slice(venomothFacingStart, venomothFacingEnd);
   assert(venomothFacingBody.includes("scaleX(-1)") && venomothFacingBody.includes("scaleX(1)"),
-    `Venomoth Quokka ${id} must face left while flying left and right while flying right.`);
+    `Venomoth Quokka ${id} must keep both mirrored facing states.`);
+  const venomothFacingFrames = [...venomothFacingBody.matchAll(
+    /([\d.]+)%\{transform:scaleX\((-?1)\);\}/g,
+  )].map((match) => ({ percentage: Number(match[1]), scale: Number(match[2]) }));
+  const flight = extractAnimation(light, persona);
+  assert(venomothFacingFrames.length === flight.points.length,
+    `Venomoth Quokka ${id} facing samples must stay aligned with route samples.`);
+  for (let index = 0; index < flight.points.length - 1; index += 1) {
+    const deltaX = flight.points[index + 1].x - flight.points[index].x;
+    if (Math.abs(deltaX) < 0.05) continue;
+    const expectedScale = deltaX > 0 ? -1 : 1;
+    assert(venomothFacingFrames[index].scale === expectedScale,
+      `Venomoth Quokka ${id} facing should be inverted relative to horizontal travel at `
+        + `${flight.points[index].percentage.toFixed(2)}% (dx=${deltaX.toFixed(2)}, `
+        + `scale=${venomothFacingFrames[index].scale}).`);
+  }
   assert(light.includes(`#level-wrap-${id}{translate:-10px 2px;}`)
     && dark.includes(`#level-wrap-${id}{translate:-10px 2px;}`),
   `Venomoth Quokka ${id} level should clear its large wings.`);
-  const flight = extractAnimation(light, persona);
   const darkFlight = extractAnimation(dark, persona);
   assert(JSON.stringify(flight.points) === JSON.stringify(darkFlight.points),
     `Venomoth Quokka ${id} light and dark flight paths differ.`);
