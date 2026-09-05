@@ -14,7 +14,7 @@ const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg"
 const venomothMascotPath = path.join(outputDirectory, "custom", "venomoth-butterfly.svg");
 const frogMascotPath = path.join(outputDirectory, "custom", "frog-pixel.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v73";
+const layoutVersion = "character-behaviors-v74";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -881,7 +881,7 @@ const distributeCharacterRoaming = (svg) => {
 
   const routeDuration = 120;
   const beeRouteDuration = 60;
-  const venomothRouteDuration = 120;
+  const venomothRouteDuration = 60;
   const routeSampleSeconds = 0.5;
   // Begin the gentle turn before sprites visibly overlap. The extra runway lets the temporal
   // smoother separate them without a sudden correction at the collision boundary.
@@ -1077,8 +1077,8 @@ const distributeCharacterRoaming = (svg) => {
       return beeFarmPosition(0.63 + progress * 2);
     }
     if (venomothQuokkaIds.has(String(unit.persona.id))) {
-      // Same broad flight grammar as the bee, but played over twice the duration below so the
-      // Venomoth-style butterfly moves at half the bee's actual speed.
+      // Same broad flight grammar and duration as the bee so both flying mascots move at the same
+      // actual speed while remaining out of phase and visually independent.
       return beeFarmPosition(0.11 + progress * 2);
     }
     if (frogChickIds.has(String(unit.persona.id))) {

@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v73";
+const layoutVersion = "character-behaviors-v74";
 const frogAsset = await readFile(path.join(root, "assets/gitanimals/custom/frog-pixel.svg"), "utf8");
 const venomothAsset = await readFile(path.join(root, "assets/gitanimals/custom/venomoth-butterfly.svg"), "utf8");
 const terminalAsset = await readFile(path.join(root, "assets/gitanimals/custom/oosu-terminal-cutout.svg"), "utf8");
@@ -85,8 +85,9 @@ assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(venomothAsset),
   "Venomoth custom asset should stay flat: no gradients or translucent shading.");
 assert(new Set([...venomothAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 4,
   "Venomoth custom asset should keep a compact flat-color palette instead of pseudo-gradient shading.");
-assert(!venomothAsset.includes('#E6B2EA') && venomothAsset.includes('#B778C3'),
-  "Venomoth wings should use one purple fill instead of a lighter second wing tone.");
+assert(!venomothAsset.includes('#E6B2EA') && !venomothAsset.includes('#B778C3')
+  && venomothAsset.includes('#9B6FC7'),
+  "Venomoth wings should use the muted GitAnimals-style purple as one flat wing fill.");
 assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(terminalAsset),
   "Terminal mascot should stay flat: no gradients or translucent highlight/shadow layers.");
 assert(terminalAsset.includes('shape-rendering="crispEdges"'),
@@ -523,8 +524,8 @@ for (const persona of visible.filter(isVenomothPersona)) {
     `Venomoth Quokka ${id} original body should be replaced.`);
   assert(!light.includes(`<svg id="profile-shadow-${id}"`) && !dark.includes(`<svg id="profile-shadow-${id}"`),
     `Venomoth Quokka ${id} should fly without a ground shadow.`);
-  assert(light.includes(`#profile-facing-${id}{animation:profile-facing-route-${id} 120s steps(1,end) infinite both;transform-box:fill-box;transform-origin:center center;`),
-    `Venomoth Quokka ${id} should flip around its own artwork center on the 120s flight cycle.`);
+  assert(light.includes(`#profile-facing-${id}{animation:profile-facing-route-${id} 60s steps(1,end) infinite both;transform-box:fill-box;transform-origin:center center;`),
+    `Venomoth Quokka ${id} should flip around its own artwork center on the same 60s cycle as the bee.`);
   const venomothFacingStart = light.indexOf(`@keyframes profile-facing-route-${id}`);
   const venomothFacingEnd = light.indexOf(`#profile-facing-${id}`, venomothFacingStart);
   const venomothFacingBody = light.slice(venomothFacingStart, venomothFacingEnd);
@@ -543,8 +544,8 @@ for (const persona of visible.filter(isVenomothPersona)) {
     `Venomoth Quokka ${id} should sweep across water and land.`);
   assert(Math.max(...yValues) - Math.min(...yValues) >= 50,
     `Venomoth Quokka ${id} should use the full-height flying route.`);
-  assert(flight.duration === 120 && darkFlight.duration === 120,
-    `Venomoth Quokka ${id} must take 120s, exactly twice the bee cycle.`);
+  assert(flight.duration === 60 && darkFlight.duration === 60,
+    `Venomoth Quokka ${id} must take 60s, exactly matching the bee cycle.`);
 }
 
 for (const persona of visible.filter((candidate) => frogChickIds.has(String(candidate.id)))) {
