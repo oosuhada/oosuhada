@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v78";
+const layoutVersion = "character-behaviors-v79";
 const frogAsset = await readFile(path.join(root, "assets/gitanimals/custom/frog-pixel.svg"), "utf8");
 const venomothAsset = await readFile(path.join(root, "assets/gitanimals/custom/venomoth-butterfly.svg"), "utf8");
 const beeAsset = await readFile(path.join(root, "assets/gitanimals/custom/bee-svgrepo-com.svg"), "utf8");
@@ -84,7 +84,7 @@ assert(!/<image\b|data:image|href=["'](?:https?:|data:)/i.test(venomothAsset),
   "Venomoth custom asset must remain pure inline vector artwork.");
 assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(venomothAsset),
   "Venomoth custom asset should stay flat: no gradients or translucent shading.");
-assert(new Set([...venomothAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 5,
+assert(new Set([...venomothAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 6,
   "Venomoth custom asset should keep a compact flat-color palette instead of pseudo-gradient shading.");
 assert(venomothAsset.includes('#C8AED6') && venomothAsset.includes('#8D778F')
   && venomothAsset.includes('#B7AFB8'),
@@ -95,8 +95,12 @@ assert(!venomothAsset.includes('#241B2B') && !venomothAsset.includes('#101010')
 assert(venomothAsset.includes('id="venomoth-eye-left"') && venomothAsset.includes('id="venomoth-eye-right"')
   && venomothAsset.includes('id="venomoth-pupil-left"') && venomothAsset.includes('id="venomoth-pupil-right"'),
   "Venomoth must preserve two separately addressable oversized eyes and two pupils.");
-assert(venomothAsset.includes('d="M8 9h2v1h-2Z"') && venomothAsset.includes('d="M14 9h2v1h-2Z"'),
-  "Venomoth pupils should stay small and centered inside the oversized eyes.");
+assert(venomothAsset.includes('d="M8 9h2v2h-2Z"') && venomothAsset.includes('d="M14 9h2v2h-2Z"'),
+  "Venomoth pupils should stay large, square, and centered inside the oversized eyes.");
+assert(venomothAsset.includes('id="venomoth-highlight-left"')
+  && venomothAsset.includes('id="venomoth-highlight-right"')
+  && venomothAsset.includes('fill="#FFFFFF"'),
+  "Venomoth pupils should keep one bright catchlight pixel each for a friendly character-eye look.");
 assert(beeAsset.includes('viewBox="0 0 18 14"') && beeAsset.includes('shape-rendering="crispEdges"'),
   "Bee should stay on the compact GitAnimals-style 18x14 crisp pixel grid.");
 assert(!/<image\b|data:image|href=["'](?:https?:|data:)/i.test(beeAsset)
