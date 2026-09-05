@@ -64,7 +64,7 @@ const levelGapContractById = new Map(
   visiblePersonas
     .map((persona) => {
       const contract = frogChickIds.has(String(persona.id))
-        ? { min: 10, max: 20 }
+        ? { min: 5, max: 12 }
         : ({
         RABBIT: { min: 0, max: 7 },
         RABBIT_TUBE: { min: 6, max: 17 },
@@ -237,7 +237,7 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v72", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v73", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.swimZone?.width > 285 && geometry.swimZone?.width < 305,

@@ -14,7 +14,7 @@ const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg"
 const venomothMascotPath = path.join(outputDirectory, "custom", "venomoth-butterfly.svg");
 const frogMascotPath = path.join(outputDirectory, "custom", "frog-pixel.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v72";
+const layoutVersion = "character-behaviors-v73";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -1438,15 +1438,15 @@ const distributeCharacterRoaming = (svg) => {
   const actionProfile = (persona, index) => {
     if (frogChickIds.has(String(persona.id))) {
       const profile = {
-        duration: 36,
-        // Mostly idle, with one short vertical hop per cycle. Keep x at zero throughout so the
-        // jump reads as an in-place frog hop instead of a second roaming path layered over water.
-        body: "0%,44%,68%,100%{transform:translate(0,0) rotate(0deg);}"
-          + "48%{transform:translate(0,-2px) rotate(0deg);}"
-          + "53%{transform:translate(0,-7px) rotate(0deg);}"
-          + "56%{transform:translate(0,-10px) rotate(0deg);}"
-          + "59%{transform:translate(0,-7px) rotate(0deg);}"
-          + "64%{transform:translate(0,-2px) rotate(0deg);}",
+        duration: 32,
+        // Continuous breathing is handled on the frog sprite below. This action layer adds one
+        // quick vertical hop per cycle without introducing any horizontal drift.
+        body: "0%,58%,63%,100%{transform:translate(0,0) rotate(0deg);}"
+          + "59%{transform:translate(0,-4px) rotate(0deg);}"
+          + "60.25%{transform:translate(0,-10px) rotate(0deg);}"
+          + "60.75%{transform:translate(0,-12px) rotate(0deg);}"
+          + "61.25%{transform:translate(0,-10px) rotate(0deg);}"
+          + "62%{transform:translate(0,-4px) rotate(0deg);}",
       };
       return { ...profile, delay: -((index * 7) % profile.duration) };
     }
@@ -1746,6 +1746,13 @@ const distributeCharacterRoaming = (svg) => {
         + `${facingOriginStyle}}`
         + `#${sizeWrapperId}{transform:scale(${scale.toFixed(2)});`
         + `transform-origin:${(geometry.cx * 3).toFixed(2)}px ${(geometry.cy * 3).toFixed(2)}px;}`;
+      if (isCustomWaterFrog) {
+        coordinatedRouteStyles += `@keyframes profile-frog-pant-${id}{`
+          + "0%,100%{transform:translateY(0) scale(1,1);}"
+          + "45%,55%{transform:translateY(.8px) scale(1.025,.955);}}"
+          + `#profile-custom-frog-${id}{animation:profile-frog-pant-${id} 1.25s ease-in-out infinite;`
+          + "transform-box:fill-box;transform-origin:center bottom;}";
+      }
 
       coordinatedRouteStyles += `@keyframes profile-interaction-route-${id}{${interactionKeyframes(unitIndex)}}`
         + `#${interactionWrapperId}{animation:profile-interaction-route-${id} ${personaRouteDuration}s linear infinite both;`
@@ -1777,10 +1784,10 @@ const distributeCharacterRoaming = (svg) => {
           ? `#${actionWrapperId},#${riderNeutralizerId}`
           : `#${actionWrapperId}`;
         const shadowRouteBody = isCustomWaterFrog
-          ? "0%,44%,68%,100%{transform:scaleX(1);opacity:.18;}"
-            + "48%,64%{transform:scaleX(.86);opacity:.14;}"
-            + "53%,59%{transform:scaleX(.70);opacity:.10;}"
-            + "56%{transform:scaleX(.58);opacity:.07;}"
+          ? "0%,58%,63%,100%{transform:scaleX(1);opacity:.18;}"
+            + "59%,62%{transform:scaleX(.82);opacity:.13;}"
+            + "60.25%,61.25%{transform:scaleX(.66);opacity:.09;}"
+            + "60.75%{transform:scaleX(.54);opacity:.07;}"
           : "0%,14%,32%,50%,68%,86%,100%{transform:scaleX(1);opacity:.18;}"
             + "18%,54%,90%{transform:scaleX(.78);opacity:.11;}"
             + "24%,42%,76%{transform:scaleX(1.12);opacity:.21;}";
@@ -1869,9 +1876,8 @@ const distributeCharacterRoaming = (svg) => {
         // the body while leaving the full wing silhouette readable.
         coordinatedRouteStyles += `#level-wrap-${id}{translate:-10px 2px;}`;
       } else if (isCustomWaterFrog) {
-        // At native 1x the frog is much shorter than the previous doubled sprite. Bring the label
-        // back down with it while keeping a small left bias and clear air above both eyes.
-        coordinatedRouteStyles += `#level-wrap-${id}{translate:-6px -16px;}`;
+        // At native 1x, keep the label close to the frog while preserving a little air above both eyes.
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:-6px -10px;}`;
       } else if (persona.type === "RABBIT") {
         // The rabbit artwork's visual centre moves substantially inside its wide emotion-state
         // canvas when mirrored. Keep the horizontal optical correction, but bring the label down
