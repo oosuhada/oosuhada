@@ -6,9 +6,10 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v76";
+const layoutVersion = "character-behaviors-v78";
 const frogAsset = await readFile(path.join(root, "assets/gitanimals/custom/frog-pixel.svg"), "utf8");
 const venomothAsset = await readFile(path.join(root, "assets/gitanimals/custom/venomoth-butterfly.svg"), "utf8");
+const beeAsset = await readFile(path.join(root, "assets/gitanimals/custom/bee-svgrepo-com.svg"), "utf8");
 const terminalAsset = await readFile(path.join(root, "assets/gitanimals/custom/oosu-terminal-cutout.svg"), "utf8");
 // The route is cyclic. The previous 3.0s check split one cross-seam interaction into two shorter
 // segments, so rotating the scene exposed the real 3.2s duration. Keep a narrow 0.05s margin above
@@ -94,6 +95,20 @@ assert(!venomothAsset.includes('#241B2B') && !venomothAsset.includes('#101010')
 assert(venomothAsset.includes('id="venomoth-eye-left"') && venomothAsset.includes('id="venomoth-eye-right"')
   && venomothAsset.includes('id="venomoth-pupil-left"') && venomothAsset.includes('id="venomoth-pupil-right"'),
   "Venomoth must preserve two separately addressable oversized eyes and two pupils.");
+assert(venomothAsset.includes('d="M8 9h2v1h-2Z"') && venomothAsset.includes('d="M14 9h2v1h-2Z"'),
+  "Venomoth pupils should stay small and centered inside the oversized eyes.");
+assert(beeAsset.includes('viewBox="0 0 18 14"') && beeAsset.includes('shape-rendering="crispEdges"'),
+  "Bee should stay on the compact GitAnimals-style 18x14 crisp pixel grid.");
+assert(!/<image\b|data:image|href=["'](?:https?:|data:)/i.test(beeAsset)
+  && !/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(beeAsset),
+  "Bee custom asset should remain flat pure vector artwork with no raster refs, gradients, or translucent shading.");
+assert(new Set([...beeAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 5,
+  "Bee should keep a compact GitAnimals-style flat palette.");
+assert(beeAsset.includes('id="bee-eye"') && beeAsset.includes('id="bee-pupil"')
+  && !beeAsset.includes('#070000') && !beeAsset.includes('#000000'),
+  "Bee should use a friendly readable eye and avoid the old heavy black SVGRepo styling.");
+assert(beeAsset.includes('d="M13 6h3v3h-3Z"') && beeAsset.includes('d="M14 7h1v1h-1Z"'),
+  "Bee pupil should remain centered in a larger friendly pixel eye.");
 assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(terminalAsset),
   "Terminal mascot should stay flat: no gradients or translucent highlight/shadow layers.");
 assert(terminalAsset.includes('shape-rendering="crispEdges"'),

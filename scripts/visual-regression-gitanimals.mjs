@@ -202,6 +202,14 @@ try {
             .map((id) => document.getElementById(id))
             .filter(Boolean)
             .map((element) => ({ id: element.id, ...rectFor(element) })),
+          beeEye: (() => {
+            const element = document.getElementById("bee-eye");
+            return element ? rectFor(element) : null;
+          })(),
+          beePupil: (() => {
+            const element = document.getElementById("bee-pupil");
+            return element ? rectFor(element) : null;
+          })(),
           shadows: [...document.querySelectorAll("svg[id^='profile-shadow-']")].map((element) => ({
             id: element.id,
             ...rectFor(element),
@@ -245,7 +253,7 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v76", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v78", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.swimZone?.width > 285 && geometry.swimZone?.width < 305,
@@ -292,6 +300,17 @@ try {
         const bee = geometry.characters.find((character) => character.id === id);
         assert(bee?.visibleArtwork && bee.visibleArtwork.width > 0 && bee.visibleArtwork.height > 0,
           `${theme} ${seconds}s lost the flying bee sprite.`);
+        assert(geometry.beeEye && geometry.beePupil
+          && geometry.beeEye.width >= 4 && geometry.beeEye.height >= 4
+          && geometry.beePupil.width >= 1 && geometry.beePupil.height >= 1,
+        `${theme} ${seconds}s must keep the Bee eye readable at README scale.`);
+        const beeEyeCenterX = geometry.beeEye.x + geometry.beeEye.width / 2;
+        const beeEyeCenterY = geometry.beeEye.y + geometry.beeEye.height / 2;
+        const beePupilCenterX = geometry.beePupil.x + geometry.beePupil.width / 2;
+        const beePupilCenterY = geometry.beePupil.y + geometry.beePupil.height / 2;
+        assert(Math.abs(beeEyeCenterX - beePupilCenterX) <= 0.2
+          && Math.abs(beeEyeCenterY - beePupilCenterY) <= 0.2,
+        `${theme} ${seconds}s must keep the Bee pupil centered in its eye.`);
       });
       venomothIds.forEach((id) => {
         const venomoth = geometry.characters.find((character) => character.id === id);
@@ -301,8 +320,18 @@ try {
           && geometry.venomothEyes.every((eye) => eye.width >= 4.5 && eye.height >= 3.5),
         `${theme} ${seconds}s must keep both Venomoth eyes visibly large at README scale.`);
         assert(geometry.venomothPupils.length === 2
-          && geometry.venomothPupils.every((pupil) => pupil.width >= 2 && pupil.height >= 2),
+          && geometry.venomothPupils.every((pupil) => pupil.width >= 2.5 && pupil.height >= 1.2),
         `${theme} ${seconds}s must keep both Venomoth pupils visible at README scale.`);
+        geometry.venomothEyes.forEach((eye, index) => {
+          const pupil = geometry.venomothPupils[index];
+          const eyeCenterX = eye.x + eye.width / 2;
+          const eyeCenterY = eye.y + eye.height / 2;
+          const pupilCenterX = pupil.x + pupil.width / 2;
+          const pupilCenterY = pupil.y + pupil.height / 2;
+          assert(Math.abs(eyeCenterX - pupilCenterX) <= 0.2
+            && Math.abs(eyeCenterY - pupilCenterY) <= 0.2,
+          `${theme} ${seconds}s must keep each Venomoth pupil centered in its eye.`);
+        });
       });
       assert(geometry.actions === expectedActionCount, `${theme} ${seconds}s lost character action wrappers.`);
       assert(geometry.interactions === expectedInteractionCount,

@@ -14,7 +14,7 @@ const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg"
 const venomothMascotPath = path.join(outputDirectory, "custom", "venomoth-butterfly.svg");
 const frogMascotPath = path.join(outputDirectory, "custom", "frog-pixel.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v76";
+const layoutVersion = "character-behaviors-v78";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -809,7 +809,7 @@ const distributeCharacterRoaming = (svg) => {
     return beeMascotSource
       .replace(/<\?xml[^>]*>\s*/i, "")
       .replace(/<!DOCTYPE[^>]*>\s*/i, "")
-      .replace(/<svg\b/, `<svg id="profile-custom-bee-${personaId}" class="profile-custom-bee" x="-10" y="-10" width="23" height="23"`);
+      .replace(/<svg\b/, `<svg id="profile-custom-bee-${personaId}" class="profile-custom-bee" x="-11" y="-8" width="26" height="20"`);
   };
 
   const venomothMascotSprite = (personaId) => {
