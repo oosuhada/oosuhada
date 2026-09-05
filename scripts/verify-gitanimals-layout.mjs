@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v71";
+const layoutVersion = "character-behaviors-v76";
 const frogAsset = await readFile(path.join(root, "assets/gitanimals/custom/frog-pixel.svg"), "utf8");
 const venomothAsset = await readFile(path.join(root, "assets/gitanimals/custom/venomoth-butterfly.svg"), "utf8");
 const terminalAsset = await readFile(path.join(root, "assets/gitanimals/custom/oosu-terminal-cutout.svg"), "utf8");
@@ -83,10 +83,17 @@ assert(!/<image\b|data:image|href=["'](?:https?:|data:)/i.test(venomothAsset),
   "Venomoth custom asset must remain pure inline vector artwork.");
 assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(venomothAsset),
   "Venomoth custom asset should stay flat: no gradients or translucent shading.");
-assert(new Set([...venomothAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 4,
+assert(new Set([...venomothAsset.matchAll(/fill="(#[0-9A-Fa-f]{6})"/g)].map((match) => match[1])).size <= 5,
   "Venomoth custom asset should keep a compact flat-color palette instead of pseudo-gradient shading.");
-assert(!venomothAsset.includes('#E6B2EA') && venomothAsset.includes('#B778C3'),
-  "Venomoth wings should use one purple fill instead of a lighter second wing tone.");
+assert(venomothAsset.includes('#C8AED6') && venomothAsset.includes('#8D778F')
+  && venomothAsset.includes('#B7AFB8'),
+  "Venomoth should keep the softer reference-derived lavender, mauve, and gray body palette.");
+assert(!venomothAsset.includes('#241B2B') && !venomothAsset.includes('#101010')
+  && !venomothAsset.includes('#000000'),
+  "Venomoth must not restore the heavy black outer contour.");
+assert(venomothAsset.includes('id="venomoth-eye-left"') && venomothAsset.includes('id="venomoth-eye-right"')
+  && venomothAsset.includes('id="venomoth-pupil-left"') && venomothAsset.includes('id="venomoth-pupil-right"'),
+  "Venomoth must preserve two separately addressable oversized eyes and two pupils.");
 assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(terminalAsset),
   "Terminal mascot should stay flat: no gradients or translucent highlight/shadow layers.");
 assert(terminalAsset.includes('shape-rendering="crispEdges"'),
@@ -523,8 +530,8 @@ for (const persona of visible.filter(isVenomothPersona)) {
     `Venomoth Quokka ${id} original body should be replaced.`);
   assert(!light.includes(`<svg id="profile-shadow-${id}"`) && !dark.includes(`<svg id="profile-shadow-${id}"`),
     `Venomoth Quokka ${id} should fly without a ground shadow.`);
-  assert(light.includes(`#profile-facing-${id}{animation:profile-facing-route-${id} 120s steps(1,end) infinite both;transform-box:fill-box;transform-origin:center center;`),
-    `Venomoth Quokka ${id} should flip around its own artwork center on the 120s flight cycle.`);
+  assert(light.includes(`#profile-facing-${id}{animation:profile-facing-route-${id} 60s steps(1,end) infinite both;transform-box:fill-box;transform-origin:center center;`),
+    `Venomoth Quokka ${id} should flip around its own artwork center on the same 60s cycle as the bee.`);
   const venomothFacingStart = light.indexOf(`@keyframes profile-facing-route-${id}`);
   const venomothFacingEnd = light.indexOf(`#profile-facing-${id}`, venomothFacingStart);
   const venomothFacingBody = light.slice(venomothFacingStart, venomothFacingEnd);
@@ -543,8 +550,8 @@ for (const persona of visible.filter(isVenomothPersona)) {
     `Venomoth Quokka ${id} should sweep across water and land.`);
   assert(Math.max(...yValues) - Math.min(...yValues) >= 50,
     `Venomoth Quokka ${id} should use the full-height flying route.`);
-  assert(flight.duration === 120 && darkFlight.duration === 120,
-    `Venomoth Quokka ${id} must take 120s, exactly twice the bee cycle.`);
+  assert(flight.duration === 60 && darkFlight.duration === 60,
+    `Venomoth Quokka ${id} must take 60s, exactly matching the bee cycle.`);
 }
 
 for (const persona of visible.filter((candidate) => frogChickIds.has(String(candidate.id)))) {
@@ -553,12 +560,29 @@ for (const persona of visible.filter((candidate) => frogChickIds.has(String(cand
     `Frog Little Chick ${id} should render the isolated pixel frog in both themes.`);
   assert(!light.includes(`little-chick-${id}-body`) && !dark.includes(`little-chick-${id}-body`),
     `Frog Little Chick ${id} original chick body should be replaced.`);
-  assert(light.includes(`#level-wrap-${id}{translate:-8px -32px;}`)
-    && dark.includes(`#level-wrap-${id}{translate:-8px -32px;}`),
+  assert(light.includes(`#level-wrap-${id}{translate:-6px -10px;}`)
+    && dark.includes(`#level-wrap-${id}{translate:-6px -10px;}`),
   `Frog Little Chick ${id} level should stay above the frog.`);
-  assert(light.includes(`#profile-size-${id}{transform:scale(2.00);`)
-    && dark.includes(`#profile-size-${id}{transform:scale(2.00);`),
-  `Frog Little Chick ${id} should render at exactly 2x its previous size.`);
+  assert(light.includes(`#profile-size-${id}{transform:scale(1.00);`)
+    && dark.includes(`#profile-size-${id}{transform:scale(1.00);`),
+  `Frog Little Chick ${id} should render at native 1x size.`);
+  const frogJumpStart = light.indexOf(`@keyframes profile-actions-route-${id}`);
+  const frogJumpEnd = light.indexOf(`#profile-actions-${id}`, frogJumpStart);
+  const frogJumpBody = light.slice(frogJumpStart, frogJumpEnd);
+  assert(frogJumpBody.includes("translate(0,-12px)")
+    && !/translate\((?:-|[1-9])[^,]*px,/.test(frogJumpBody),
+  `Frog Little Chick ${id} should intermittently jump straight up in place without horizontal drift.`);
+  assert(light.includes(`#profile-actions-${id}{animation:profile-actions-route-${id} 32s ease-in-out infinite both;`),
+    `Frog Little Chick ${id} jump should use the quicker intermittent 32s cycle.`);
+  assert(light.includes(`@keyframes profile-frog-pant-${id}`)
+    && light.includes(`#profile-custom-frog-${id}{animation:profile-frog-pant-${id} 1.25s ease-in-out infinite;`)
+    && dark.includes(`@keyframes profile-frog-pant-${id}`),
+  `Frog Little Chick ${id} should keep a continuous visible pant/breath idle motion.`);
+  const frogShadowStart = light.indexOf(`@keyframes profile-shadow-route-${id}`);
+  const frogShadowEnd = light.indexOf(`#profile-shadow-shape-${id}`, frogShadowStart);
+  const frogShadowBody = light.slice(frogShadowStart, frogShadowEnd);
+  assert(frogShadowBody.includes("scaleX(.54);opacity:.07"),
+    `Frog Little Chick ${id} shadow should tighten and fade at the jump apex.`);
   assert(light.includes('#3E7F3C') && light.includes('#73B84D')
     && dark.includes('#3E7F3C') && dark.includes('#73B84D'),
   `Frog Little Chick ${id} should use the brighter tree-frog palette.`);

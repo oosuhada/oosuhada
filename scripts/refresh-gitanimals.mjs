@@ -14,7 +14,7 @@ const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg"
 const venomothMascotPath = path.join(outputDirectory, "custom", "venomoth-butterfly.svg");
 const frogMascotPath = path.join(outputDirectory, "custom", "frog-pixel.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v71";
+const layoutVersion = "character-behaviors-v76";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -315,7 +315,7 @@ const personaFamily = (type) => {
 };
 
 const characterScale = (persona) => {
-  if (frogChickIds.has(String(persona.id))) return 2;
+  if (frogChickIds.has(String(persona.id))) return 1;
   return ({
   CAPYBARA_CARROT: 1.1,
   CAPYBARA_SWIM: 1.1,
@@ -379,8 +379,8 @@ const movementZoneBounds = (persona) => {
     return { left: 4, right: 96, top: 13, bottom: 84 };
   }
   if (frogChickIds.has(String(persona.id))) {
-    // The frog is deliberately a large shoreline resident. The scale-aware 5-unit inset below
-    // turns this into an effective x=39..41 pocket while keeping the doubled artwork in the water.
+    // Keep the frog in its compact lower-right shoreline pocket. Its custom sprite is back at the
+    // native 1x scale, so no extra scale-aware horizontal inset is needed here.
     return { left: 34, right: 46, top: 67.5, bottom: 75 };
   }
   return isSwimZonePersona(persona)
@@ -881,7 +881,7 @@ const distributeCharacterRoaming = (svg) => {
 
   const routeDuration = 120;
   const beeRouteDuration = 60;
-  const venomothRouteDuration = 120;
+  const venomothRouteDuration = 60;
   const routeSampleSeconds = 0.5;
   // Begin the gentle turn before sprites visibly overlap. The extra runway lets the temporal
   // smoother separate them without a sudden correction at the collision boundary.
@@ -1077,8 +1077,8 @@ const distributeCharacterRoaming = (svg) => {
       return beeFarmPosition(0.63 + progress * 2);
     }
     if (venomothQuokkaIds.has(String(unit.persona.id))) {
-      // Same broad flight grammar as the bee, but played over twice the duration below so the
-      // Venomoth-style butterfly moves at half the bee's actual speed.
+      // Same broad flight grammar and duration as the bee so both flying mascots move at the same
+      // actual speed while remaining out of phase and visually independent.
       return beeFarmPosition(0.11 + progress * 2);
     }
     if (frogChickIds.has(String(unit.persona.id))) {
@@ -1436,6 +1436,20 @@ const distributeCharacterRoaming = (svg) => {
   };
 
   const actionProfile = (persona, index) => {
+    if (frogChickIds.has(String(persona.id))) {
+      const profile = {
+        duration: 32,
+        // Continuous breathing is handled on the frog sprite below. This action layer adds one
+        // quick vertical hop per cycle without introducing any horizontal drift.
+        body: "0%,58%,63%,100%{transform:translate(0,0) rotate(0deg);}"
+          + "59%{transform:translate(0,-4px) rotate(0deg);}"
+          + "60.25%{transform:translate(0,-10px) rotate(0deg);}"
+          + "60.75%{transform:translate(0,-12px) rotate(0deg);}"
+          + "61.25%{transform:translate(0,-10px) rotate(0deg);}"
+          + "62%{transform:translate(0,-4px) rotate(0deg);}",
+      };
+      return { ...profile, delay: -((index * 7) % profile.duration) };
+    }
     const profiles = {
       RABBIT: {
         duration: 52,
@@ -1732,6 +1746,13 @@ const distributeCharacterRoaming = (svg) => {
         + `${facingOriginStyle}}`
         + `#${sizeWrapperId}{transform:scale(${scale.toFixed(2)});`
         + `transform-origin:${(geometry.cx * 3).toFixed(2)}px ${(geometry.cy * 3).toFixed(2)}px;}`;
+      if (isCustomWaterFrog) {
+        coordinatedRouteStyles += `@keyframes profile-frog-pant-${id}{`
+          + "0%,100%{transform:translateY(0) scale(1,1);}"
+          + "45%,55%{transform:translateY(.8px) scale(1.025,.955);}}"
+          + `#profile-custom-frog-${id}{animation:profile-frog-pant-${id} 1.25s ease-in-out infinite;`
+          + "transform-box:fill-box;transform-origin:center bottom;}";
+      }
 
       coordinatedRouteStyles += `@keyframes profile-interaction-route-${id}{${interactionKeyframes(unitIndex)}}`
         + `#${interactionWrapperId}{animation:profile-interaction-route-${id} ${personaRouteDuration}s linear infinite both;`
@@ -1762,13 +1783,18 @@ const distributeCharacterRoaming = (svg) => {
         const actionSelectors = persona.type === "CAPYBARA_SWIM" && riderNeutralizerId
           ? `#${actionWrapperId},#${riderNeutralizerId}`
           : `#${actionWrapperId}`;
+        const shadowRouteBody = isCustomWaterFrog
+          ? "0%,58%,63%,100%{transform:scaleX(1);opacity:.18;}"
+            + "59%,62%{transform:scaleX(.82);opacity:.13;}"
+            + "60.25%,61.25%{transform:scaleX(.66);opacity:.09;}"
+            + "60.75%{transform:scaleX(.54);opacity:.07;}"
+          : "0%,14%,32%,50%,68%,86%,100%{transform:scaleX(1);opacity:.18;}"
+            + "18%,54%,90%{transform:scaleX(.78);opacity:.11;}"
+            + "24%,42%,76%{transform:scaleX(1.12);opacity:.21;}";
         coordinatedRouteStyles += `@keyframes profile-actions-route-${id}{${profile.body}}`
           + `${actionSelectors}{animation:profile-actions-route-${id} ${profile.duration}s ease-in-out infinite both;`
           + `animation-delay:${profile.delay}s;transform-origin:${pivot.toFixed(2)}px ${((geometry.actionCy ?? geometry.cy) * 3).toFixed(2)}px;}`
-          + `@keyframes profile-shadow-route-${id}{`
-          + "0%,14%,32%,50%,68%,86%,100%{transform:scaleX(1);opacity:.18;}"
-          + "18%,54%,90%{transform:scaleX(.78);opacity:.11;}"
-          + "24%,42%,76%{transform:scaleX(1.12);opacity:.21;}}"
+          + `@keyframes profile-shadow-route-${id}{${shadowRouteBody}}`
           + `#profile-shadow-shape-${id}{animation:profile-shadow-route-${id} ${profile.duration}s ease-in-out infinite both;`
           + `animation-delay:${profile.delay}s;transform-origin:${geometry.cx}px ${geometry.cy}px;}`;
 
@@ -1850,9 +1876,8 @@ const distributeCharacterRoaming = (svg) => {
         // the body while leaving the full wing silhouette readable.
         coordinatedRouteStyles += `#level-wrap-${id}{translate:-10px 2px;}`;
       } else if (isCustomWaterFrog) {
-        // The doubled frog is tall enough to cover the upstream label. Lift metadata fully above
-        // both eyes instead of letting the text cut through the head.
-        coordinatedRouteStyles += `#level-wrap-${id}{translate:-8px -32px;}`;
+        // At native 1x, keep the label close to the frog while preserving a little air above both eyes.
+        coordinatedRouteStyles += `#level-wrap-${id}{translate:-6px -10px;}`;
       } else if (persona.type === "RABBIT") {
         // The rabbit artwork's visual centre moves substantially inside its wide emotion-state
         // canvas when mirrored. Keep the horizontal optical correction, but bring the label down
