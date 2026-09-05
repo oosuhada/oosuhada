@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10520",
+  "totalContributions": "10522",
   "personas": [
     {
       "id": "764406126012079806",
@@ -426,7 +426,7 @@
     {
       "id": "839316524592413461",
       "type": "PENGUIN",
-      "level": "189",
+      "level": "190",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
@@ -566,7 +566,7 @@
     {
       "id": "856825497340980190",
       "type": "LITTLE_CHICK_SUNGLASSES",
-      "level": "177",
+      "level": "178",
       "visible": false,
       "appVisible": false,
       "dropRate": "3%",
