@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10514",
+  "totalContributions": "10516",
   "personas": [
     {
       "id": "764406126012079806",
@@ -386,7 +386,7 @@
     {
       "id": "839316523409612356",
       "type": "GOOSE",
-      "level": "194",
+      "level": "195",
       "visible": true,
       "appVisible": false,
       "dropRate": "9%",
@@ -706,7 +706,7 @@
     {
       "id": "869762253656795781",
       "type": "WHITE_CAT",
-      "level": "7",
+      "level": "8",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.87%",

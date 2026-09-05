@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v75";
+const layoutVersion = "character-behaviors-v76";
 const frogAsset = await readFile(path.join(root, "assets/gitanimals/custom/frog-pixel.svg"), "utf8");
 const venomothAsset = await readFile(path.join(root, "assets/gitanimals/custom/venomoth-butterfly.svg"), "utf8");
 const terminalAsset = await readFile(path.join(root, "assets/gitanimals/custom/oosu-terminal-cutout.svg"), "utf8");
@@ -91,6 +91,9 @@ assert(venomothAsset.includes('#C8AED6') && venomothAsset.includes('#8D778F')
 assert(!venomothAsset.includes('#241B2B') && !venomothAsset.includes('#101010')
   && !venomothAsset.includes('#000000'),
   "Venomoth must not restore the heavy black outer contour.");
+assert(venomothAsset.includes('id="venomoth-eye-left"') && venomothAsset.includes('id="venomoth-eye-right"')
+  && venomothAsset.includes('id="venomoth-pupil-left"') && venomothAsset.includes('id="venomoth-pupil-right"'),
+  "Venomoth must preserve two separately addressable oversized eyes and two pupils.");
 assert(!/<(?:linear|radial)Gradient\b|url\(#|\bopacity=/i.test(terminalAsset),
   "Terminal mascot should stay flat: no gradients or translucent highlight/shadow layers.");
 assert(terminalAsset.includes('shape-rendering="crispEdges"'),

@@ -194,6 +194,14 @@ try {
             id: element.id,
             ...rectFor(element),
           })),
+          venomothEyes: ["venomoth-eye-left", "venomoth-eye-right"]
+            .map((id) => document.getElementById(id))
+            .filter(Boolean)
+            .map((element) => ({ id: element.id, ...rectFor(element) })),
+          venomothPupils: ["venomoth-pupil-left", "venomoth-pupil-right"]
+            .map((id) => document.getElementById(id))
+            .filter(Boolean)
+            .map((element) => ({ id: element.id, ...rectFor(element) })),
           shadows: [...document.querySelectorAll("svg[id^='profile-shadow-']")].map((element) => ({
             id: element.id,
             ...rectFor(element),
@@ -237,7 +245,7 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v75", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v76", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.swimZone?.width > 285 && geometry.swimZone?.width < 305,
@@ -289,6 +297,12 @@ try {
         const venomoth = geometry.characters.find((character) => character.id === id);
         assert(venomoth?.visibleArtwork && venomoth.visibleArtwork.width > 0 && venomoth.visibleArtwork.height > 0,
           `${theme} ${seconds}s lost the flying Venomoth butterfly sprite.`);
+        assert(geometry.venomothEyes.length === 2
+          && geometry.venomothEyes.every((eye) => eye.width >= 4.5 && eye.height >= 3.5),
+        `${theme} ${seconds}s must keep both Venomoth eyes visibly large at README scale.`);
+        assert(geometry.venomothPupils.length === 2
+          && geometry.venomothPupils.every((pupil) => pupil.width >= 2 && pupil.height >= 2),
+        `${theme} ${seconds}s must keep both Venomoth pupils visible at README scale.`);
       });
       assert(geometry.actions === expectedActionCount, `${theme} ${seconds}s lost character action wrappers.`);
       assert(geometry.interactions === expectedInteractionCount,
