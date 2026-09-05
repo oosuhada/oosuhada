@@ -63,7 +63,9 @@ const flamingoId = String(visiblePersonas.find((persona) => persona.type === "FL
 const levelGapContractById = new Map(
   visiblePersonas
     .map((persona) => {
-      const contract = ({
+      const contract = frogChickIds.has(String(persona.id))
+        ? { min: 10, max: 20 }
+        : ({
         RABBIT: { min: 0, max: 7 },
         RABBIT_TUBE: { min: 6, max: 17 },
         LITTLE_CHICK_TUBE: { min: 4, max: 11 },
@@ -71,7 +73,7 @@ const levelGapContractById = new Map(
         HAMSTER: { min: 2, max: 7 },
         HAMSTER_TUBE: { min: 5, max: 13 },
         GALCHI_CAT: { min: 3, max: 11 },
-      })[persona.type];
+        })[persona.type];
       return contract ? [String(persona.id), { type: persona.type, ...contract }] : null;
     })
     .filter(Boolean),
@@ -235,7 +237,7 @@ try {
         };
       });
 
-      assert(geometry.layout === "character-behaviors-v71", `${theme} ${seconds}s uses a stale layout.`);
+      assert(geometry.layout === "character-behaviors-v72", `${theme} ${seconds}s uses a stale layout.`);
       assert(geometry.root.width === 600 && geometry.root.height === 300,
         `${theme} ${seconds}s changed the SVG canvas size.`);
       assert(geometry.swimZone?.width > 285 && geometry.swimZone?.width < 305,

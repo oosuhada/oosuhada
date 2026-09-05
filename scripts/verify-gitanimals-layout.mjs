@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v71";
+const layoutVersion = "character-behaviors-v72";
 const frogAsset = await readFile(path.join(root, "assets/gitanimals/custom/frog-pixel.svg"), "utf8");
 const venomothAsset = await readFile(path.join(root, "assets/gitanimals/custom/venomoth-butterfly.svg"), "utf8");
 const terminalAsset = await readFile(path.join(root, "assets/gitanimals/custom/oosu-terminal-cutout.svg"), "utf8");
@@ -553,12 +553,25 @@ for (const persona of visible.filter((candidate) => frogChickIds.has(String(cand
     `Frog Little Chick ${id} should render the isolated pixel frog in both themes.`);
   assert(!light.includes(`little-chick-${id}-body`) && !dark.includes(`little-chick-${id}-body`),
     `Frog Little Chick ${id} original chick body should be replaced.`);
-  assert(light.includes(`#level-wrap-${id}{translate:-8px -32px;}`)
-    && dark.includes(`#level-wrap-${id}{translate:-8px -32px;}`),
+  assert(light.includes(`#level-wrap-${id}{translate:-6px -16px;}`)
+    && dark.includes(`#level-wrap-${id}{translate:-6px -16px;}`),
   `Frog Little Chick ${id} level should stay above the frog.`);
-  assert(light.includes(`#profile-size-${id}{transform:scale(2.00);`)
-    && dark.includes(`#profile-size-${id}{transform:scale(2.00);`),
-  `Frog Little Chick ${id} should render at exactly 2x its previous size.`);
+  assert(light.includes(`#profile-size-${id}{transform:scale(1.00);`)
+    && dark.includes(`#profile-size-${id}{transform:scale(1.00);`),
+  `Frog Little Chick ${id} should render at native 1x size.`);
+  const frogJumpStart = light.indexOf(`@keyframes profile-actions-route-${id}`);
+  const frogJumpEnd = light.indexOf(`#profile-actions-${id}`, frogJumpStart);
+  const frogJumpBody = light.slice(frogJumpStart, frogJumpEnd);
+  assert(frogJumpBody.includes("translate(0,-10px)")
+    && !/translate\((?:-|[1-9])[^,]*px,/.test(frogJumpBody),
+  `Frog Little Chick ${id} should intermittently jump straight up in place without horizontal drift.`);
+  assert(light.includes(`#profile-actions-${id}{animation:profile-actions-route-${id} 36s ease-in-out infinite both;`),
+    `Frog Little Chick ${id} jump should use the intermittent 36s cycle.`);
+  const frogShadowStart = light.indexOf(`@keyframes profile-shadow-route-${id}`);
+  const frogShadowEnd = light.indexOf(`#profile-shadow-shape-${id}`, frogShadowStart);
+  const frogShadowBody = light.slice(frogShadowStart, frogShadowEnd);
+  assert(frogShadowBody.includes("scaleX(.58);opacity:.07"),
+    `Frog Little Chick ${id} shadow should tighten and fade at the jump apex.`);
   assert(light.includes('#3E7F3C') && light.includes('#73B84D')
     && dark.includes('#3E7F3C') && dark.includes('#73B84D'),
   `Frog Little Chick ${id} should use the brighter tree-frog palette.`);
