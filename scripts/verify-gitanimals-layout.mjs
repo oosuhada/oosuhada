@@ -6,7 +6,7 @@ const root = process.cwd();
 const state = JSON.parse(await readFile(path.join(root, "assets/gitanimals/state.json"), "utf8"));
 const light = await readFile(path.join(root, "assets/gitanimals/farm-light.svg"), "utf8");
 const dark = await readFile(path.join(root, "assets/gitanimals/farm-dark.svg"), "utf8");
-const layoutVersion = "character-behaviors-v79";
+const layoutVersion = "character-behaviors-v80";
 const frogAsset = await readFile(path.join(root, "assets/gitanimals/custom/frog-pixel.svg"), "utf8");
 const venomothAsset = await readFile(path.join(root, "assets/gitanimals/custom/venomoth-butterfly.svg"), "utf8");
 const beeAsset = await readFile(path.join(root, "assets/gitanimals/custom/bee-svgrepo-com.svg"), "utf8");
@@ -555,11 +555,25 @@ for (const persona of visible.filter(isVenomothPersona)) {
   const venomothFacingEnd = light.indexOf(`#profile-facing-${id}`, venomothFacingStart);
   const venomothFacingBody = light.slice(venomothFacingStart, venomothFacingEnd);
   assert(venomothFacingBody.includes("scaleX(-1)") && venomothFacingBody.includes("scaleX(1)"),
-    `Venomoth Quokka ${id} must face left while flying left and right while flying right.`);
+    `Venomoth Quokka ${id} must keep both mirrored facing states.`);
+  const venomothFacingFrames = [...venomothFacingBody.matchAll(
+    /([\d.]+)%\{transform:scaleX\((-?1)\);\}/g,
+  )].map((match) => ({ percentage: Number(match[1]), scale: Number(match[2]) }));
+  const flight = extractAnimation(light, persona);
+  assert(venomothFacingFrames.length === flight.points.length,
+    `Venomoth Quokka ${id} facing samples must stay aligned with route samples.`);
+  for (let index = 0; index < flight.points.length - 1; index += 1) {
+    const deltaX = flight.points[index + 1].x - flight.points[index].x;
+    if (Math.abs(deltaX) < 0.05) continue;
+    const expectedScale = deltaX > 0 ? -1 : 1;
+    assert(venomothFacingFrames[index].scale === expectedScale,
+      `Venomoth Quokka ${id} facing should be inverted relative to horizontal travel at `
+        + `${flight.points[index].percentage.toFixed(2)}% (dx=${deltaX.toFixed(2)}, `
+        + `scale=${venomothFacingFrames[index].scale}).`);
+  }
   assert(light.includes(`#level-wrap-${id}{translate:-10px 2px;}`)
     && dark.includes(`#level-wrap-${id}{translate:-10px 2px;}`),
   `Venomoth Quokka ${id} level should clear its large wings.`);
-  const flight = extractAnimation(light, persona);
   const darkFlight = extractAnimation(dark, persona);
   assert(JSON.stringify(flight.points) === JSON.stringify(darkFlight.points),
     `Venomoth Quokka ${id} light and dark flight paths differ.`);

@@ -14,7 +14,7 @@ const beeMascotPath = path.join(outputDirectory, "custom", "bee-svgrepo-com.svg"
 const venomothMascotPath = path.join(outputDirectory, "custom", "venomoth-butterfly.svg");
 const frogMascotPath = path.join(outputDirectory, "custom", "frog-pixel.svg");
 const readmePath = path.join(root, "README.md");
-const layoutVersion = "character-behaviors-v79";
+const layoutVersion = "character-behaviors-v80";
 const previousState = await readFile(statePath, "utf8").catch(() => "");
 const previousStateData = previousState === "" ? null : JSON.parse(previousState);
 const previousContributionTotal = Number(previousStateData?.totalContributions ?? 0);
@@ -1424,6 +1424,16 @@ const distributeCharacterRoaming = (svg) => {
     return frames.join("");
   };
 
+  const invertedFacingKeyframes = (unitIndex) => {
+    const frames = [];
+    routeSamples.forEach((_, sampleIndex) => {
+      const percentage = (sampleIndex / (routeSamples.length - 1)) * 100;
+      const direction = directionFor(unitIndex, sampleIndex);
+      frames.push(`${percentage.toFixed(2)}%{transform:scaleX(${-direction});}`);
+    });
+    return frames.join("");
+  };
+
   const directionalLevelKeyframes = (unitIndex, leftOffsetX, offsetY) => {
     const frames = [];
     routeSamples.forEach((_, sampleIndex) => {
@@ -1688,8 +1698,10 @@ const distributeCharacterRoaming = (svg) => {
         ? beeRouteDuration
         : isCustomFlyingVenomoth ? venomothRouteDuration : routeDuration;
       const movement = routeKeyframes(unitIndex, isRider ? 5 : 0, isRider ? -6 : 0);
-      const facing = isCustomFlyingMascot
-        ? facingKeyframes(unitIndex)
+      const facing = isCustomFlyingVenomoth
+        ? invertedFacingKeyframes(unitIndex)
+        : isCustomFlyingMascot
+          ? facingKeyframes(unitIndex)
         : hasCustomArtwork ? "0%,100%{transform:scaleX(1);}" : facingKeyframes(unitIndex);
       let rootId;
       if (movingPersonaIds.has(id)) {
