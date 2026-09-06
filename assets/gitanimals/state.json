@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10601",
+  "totalContributions": "10604",
   "personas": [
     {
       "id": "764406126012079806",
@@ -216,7 +216,7 @@
     {
       "id": "829259874410923325",
       "type": "HAMSTER",
-      "level": "462",
+      "level": "463",
       "visible": true,
       "appVisible": false,
       "dropRate": "7%",
@@ -816,7 +816,7 @@
     {
       "id": "877752366772894308",
       "type": "PENGUIN_SUNGLASSES",
-      "level": "8",
+      "level": "9",
       "visible": false,
       "appVisible": false,
       "dropRate": "1%",
@@ -986,7 +986,7 @@
     {
       "id": "879327279266773148",
       "type": "SLOTH",
-      "level": "175",
+      "level": "176",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
