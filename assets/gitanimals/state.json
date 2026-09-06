@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10593",
+  "totalContributions": "10601",
   "personas": [
     {
       "id": "764406126012079806",
@@ -146,7 +146,7 @@
     {
       "id": "786426802227731455",
       "type": "HAMSTER_KOTLIN",
-      "level": "7",
+      "level": "8",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -606,7 +606,7 @@
     {
       "id": "857949032545359859",
       "type": "HAMSTER",
-      "level": "197",
+      "level": "198",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -686,7 +686,7 @@
     {
       "id": "865422884737231028",
       "type": "HAMSTER_SPRING",
-      "level": "8",
+      "level": "9",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -866,7 +866,7 @@
     {
       "id": "878172448523140493",
       "type": "SLOTH",
-      "level": "155",
+      "level": "156",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
@@ -1066,7 +1066,7 @@
     {
       "id": "880356598613115907",
       "type": "HAMSTER",
-      "level": "124",
+      "level": "125",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -1116,7 +1116,7 @@
     {
       "id": "880456144752053167",
       "type": "MOLE_GRASS",
-      "level": "93",
+      "level": "94",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -1266,7 +1266,7 @@
     {
       "id": "881010059226313699",
       "type": "SLIME_GREEN",
-      "level": "10",
+      "level": "11",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -1286,7 +1286,7 @@
     {
       "id": "881010059901591861",
       "type": "SLOTH",
-      "level": "6",
+      "level": "7",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
