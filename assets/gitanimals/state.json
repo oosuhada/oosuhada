@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10608",
+  "totalContributions": "10623",
   "personas": [
     {
       "id": "764406126012079806",
@@ -186,7 +186,7 @@
     {
       "id": "799170701929564302",
       "type": "HAMSTER_TUBE",
-      "level": "105",
+      "level": "106",
       "visible": true,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -206,7 +206,7 @@
     {
       "id": "829259874410923324",
       "type": "RABBIT",
-      "level": "457",
+      "level": "458",
       "visible": true,
       "appVisible": false,
       "dropRate": "8%",
@@ -256,7 +256,7 @@
     {
       "id": "833704839081857700",
       "type": "PENGUIN_NODE",
-      "level": "8",
+      "level": "9",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -296,7 +296,7 @@
     {
       "id": "835719307358968503",
       "type": "LITTLE_CHICK",
-      "level": "248",
+      "level": "250",
       "visible": true,
       "appVisible": false,
       "dropRate": "8%",
@@ -356,7 +356,7 @@
     {
       "id": "839316495265826841",
       "type": "HAMSTER",
-      "level": "202",
+      "level": "203",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -366,7 +366,7 @@
     {
       "id": "839316522163902329",
       "type": "PENGUIN",
-      "level": "213",
+      "level": "214",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
@@ -466,7 +466,7 @@
     {
       "id": "843727410376082595",
       "type": "SLOTH",
-      "level": "219",
+      "level": "220",
       "visible": true,
       "appVisible": false,
       "dropRate": "6%",
@@ -726,7 +726,7 @@
     {
       "id": "873077984725154082",
       "type": "PENGUIN_SPRING",
-      "level": "10",
+      "level": "12",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -996,7 +996,7 @@
     {
       "id": "879379983292805009",
       "type": "RABBIT",
-      "level": "163",
+      "level": "164",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
@@ -1136,7 +1136,7 @@
     {
       "id": "880459500375620285",
       "type": "MALTESE_KING",
-      "level": "92",
+      "level": "93",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -1216,7 +1216,7 @@
     {
       "id": "881010057414366574",
       "type": "CAT",
-      "level": "8",
+      "level": "10",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -1286,7 +1286,7 @@
     {
       "id": "881010059901591861",
       "type": "SLOTH",
-      "level": "7",
+      "level": "8",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
