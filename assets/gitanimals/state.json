@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10628",
+  "totalContributions": "10641",
   "personas": [
     {
       "id": "764406126012079806",
@@ -206,7 +206,7 @@
     {
       "id": "829259874410923324",
       "type": "RABBIT",
-      "level": "458",
+      "level": "459",
       "visible": true,
       "appVisible": false,
       "dropRate": "8%",
@@ -236,7 +236,7 @@
     {
       "id": "829877265864042973",
       "type": "PIG_JS",
-      "level": "10",
+      "level": "11",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -426,7 +426,7 @@
     {
       "id": "839316524592413461",
       "type": "PENGUIN",
-      "level": "190",
+      "level": "193",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
@@ -706,7 +706,7 @@
     {
       "id": "869762253656795781",
       "type": "WHITE_CAT",
-      "level": "8",
+      "level": "9",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.87%",
@@ -746,7 +746,7 @@
     {
       "id": "874689586759053174",
       "type": "SHIBA",
-      "level": "177",
+      "level": "178",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
@@ -836,7 +836,7 @@
     {
       "id": "878088240865850820",
       "type": "PENGUIN",
-      "level": "163",
+      "level": "164",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
@@ -1016,7 +1016,7 @@
     {
       "id": "880005761743294266",
       "type": "LITTLE_CHICK",
-      "level": "150",
+      "level": "151",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
@@ -1116,7 +1116,7 @@
     {
       "id": "880456144752053167",
       "type": "MOLE_GRASS",
-      "level": "94",
+      "level": "95",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -1126,7 +1126,7 @@
     {
       "id": "880456765949452942",
       "type": "SLIME_RED",
-      "level": "129",
+      "level": "130",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -1236,7 +1236,7 @@
     {
       "id": "881010058190322706",
       "type": "PENGUIN",
-      "level": "11",
+      "level": "13",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
