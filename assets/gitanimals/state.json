@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10756",
+  "totalContributions": "10764",
   "personas": [
     {
       "id": "764406126012079806",
@@ -226,7 +226,7 @@
     {
       "id": "829510187139173823",
       "type": "LITTLE_CHICK_EGG_ON_HAT",
-      "level": "327",
+      "level": "328",
       "visible": false,
       "appVisible": false,
       "dropRate": "0%",
@@ -276,7 +276,7 @@
     {
       "id": "834380360140686465",
       "type": "CAPYBARA_SWIM",
-      "level": "695",
+      "level": "696",
       "visible": true,
       "appVisible": false,
       "dropRate": "3%",
@@ -386,7 +386,7 @@
     {
       "id": "839316523409612356",
       "type": "GOOSE",
-      "level": "198",
+      "level": "199",
       "visible": true,
       "appVisible": false,
       "dropRate": "9%",
@@ -516,7 +516,7 @@
     {
       "id": "847076260256037374",
       "type": "GOBLIN_BAG",
-      "level": "10",
+      "level": "11",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.29%",
@@ -666,7 +666,7 @@
     {
       "id": "859718205327903517",
       "type": "MALTESE",
-      "level": "186",
+      "level": "187",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.19%",
@@ -1076,7 +1076,7 @@
     {
       "id": "880370822945029549",
       "type": "SLIME_BLUE",
-      "level": "152",
+      "level": "153",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -1186,7 +1186,7 @@
     {
       "id": "880484338431533083",
       "type": "PENGUIN_SUNGLASSES",
-      "level": "61",
+      "level": "62",
       "visible": false,
       "appVisible": false,
       "dropRate": "1%",
@@ -1246,7 +1246,7 @@
     {
       "id": "881010058530048379",
       "type": "GOOSE",
-      "level": "10",
+      "level": "11",
       "visible": false,
       "appVisible": false,
       "dropRate": "9%",
