@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10788",
+  "totalContributions": "10789",
   "personas": [
     {
       "id": "764406126012079806",
@@ -876,7 +876,7 @@
     {
       "id": "878266697381946909",
       "type": "GOBLIN",
-      "level": "162",
+      "level": "163",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.58%",
