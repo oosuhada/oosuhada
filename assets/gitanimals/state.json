@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10824",
+  "totalContributions": "10826",
   "personas": [
     {
       "id": "764406126012079806",
@@ -776,7 +776,7 @@
     {
       "id": "876062866581593867",
       "type": "PENGUIN",
-      "level": "196",
+      "level": "197",
       "visible": false,
       "appVisible": false,
       "dropRate": "4%",
@@ -1146,7 +1146,7 @@
     {
       "id": "880459645783741675",
       "type": "SLOTH",
-      "level": "102",
+      "level": "103",
       "visible": false,
       "appVisible": false,
       "dropRate": "6%",
