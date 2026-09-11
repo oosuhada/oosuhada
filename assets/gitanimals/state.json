@@ -1,7 +1,7 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10790",
+  "totalContributions": "10796",
   "personas": [
     {
       "id": "764406126012079806",
@@ -36,7 +36,7 @@
     {
       "id": "764407591594173037",
       "type": "HAMSTER_SANTA",
-      "level": "10",
+      "level": "11",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -136,7 +136,7 @@
     {
       "id": "786420217224971504",
       "type": "LITTLE_CHICK_SUNGLASSES",
-      "level": "13",
+      "level": "14",
       "visible": false,
       "appVisible": false,
       "dropRate": "3%",
@@ -396,7 +396,7 @@
     {
       "id": "839316523686430921",
       "type": "QUOKKA",
-      "level": "203",
+      "level": "204",
       "visible": true,
       "appVisible": false,
       "dropRate": "2%",
@@ -696,7 +696,7 @@
     {
       "id": "869614905974699316",
       "type": "HAMSTER",
-      "level": "164",
+      "level": "165",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -996,7 +996,7 @@
     {
       "id": "879379983292805009",
       "type": "RABBIT",
-      "level": "166",
+      "level": "167",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
@@ -1006,7 +1006,7 @@
     {
       "id": "879647923774797261",
       "type": "RABBIT",
-      "level": "143",
+      "level": "144",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
