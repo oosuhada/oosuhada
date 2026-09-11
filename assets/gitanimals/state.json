@@ -1,12 +1,12 @@
 {
   "id": "829259874410923322",
   "name": "oosuhada",
-  "totalContributions": "10813",
+  "totalContributions": "10822",
   "personas": [
     {
       "id": "764406126012079806",
       "type": "TURTLE",
-      "level": "10",
+      "level": "11",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.29%",
@@ -606,7 +606,7 @@
     {
       "id": "857949032545359859",
       "type": "HAMSTER",
-      "level": "200",
+      "level": "201",
       "visible": false,
       "appVisible": false,
       "dropRate": "7%",
@@ -676,7 +676,7 @@
     {
       "id": "865207314070736797",
       "type": "GOOSE",
-      "level": "150",
+      "level": "151",
       "visible": false,
       "appVisible": false,
       "dropRate": "9%",
@@ -726,7 +726,7 @@
     {
       "id": "873077984725154082",
       "type": "PENGUIN_SPRING",
-      "level": "13",
+      "level": "14",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.1%",
@@ -906,7 +906,7 @@
     {
       "id": "878345547788951027",
       "type": "QUOKKA",
-      "level": "188",
+      "level": "189",
       "visible": false,
       "appVisible": false,
       "dropRate": "2%",
@@ -996,7 +996,7 @@
     {
       "id": "879379983292805009",
       "type": "RABBIT",
-      "level": "168",
+      "level": "169",
       "visible": false,
       "appVisible": false,
       "dropRate": "8%",
@@ -1156,7 +1156,7 @@
     {
       "id": "880471396495506557",
       "type": "GALCHI_CAT",
-      "level": "109",
+      "level": "110",
       "visible": false,
       "appVisible": false,
       "dropRate": "0.96%",
@@ -1246,7 +1246,7 @@
     {
       "id": "881010058530048379",
       "type": "GOOSE",
-      "level": "12",
+      "level": "13",
       "visible": false,
       "appVisible": false,
       "dropRate": "9%",
@@ -1276,7 +1276,7 @@
     {
       "id": "881010059566043467",
       "type": "GOOSE",
-      "level": "10",
+      "level": "11",
       "visible": false,
       "appVisible": false,
       "dropRate": "9%",
